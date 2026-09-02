@@ -1,0 +1,36 @@
+name = "aics-api"
+main = "src/index.js"
+compatibility_date = "2026-01-01"
+
+# --- dev ---
+[env.dev]
+vars = { ENVIRONMENT = "dev", ALLOWED_ORIGINS = "https://aics-frontend-dev.pages.dev" }
+[[env.dev.d1_databases]]
+binding = "DB"
+database_name = "aics-db-dev"
+database_id = "REPLACE_DEV_D1_ID"
+[[env.dev.kv_namespaces]]
+binding = "KV_NS"
+id = "REPLACE_DEV_KV_ID"
+
+# --- staging ---
+[env.staging]
+vars = { ENVIRONMENT = "staging", ALLOWED_ORIGINS = "https://aics-frontend-staging.pages.dev" }
+[[env.staging.d1_databases]]
+binding = "DB"
+database_name = "aics-db-staging"
+database_id = "REPLACE_STAGING_D1_ID"
+[[env.staging.kv_namespaces]]
+binding = "KV_NS"
+id = "REPLACE_STAGING_KV_ID"
+
+# --- prod ---
+[env.prod]
+vars = { ENVIRONMENT = "prod", ALLOWED_ORIGINS = "https://aics-frontend-prod.pages.dev" }
+[[env.prod.d1_databases]]
+binding = "DB"
+database_name = "aics-db-prod"
+database_id = "REPLACE_PROD_D1_ID"
+[[env.prod.kv_namespaces]]
+binding = "KV_NS"
+id = "REPLACE_PROD_KV_ID"
