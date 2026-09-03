@@ -48,7 +48,9 @@ export default {
           email: info.email, name: info.name || '', picture: info.picture || '',
           plan, exp: Date.now() + 7 * 86400000,
         }, key);
-        return Response.redirect((redirect || '/auth/result') + '#token=' + encodeURIComponent(token), 302);
+                const target = redirect || '/auth/result';
+        const abs = /^https?:\/\//.test(target) ? target : url.origin + target;
+        return Response.redirect(abs + '#token=' + encodeURIComponent(token), 302);
       } catch (e) {
         return json({ error: 'auth_failed', detail: String(e.message || e) }, 500, cors);
       }
