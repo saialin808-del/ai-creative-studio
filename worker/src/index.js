@@ -1,5 +1,6 @@
-// AI Creative Studio — Cloudflare Worker API (STEP 4 Phase 2)
+// AI Creative Studio — Cloudflare Worker API (STEP 4 Phase 3)
 import { signToken, verifyToken, getKey, makeState, parseState, exchangeCode, fetchUserInfo } from './auth';
+import { callGeminiText } from './ai';
 
 export default {
   async fetch(request, env, ctx) {
@@ -48,7 +49,7 @@ export default {
           email: info.email, name: info.name || '', picture: info.picture || '',
           plan, exp: Date.now() + 7 * 86400000,
         }, key);
-                const target = redirect || '/auth/result';
+        const target = redirect || '/auth/result';
         const abs = /^https?:\/\//.test(target) ? target : url.origin + target;
         return Response.redirect(abs + '#token=' + encodeURIComponent(token), 302);
       } catch (e) {
@@ -67,6 +68,31 @@ export default {
       const payload = await verifyToken(token, key);
       if (!payload) return json({ error: 'invalid_token' }, 401, cors);
       return json({ email: payload.email, name: payload.name, plan: payload.plan }, 200, cors);
+    }
+
+    if (path === '/api/ai/test' && request.method === 'POST') {
+      const auth = (request.headers.get('Authorization') || '').replace(/^Bearer\s+/i, '');
+      if (!auth) return json({ error: 'unauthorized' }, 401, cors);
+      const k = await getKey(env.SESSION_SIGNING_KEY);
+      const payload = await verifyToken(auth, k);
+      if (!payload) return json({ error: 'invalid_token' }, 401, cors);
+      const body = await request.json().catch(() => null);
+      if (!body || !body.prompt) return json({ error: 'missing_prompt' }, 400, cors);
+      try {
+        const out = await callGeminiText(env, {
+          model: body.model || 'gemini-3.6-flash',
+          system: body.system || '',
+          prompt: body.prompt,
+          apiKey: body.apiKey,
+        });
+        return json({ output: out }, 200, cors);
+      } catch (e) {
+        return json({ error: 'ai_error', detail: String(e.message || e) }, 500, cors);
+      }
+    }
+
+    if (path === '/ai-test') {
+      return new Response(aiTestPage(), { status: 200, headers: { 'Content-Type': 'text/html; charset=utf-8' } });
     }
 
     return json({ error: 'not_found', path }, 404, cors);
@@ -107,4 +133,27 @@ function resultPage() {
     '}else{document.getElementById("status").textContent="No token found.";}' +
     'function copyT(){var x=document.getElementById("tok");x.select();try{document.execCommand("copy");}catch(e){}}<\/script>' +
     '</body></html>';
+}
+
+function aiTestPage() {
+  return '<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>AI Test</title></head>' +
+    '<body style="font-family:sans-serif;max-width:640px;margin:24px auto;padding:0 16px;background:#F4F3EE;color:#1A1B1C">' +
+    '<h2 style="color:#1b6d96">🤖 AI Router Test</h2>' +
+    '<label style="font-size:13px;font-weight:600">Session Token (Login OK page ကနေ Copy)</label><br>' +
+    '<textarea id="tok" rows="3" style="width:100%;font-family:monospace;font-size:12px;box-sizing:border-box"></textarea>' +
+    '<label style="font-size:13px;font-weight:600">Your Gemini API Key (BYOK)</label><br>' +
+    '<input id="key" type="password" style="width:100%;font-size:13px;box-sizing:border-box;padding:8px">' +
+    '<label style="font-size:13px;font-weight:600">System (optional)</label><br>' +
+    '<textarea id="sys" rows="2" style="width:100%;font-size:13px;box-sizing:border-box"></textarea>' +
+    '<label style="font-size:13px;font-weight:600">Prompt</label><br>' +
+    '<textarea id="pr" rows="3" style="width:100%;font-size:13px;box-sizing:border-box">Say hello in one short sentence.</textarea>' +
+    '<br><button id="btn" onclick="run()" style="margin-top:8px;padding:10px 22px;font-size:14px">▶ Run Gemini</button>' +
+    '<div id="out" style="margin-top:10px;padding:12px;background:#fff;border-radius:8px;border:1px solid #E4E3DD;font-size:13px;white-space:pre-wrap;min-height:60px">Result will show here.</div>' +
+    '<script>' +
+    'function run(){var o=document.getElementById("out");o.textContent="Loading...";' +
+    'fetch("/api/ai/test",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+document.getElementById("tok").value},' +
+    'body:JSON.stringify({apiKey:document.getElementById("key").value,system:document.getElementById("sys").value,prompt:document.getElementById("pr").value})})' +
+    '.then(function(r){return r.json();}).then(function(d){o.textContent=d.output||("ERROR: "+(d.error||"")+" "+(d.detail||""));})' +
+    '.catch(function(e){o.textContent="Network error: "+e;});}' +
+    '<\/script></body></html>';
 }
