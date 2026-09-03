@@ -1,6 +1,7 @@
-// AI Creative Studio — Cloudflare Worker API (STEP 4 Phase 3)
+// AI Creative Studio — Cloudflare Worker API (STEP 4 Phase 3b)
 import { signToken, verifyToken, getKey, makeState, parseState, exchangeCode, fetchUserInfo } from './auth';
 import { callGeminiText } from './ai';
+import { getCMSData, buildSystemPrompt } from './cms';
 
 export default {
   async fetch(request, env, ctx) {
@@ -91,8 +92,26 @@ export default {
       }
     }
 
+    if (path === '/api/cms/prompt') {
+      const auth = (request.headers.get('Authorization') || '').replace(/^Bearer\s+/i, '');
+      if (!auth) return json({ error: 'unauthorized' }, 401, cors);
+      const k = await getKey(env.SESSION_SIGNING_KEY);
+      const payload = await verifyToken(auth, k);
+      if (!payload) return json({ error: 'invalid_token' }, 401, cors);
+      const studio = (url.searchParams.get('studio') || '').toUpperCase();
+      const type = url.searchParams.get('type') || '1';
+      const plan = payload.plan; // server-verified plan only
+      const c = await getCMSData(env, studio, plan, type);
+      if (!c) return json({ found: false, studio, plan, type }, 200, cors);
+      return json({ found: true, studio, plan, type, systemPrompt: buildSystemPrompt(c) }, 200, cors);
+    }
+
     if (path === '/ai-test') {
       return new Response(aiTestPage(), { status: 200, headers: { 'Content-Type': 'text/html; charset=utf-8' } });
+    }
+
+    if (path === '/cms-test') {
+      return new Response(cmsTestPage(), { status: 200, headers: { 'Content-Type': 'text/html; charset=utf-8' } });
     }
 
     return json({ error: 'not_found', path }, 404, cors);
@@ -154,6 +173,27 @@ function aiTestPage() {
     'fetch("/api/ai/test",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+document.getElementById("tok").value},' +
     'body:JSON.stringify({apiKey:document.getElementById("key").value,system:document.getElementById("sys").value,prompt:document.getElementById("pr").value})})' +
     '.then(function(r){return r.json();}).then(function(d){o.textContent=d.output||("ERROR: "+(d.error||"")+" "+(d.detail||""));})' +
+    '.catch(function(e){o.textContent="Network error: "+e;});}' +
+    '<\/script></body></html>';
+}
+
+function cmsTestPage() {
+  return '<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>CMS Test</title></head>' +
+    '<body style="font-family:sans-serif;max-width:640px;margin:24px auto;padding:0 16px;background:#F4F3EE;color:#1A1B1C">' +
+    '<h2 style="color:#1b6d96">📋 CMS Engine Test</h2>' +
+    '<label style="font-size:13px;font-weight:600">Session Token</label><br>' +
+    '<textarea id="tok" rows="3" style="width:100%;font-family:monospace;font-size:12px;box-sizing:border-box"></textarea>' +
+    '<label style="font-size:13px;font-weight:600">Studio (STORY / CONTENT / SHORT / IMAGE / VOICE / SHOPCONTENT ...)</label><br>' +
+    '<input id="st" value="STORY" style="width:100%;font-size:13px;box-sizing:border-box;padding:8px">' +
+    '<label style="font-size:13px;font-weight:600">Type (1-5)</label><br>' +
+    '<input id="ty" value="1" style="width:100%;font-size:13px;box-sizing:border-box;padding:8px">' +
+    '<br><button onclick="run()" style="margin-top:8px;padding:10px 22px;font-size:14px">🔍 Get Prompt</button>' +
+    '<div id="out" style="margin-top:10px;padding:12px;background:#fff;border-radius:8px;border:1px solid #E4E3DD;font-size:13px;white-space:pre-wrap;min-height:60px">Result will show here.</div>' +
+    '<script>' +
+    'function run(){var o=document.getElementById("out");o.textContent="Loading...";' +
+    'fetch("/api/cms/prompt?studio="+encodeURIComponent(document.getElementById("st").value)+"&type="+encodeURIComponent(document.getElementById("ty").value),' +
+    '{headers:{"Authorization":"Bearer "+document.getElementById("tok").value}})' +
+    '.then(function(r){return r.json();}).then(function(d){o.textContent=d.found?("FOUND ✅ ("+d.studio+"/"+d.plan+"/"+d.type+")\n\n"+d.systemPrompt):("NOT FOUND — "+d.studio+"/"+d.plan+"/"+d.type+" (database ထဲ ဒေတာမရှိသေးဘူး)");})' +
     '.catch(function(e){o.textContent="Network error: "+e;});}' +
     '<\/script></body></html>';
 }
