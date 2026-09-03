@@ -1,122 +1,37 @@
-// AI Creative Studio — Cloudflare Worker API (STEP 4 Phase 3b)
+// AI Creative Studio — Cloudflare Worker API (STEP 4 Phase 3b — robust)
 import { signToken, verifyToken, getKey, makeState, parseState, exchangeCode, fetchUserInfo } from './auth';
 import { callGeminiText } from './ai';
 import { getCMSData, buildSystemPrompt } from './cms';
 
-export default {
-  async fetch(request, env, ctx) {
-    const url = new URL(request.url);
-    const cors = {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-    };
-    if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors });
+function corsHeaders() {
+  return {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  };
+}
 
-    const path = url.pathname;
+function json(body, status = 200, headers = {}) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { 'Content-Type': 'application/json; charset=utf-8', ...headers },
+  });
+}
 
-    if (path === '/api/health') {
-      return json({ status: 'ok', service: 'aics-api', env: env.ENVIRONMENT || 'dev' }, 200, cors);
-    }
+function htmlPage(body) {
+  return new Response(body, { status: 200, headers: { 'Content-Type': 'text/html; charset=utf-8' } });
+}
 
-    if (path === '/api/auth/login') {
-      if (!env.GOOGLE_OAUTH_CLIENT_ID) return json({ error: 'not_configured' }, 500, cors);
-      const redirect = url.searchParams.get('redirect') || '';
-      const redirectUri = url.origin + '/api/auth/callback';
-      const authUrl = 'https://accounts.google.com/o/oauth2/v2/auth?' + new URLSearchParams({
-        client_id: env.GOOGLE_OAUTH_CLIENT_ID,
-        redirect_uri: redirectUri,
-        response_type: 'code',
-        scope: 'openid email profile',
-        state: makeState(redirect),
-        prompt: 'select_account',
-      });
-      return Response.redirect(authUrl, 302);
-    }
+function bearer(request) {
+  return (request.headers.get('Authorization') || '').replace(/^Bearer\s+/i, '');
+}
 
-    if (path === '/api/auth/callback') {
-      const code = url.searchParams.get('code');
-      const state = url.searchParams.get('state') || '';
-      const redirect = parseState(state);
-      if (!code) return json({ error: 'missing_code' }, 400, cors);
-      const redirectUri = url.origin + '/api/auth/callback';
-      try {
-        const tokens = await exchangeCode(code, env.GOOGLE_OAUTH_CLIENT_ID, env.GOOGLE_OAUTH_CLIENT_SECRET, redirectUri);
-        const info = await fetchUserInfo(tokens.access_token);
-        if (!info || !info.email) throw new Error('no_email');
-        const plan = await resolvePlan(env, info.email);
-        const key = await getKey(env.SESSION_SIGNING_KEY);
-        const token = await signToken({
-          email: info.email, name: info.name || '', picture: info.picture || '',
-          plan, exp: Date.now() + 7 * 86400000,
-        }, key);
-        const target = redirect || '/auth/result';
-        const abs = /^https?:\/\//.test(target) ? target : url.origin + target;
-        return Response.redirect(abs + '#token=' + encodeURIComponent(token), 302);
-      } catch (e) {
-        return json({ error: 'auth_failed', detail: String(e.message || e) }, 500, cors);
-      }
-    }
-
-    if (path === '/auth/result') {
-      return new Response(resultPage(), { status: 200, headers: { 'Content-Type': 'text/html; charset=utf-8' } });
-    }
-
-    if (path === '/api/users/me') {
-      const token = (request.headers.get('Authorization') || '').replace(/^Bearer\s+/i, '');
-      if (!token) return json({ error: 'unauthorized' }, 401, cors);
-      const key = await getKey(env.SESSION_SIGNING_KEY);
-      const payload = await verifyToken(token, key);
-      if (!payload) return json({ error: 'invalid_token' }, 401, cors);
-      return json({ email: payload.email, name: payload.name, plan: payload.plan }, 200, cors);
-    }
-
-    if (path === '/api/ai/test' && request.method === 'POST') {
-      const auth = (request.headers.get('Authorization') || '').replace(/^Bearer\s+/i, '');
-      if (!auth) return json({ error: 'unauthorized' }, 401, cors);
-      const k = await getKey(env.SESSION_SIGNING_KEY);
-      const payload = await verifyToken(auth, k);
-      if (!payload) return json({ error: 'invalid_token' }, 401, cors);
-      const body = await request.json().catch(() => null);
-      if (!body || !body.prompt) return json({ error: 'missing_prompt' }, 400, cors);
-      try {
-        const out = await callGeminiText(env, {
-          model: body.model || 'gemini-3.6-flash',
-          system: body.system || '',
-          prompt: body.prompt,
-          apiKey: body.apiKey,
-        });
-        return json({ output: out }, 200, cors);
-      } catch (e) {
-        return json({ error: 'ai_error', detail: String(e.message || e) }, 500, cors);
-      }
-    }
-
-    if (path === '/api/cms/prompt') {
-      const auth = (request.headers.get('Authorization') || '').replace(/^Bearer\s+/i, '');
-      if (!auth) return json({ error: 'unauthorized' }, 401, cors);
-      const k = await getKey(env.SESSION_SIGNING_KEY);
-      const payload = await verifyToken(auth, k);
-      if (!payload) return json({ error: 'invalid_token' }, 401, cors);
-      const studio = (url.searchParams.get('studio') || '').toUpperCase();
-      const type = url.searchParams.get('type') || '1';
-      const plan = payload.plan; // server-verified plan only
-      const c = await getCMSData(env, studio, plan, type);
-      if (!c) return json({ found: false, studio, plan, type }, 200, cors);
-      return json({ found: true, studio, plan, type, systemPrompt: buildSystemPrompt(c) }, 200, cors);
-    }
-
-    if (path === '/ai-test') {
-      return new Response(aiTestPage(), { status: 200, headers: { 'Content-Type': 'text/html; charset=utf-8' } });
-    }
-
-    if (path === '/cms-test') {
-      return new Response(cmsTestPage(), { status: 200, headers: { 'Content-Type': 'text/html; charset=utf-8' } });
-    }
-
-    return json({ error: 'not_found', path }, 404, cors);
-  }
-};
+async function verifyTokenSafe(env, token) {
+  try {
+    const key = await getKey(env.SESSION_SIGNING_KEY);
+    return await verifyToken(token, key);
+  } catch (e) { return null; }
+}
 
 async function resolvePlan(env, email) {
   try {
@@ -128,11 +43,98 @@ async function resolvePlan(env, email) {
   } catch (e) { return 'FREE'; }
 }
 
-function json(body, status = 200, headers = {}) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { 'Content-Type': 'application/json; charset=utf-8', ...headers },
-  });
+async function route(request, env, ctx) {
+  const url = new URL(request.url);
+  const cors = corsHeaders();
+  if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors });
+  const path = url.pathname;
+
+  if (path === '/api/health') {
+    return json({ status: 'ok', service: 'aics-api', env: env.ENVIRONMENT || 'dev' }, 200, cors);
+  }
+
+  if (path === '/api/auth/login') {
+    if (!env.GOOGLE_OAUTH_CLIENT_ID) return json({ error: 'not_configured' }, 500, cors);
+    const redirect = url.searchParams.get('redirect') || '';
+    const redirectUri = url.origin + '/api/auth/callback';
+    const authUrl = 'https://accounts.google.com/o/oauth2/v2/auth?' + new URLSearchParams({
+      client_id: env.GOOGLE_OAUTH_CLIENT_ID,
+      redirect_uri: redirectUri,
+      response_type: 'code',
+      scope: 'openid email profile',
+      state: makeState(redirect),
+      prompt: 'select_account',
+    });
+    return Response.redirect(authUrl, 302);
+  }
+
+  if (path === '/api/auth/callback') {
+    const code = url.searchParams.get('code');
+    const state = url.searchParams.get('state') || '';
+    const redirect = parseState(state);
+    if (!code) return json({ error: 'missing_code' }, 400, cors);
+    const redirectUri = url.origin + '/api/auth/callback';
+    const tokens = await exchangeCode(code, env.GOOGLE_OAUTH_CLIENT_ID, env.GOOGLE_OAUTH_CLIENT_SECRET, redirectUri);
+    const info = await fetchUserInfo(tokens.access_token);
+    if (!info || !info.email) throw new Error('no_email');
+    const plan = await resolvePlan(env, info.email);
+    const key = await getKey(env.SESSION_SIGNING_KEY);
+    const token = await signToken({
+      email: info.email, name: info.name || '', picture: info.picture || '',
+      plan, exp: Date.now() + 7 * 86400000,
+    }, key);
+    const target = redirect || '/auth/result';
+    const abs = /^https?:\/\//.test(target) ? target : url.origin + target;
+    return Response.redirect(abs + '#token=' + encodeURIComponent(token), 302);
+  }
+
+  if (path === '/auth/result') return htmlPage(resultPage());
+
+  if (path === '/api/users/me') {
+    const token = bearer(request);
+    if (!token) return json({ error: 'unauthorized' }, 401, cors);
+    const payload = await verifyTokenSafe(env, token);
+    if (!payload) return json({ error: 'invalid_token' }, 401, cors);
+    return json({ email: payload.email, name: payload.name, plan: payload.plan }, 200, cors);
+  }
+
+  if (path === '/api/ai/test' && request.method === 'POST') {
+    const token = bearer(request);
+    if (!token) return json({ error: 'unauthorized' }, 401, cors);
+    const payload = await verifyTokenSafe(env, token);
+    if (!payload) return json({ error: 'invalid_token' }, 401, cors);
+    const body = await request.json().catch(() => null);
+    if (!body || !body.prompt) return json({ error: 'missing_prompt' }, 400, cors);
+    try {
+      const out = await callGeminiText(env, {
+        model: body.model || 'gemini-3.6-flash',
+        system: body.system || '',
+        prompt: body.prompt,
+        apiKey: body.apiKey,
+      });
+      return json({ output: out }, 200, cors);
+    } catch (e) {
+      return json({ error: 'ai_error', detail: String((e && e.message) || e) }, 500, cors);
+    }
+  }
+
+  if (path === '/api/cms/prompt') {
+    const token = bearer(request);
+    if (!token) return json({ error: 'unauthorized' }, 401, cors);
+    const payload = await verifyTokenSafe(env, token);
+    if (!payload) return json({ error: 'invalid_token' }, 401, cors);
+    const studio = (url.searchParams.get('studio') || '').toUpperCase();
+    const type = url.searchParams.get('type') || '1';
+    const plan = payload.plan;
+    const c = await getCMSData(env, studio, plan, type);
+    if (!c) return json({ found: false, studio, plan, type }, 200, cors);
+    return json({ found: true, studio, plan, type, systemPrompt: buildSystemPrompt(c) }, 200, cors);
+  }
+
+  if (path === '/ai-test') return htmlPage(aiTestPage());
+  if (path === '/cms-test') return htmlPage(cmsTestPage());
+
+  return json({ error: 'not_found', path }, 404, cors);
 }
 
 function resultPage() {
@@ -191,9 +193,22 @@ function cmsTestPage() {
     '<div id="out" style="margin-top:10px;padding:12px;background:#fff;border-radius:8px;border:1px solid #E4E3DD;font-size:13px;white-space:pre-wrap;min-height:60px">Result will show here.</div>' +
     '<script>' +
     'function run(){var o=document.getElementById("out");o.textContent="Loading...";' +
-    'fetch("/api/cms/prompt?studio="+encodeURIComponent(document.getElementById("st").value)+"&type="+encodeURIComponent(document.getElementById("ty").value),' +
-    '{headers:{"Authorization":"Bearer "+document.getElementById("tok").value}})' +
-    '.then(function(r){return r.json();}).then(function(d){o.textContent=d.found?("FOUND ✅ ("+d.studio+"/"+d.plan+"/"+d.type+")\\n\\n"+d.systemPrompt):("NOT FOUND — "+d.studio+"/"+d.plan+"/"+d.type+" (database ထဲ ဒေတာမရှိသေးဘူး)");})' +
+    'var url="/api/cms/prompt?studio="+encodeURIComponent(document.getElementById("st").value)+"&type="+encodeURIComponent(document.getElementById("ty").value);' +
+    'fetch(url,{headers:{"Authorization":"Bearer "+document.getElementById("tok").value}})' +
+    '.then(function(r){return r.text().then(function(t){return {status:r.status,text:t};});})' +
+    '.then(function(res){var d;try{d=JSON.parse(res.text);}catch(e){o.textContent="HTTP "+res.status+" | NOT JSON | raw: "+res.text.slice(0,500);return;}' +
+    'if(d.error){o.textContent="ERROR: "+d.error+(d.detail?(" | "+d.detail):"");return;}' +
+    'o.textContent=d.found?("FOUND ✅ "+d.studio+"/"+d.plan+"/"+d.type+"\\n\\n"+d.systemPrompt):("NOT FOUND "+d.studio+"/"+d.plan+"/"+d.type+" (database ထဲ ဒေတာမရှိသေးဘူး)");})' +
     '.catch(function(e){o.textContent="Network error: "+e;});}' +
     '<\/script></body></html>';
 }
+
+export default {
+  async fetch(request, env, ctx) {
+    try {
+      return await route(request, env, ctx);
+    } catch (e) {
+      return json({ error: 'internal', detail: String((e && e.message) || e) }, 500, corsHeaders());
+    }
+  }
+};
