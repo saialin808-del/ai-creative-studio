@@ -193,7 +193,7 @@ function cmsTestPage() {
     'function run(){var o=document.getElementById("out");o.textContent="Loading...";' +
     'fetch("/api/cms/prompt?studio="+encodeURIComponent(document.getElementById("st").value)+"&type="+encodeURIComponent(document.getElementById("ty").value),' +
     '{headers:{"Authorization":"Bearer "+document.getElementById("tok").value}})' +
-    '.then(function(r){return r.json();}).then(function(d){o.textContent=d.found?("FOUND ✅ ("+d.studio+"/"+d.plan+"/"+d.type+")\n\n"+d.systemPrompt):("NOT FOUND — "+d.studio+"/"+d.plan+"/"+d.type+" (database ထဲ ဒေတာမရှိသေးဘူး)");})' +
+    '.then(function(r){return r.json();}).then(function(d){o.textContent=d.found?("FOUND ✅ ("+d.studio+"/"+d.plan+"/"+d.type+")\\n\\n"+d.systemPrompt):("NOT FOUND — "+d.studio+"/"+d.plan+"/"+d.type+" (database ထဲ ဒေတာမရှိသေးဘူး)");})' +
     '.catch(function(e){o.textContent="Network error: "+e;});}' +
     '<\/script></body></html>';
 }
