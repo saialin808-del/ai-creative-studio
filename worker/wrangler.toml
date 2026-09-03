@@ -1,25 +1,27 @@
-name: Deploy Worker + D1 Migration
-on:
-  push:
-    branches: [main]
-  workflow_dispatch:
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        env: [dev, staging, prod]
-    steps:
-      - uses: actions/checkout@v4
-      - name: Deploy Worker (aics-api-${{ matrix.env }})
-        working-directory: worker
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-        run: npx wrangler@4 deploy --env ${{ matrix.env }}
-      - name: Apply D1 migrations (aics-db-${{ matrix.env }})
-        working-directory: worker
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-        run: npx wrangler@4 d1 migrations apply aics-db-${{ matrix.env }} --env ${{ matrix.env }}
+name = "aics-api"
+main = "src/index.js"
+compatibility_date = "2026-01-01"
+
+# --- dev ---
+[env.dev]
+vars = { ENVIRONMENT = "dev", ALLOWED_ORIGINS = "https://aics-frontend-dev.pages.dev" }
+[[env.dev.d1_databases]]
+binding = "DB"
+database_name = "aics-db-dev"
+database_id = "3f747286-9531-4b92-96a7-f0144387bd91"
+
+# --- staging ---
+[env.staging]
+vars = { ENVIRONMENT = "staging", ALLOWED_ORIGINS = "https://aics-frontend-staging.pages.dev" }
+[[env.staging.d1_databases]]
+binding = "DB"
+database_name = "aics-db-staging"
+database_id = "7c663452-6270-4c73-9a2c-6cd1dee977f5"
+
+# --- prod ---
+[env.prod]
+vars = { ENVIRONMENT = "prod", ALLOWED_ORIGINS = "https://aics-frontend-prod.pages.dev" }
+[[env.prod.d1_databases]]
+binding = "DB"
+database_name = "aics-db-prod"
+database_id = "dfcadfdf-fb95-4e81-ae04-914447b657ec"
