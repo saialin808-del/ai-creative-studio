@@ -1,4 +1,4 @@
-// AI Creative Studio — AI Router (Gemini) — Phase 3
+// AI Creative Studio — AI Router (Gemini) — Phase 3 (retry + robust errors)
 const GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta';
 
 async function callGeminiText(env, { model, system, prompt, apiKey }) {
@@ -6,18 +6,31 @@ async function callGeminiText(env, { model, system, prompt, apiKey }) {
   if (!key) throw new Error('no_api_key');
   const body = { contents: [{ role: 'user', parts: [{ text: prompt }] }] };
   if (system) body.systemInstruction = { parts: [{ text: system }] };
-  const res = await fetch(GEMINI_BASE + '/models/' + model + ':generateContent', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
-    body: JSON.stringify(body),
-  });
-  const data = await res.json();
-  if (!res.ok) {
-    throw new Error((data.error && data.error.message) || 'gemini_error');
+  let lastErr = null;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      const res = await fetch(GEMINI_BASE + '/models/' + model + ':generateContent', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
+        body: JSON.stringify(body),
+      });
+      const text = await res.text();
+      let data;
+      try { data = JSON.parse(text); }
+      catch (e) { lastErr = new Error('bad_response (gateway/timeout)'); continue; }
+      if (!res.ok) {
+        lastErr = new Error((data.error && data.error.message) || ('gemini_error_' + res.status));
+        if (res.status === 429 || res.status >= 500) continue;
+        break;
+      }
+      const parts = data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts;
+      return parts ? parts.map(p => p.text || '').join('').trim() : '';
+    } catch (e) {
+      lastErr = e;
+      await new Promise(r => setTimeout(r, 800));
+    }
   }
-  const parts = data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts;
-  if (!parts) return '';
-  return parts.map(p => p.text || '').join('').trim();
+  throw lastErr || new Error('gemini_failed');
 }
 
 export { callGeminiText };
