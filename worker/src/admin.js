@@ -111,6 +111,7 @@ var currentTab='cms';
 function $(id){return document.getElementById(id);}
 function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function showError(msg){
+  $('loading').style.display='block';
   $('loading').innerHTML='<div style="color:#d33;"><b>Error:</b> '+esc(String(msg))+'</div>';
 }
 function showApp(){
@@ -268,14 +269,32 @@ function tokenFromHash(){
 function init(){
   try{
     tokenFromHash();
-    if(!token){login();return;}
+    if(!token){
+      $('loading').innerHTML='🔄 Google login ကို ဓာတ်ပြန်နေသည်...';
+      setTimeout(login,300);
+      return;
+    }
+    $('loading').innerHTML='🔍 Login စစ်ဆေးနေသည်... (token ရှိသည်)';
+    var timedOut=false;
+    var timer=setTimeout(function(){
+      timedOut=true;
+      showError('Server မှ တုံ့ပြန်မှု မရဘူး (၈ စက္ကန့်ကျော်)။ <br><br>လုပ်ဆောင်ရန်: <br>1. Page ကို pull-down လုပ်ပြီး refresh လုပ်ပါ <br>2. /app ကို ဦးစွာ ဝင်ကြည့်ပါ login အလုပ်လုပ်လား <br>3. VPN ကို ပိတ်/ဖွင့် ပြန်လုပ်ကြည့်ပါ');
+    },8000);
     api('/api/users/me').then(function(d){
-      if(!d||!d.email){login();return;}
+      if(timedOut)return;
+      clearTimeout(timer);
+      if(!d||!d.email){
+        $('loading').innerHTML='🔄 Login မမြင်သေး — Google ကို ပြန်ဝင်နေသည်...';
+        setTimeout(login,500);
+        return;
+      }
       $('userBox').textContent=d.email+' · '+d.plan;
       fillStudios();
       showApp();
       load();
     }).catch(function(e){
+      if(timedOut)return;
+      clearTimeout(timer);
       showError('Login failed: '+String(e&&e.message||e)+' — ပြန်ဝင်ပါ');
     });
   }catch(e){
