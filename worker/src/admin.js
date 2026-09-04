@@ -9,7 +9,8 @@ export const ADMIN_HTML = `<!DOCTYPE html>
 <title>CMS Manager — AI Creative Studio</title>
 <style>
 *{box-sizing:border-box}
-body{margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#F4F3EE;color:#1A1B1C;display:none}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#F4F3EE;color:#1A1B1C}
+#loading{padding:40px 20px;text-align:center;color:#6B7280;font-size:14px}
 header{position:sticky;top:0;background:#1b6d96;color:#fff;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;z-index:10}
 .logo{font-weight:700;font-size:16px}
 .user{font-size:12px}
@@ -39,6 +40,8 @@ label{display:block;font-size:12px;font-weight:600;margin:10px 0 3px}
 </style>
 </head>
 <body>
+<div id="loading">⏳ Loading admin panel...</div>
+<div id="app" class="hidden">
 <header>
   <div class="logo">🗂️ Admin Panel</div>
   <div class="user"><span id="userBox"></span> · <a href="/app" style="color:#fff;">→ App</a></div>
@@ -48,7 +51,6 @@ label{display:block;font-size:12px;font-weight:600;margin:10px 0 3px}
     <button class="btn active" id="tabCms" onclick="switchTab('cms')">📋 CMS</button>
     <button class="btn inactive" id="tabUsers" onclick="switchTab('users')">👥 Users</button>
   </div>
-
   <div id="cmsView">
     <div class="card row">
       <select id="fStudio"></select>
@@ -63,7 +65,6 @@ label{display:block;font-size:12px;font-weight:600;margin:10px 0 3px}
     </div>
     <div id="list"></div>
   </div>
-
   <div id="usersView" class="hidden">
     <div class="card row">
       <button class="btn" onclick="loadUsers()">⟳ Refresh</button>
@@ -72,7 +73,6 @@ label{display:block;font-size:12px;font-weight:600;margin:10px 0 3px}
     <div id="usersList"></div>
   </div>
 </main>
-
 <div id="formWrap" class="hidden">
   <div class="overlay">
     <div class="card form">
@@ -96,6 +96,7 @@ label{display:block;font-size:12px;font-weight:600;margin:10px 0 3px}
     </div>
   </div>
 </div>
+</div>
 
 <script>
 var TOKEN_KEY='aics_token';
@@ -107,14 +108,15 @@ var users=[];
 var editingId=null;
 var currentTab='cms';
 
-window.onerror=function(msg,url,line){
-  document.body.style.display='block';
-  document.body.innerHTML='<div style="padding:20px;color:#d33;font-size:14px;"><b>JS Error:</b> '+String(msg)+'<br>line: '+line+'</div>';
-  return true;
-};
-
 function $(id){return document.getElementById(id);}
 function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function showError(msg){
+  $('loading').innerHTML='<div style="color:#d33;"><b>Error:</b> '+esc(String(msg))+'</div>';
+}
+function showApp(){
+  $('loading').style.display='none';
+  $('app').classList.remove('hidden');
+}
 function login(){location.href='/api/auth/login?next='+encodeURIComponent(location.origin+'/admin');}
 function api(path,method,body){
   return fetch(path,{method:method||'GET',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:body?JSON.stringify(body):undefined})
@@ -264,18 +266,21 @@ function tokenFromHash(){
 }
 
 function init(){
-  tokenFromHash();
-  if(!token){login();return;}
-  api('/api/users/me').then(function(d){
-    if(!d||!d.email){login();return;}
-    $('userBox').textContent=d.email+' · '+d.plan;
-    fillStudios();
-    document.body.style.display='block';
-    load();
-  }).catch(function(e){
-    document.body.style.display='block';
-    $('list').innerHTML='<div class="card"><span class="err">Login error: '+esc(String(e&&e.message||e))+' — ပြန်ဝင်ပါ</span></div>';
-  });
+  try{
+    tokenFromHash();
+    if(!token){login();return;}
+    api('/api/users/me').then(function(d){
+      if(!d||!d.email){login();return;}
+      $('userBox').textContent=d.email+' · '+d.plan;
+      fillStudios();
+      showApp();
+      load();
+    }).catch(function(e){
+      showError('Login failed: '+String(e&&e.message||e)+' — ပြန်ဝင်ပါ');
+    });
+  }catch(e){
+    showError('Init error: '+String(e&&e.message||e));
+  }
 }
 init();
 </script>
@@ -288,7 +293,6 @@ export async function adminApi(request, path, env, verifyToken) {
   if (!isCms && !isUsers) return null;
 
   const method = request.method;
-
   const authHeader = request.headers.get('Authorization') || '';
   const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : '';
   if (!token) return json({ error: 'unauthorized', detail: 'login required' }, 401);
