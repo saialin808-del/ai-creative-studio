@@ -1,4 +1,6 @@
-// Admin — HTML/CSS test (JS minimal)
+// Phase 5 — AI Creative Studio CMS Manager + Users Manager (Admin)
+// Served at /admin. CMS CRUD via /api/cms. Users via /api/admin/users. Admin-only.
+
 export const ADMIN_HTML = `<!DOCTYPE html>
 <html lang="my">
 <head>
@@ -46,8 +48,8 @@ label{display:block;font-size:12px;font-weight:600;margin:10px 0 3px}
 </header>
 <main>
   <div class="card row" style="gap:4px;">
-    <button class="btn active" id="tabCms">📋 CMS</button>
-    <button class="btn inactive" id="tabUsers">👥 Users</button>
+    <button class="btn active" id="tabCms" onclick="switchTab('cms')">📋 CMS</button>
+    <button class="btn inactive" id="tabUsers" onclick="switchTab('users')">👥 Users</button>
   </div>
   <div id="cmsView">
     <div class="card row">
@@ -58,15 +60,15 @@ label{display:block;font-size:12px;font-weight:600;margin:10px 0 3px}
         <option value="PRO">PRO</option>
       </select>
       <input id="fType" placeholder="Type (1-5)" style="width:110px;">
-      <button class="btn">⟳ Refresh</button>
-      <button class="btn green">+ Add New</button>
+      <button class="btn" onclick="load()">⟳ Refresh</button>
+      <button class="btn green" onclick="addEdit(null)">＋ Add New</button>
     </div>
     <div id="list"></div>
   </div>
   <div id="usersView" class="hidden">
     <div class="card row">
-      <button class="btn">⟳ Refresh</button>
-      <span style="font-size:12px;color:#6B7280;">User plan management</span>
+      <button class="btn" onclick="loadUsers()">⟳ Refresh</button>
+      <span style="font-size:12px;color:#6B7280;">Tap button to toggle user plan</span>
     </div>
     <div id="usersList"></div>
   </div>
@@ -88,8 +90,8 @@ label{display:block;font-size:12px;font-weight:600;margin:10px 0 3px}
       <label>quality_check</label><textarea id="iQuality_check"></textarea>
       <label>final_output</label><textarea id="iFinal_output"></textarea>
       <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;">
-        <button class="btn">💾 Save</button>
-        <button class="btn gray">Cancel</button>
+        <button class="btn" onclick="save()">💾 Save</button>
+        <button class="btn gray" onclick="closeForm()">Cancel</button>
       </div>
     </div>
   </div>
@@ -97,12 +99,290 @@ label{display:block;font-size:12px;font-weight:600;margin:10px 0 3px}
 </div>
 
 <script>
-document.getElementById('loading').innerHTML = '✅ HTML + CSS + JS — all OK!';
-document.getElementById('app').classList.remove('hidden');
+window.onerror = function(msg, url, line) {
+  var el = document.getElementById('loading');
+  if (el) el.innerHTML = '<div style="color:#d33;text-align:left;"><b>JS Error:</b> ' + String(msg) + '<br><b>Line:</b> ' + line + '</div>';
+};
+
+var TOKEN_KEY='aics_token';
+var token='';
+try { token = localStorage.getItem(TOKEN_KEY) || ''; } catch(e) {}
+var STUDIOS=['STORY','STORYVIDEO','CONTENT','CONTENTVIDEO','SHORT','SHORTVIDEO','IMAGE','VOICE','SHOPCONTENT','SHOPVIDEO'];
+var FIELDS=['core','memory','knowledge','workflow','template','prompt','quality_check','final_output'];
+var items=[];
+var users=[];
+var editingId=null;
+var currentTab='cms';
+
+function $(id){return document.getElementById(id);}
+function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function showError(msg){
+  $('loading').style.display='block';
+  $('loading').innerHTML='<div style="color:#d33;"><b>Error:</b> '+esc(String(msg))+'</div>';
+}
+function showApp(){
+  $('loading').style.display='none';
+  $('app').classList.remove('hidden');
+}
+function login(){location.href='/api/auth/login?next='+encodeURIComponent(location.origin+'/admin');}
+function api(path,method,body){
+  return fetch(path,{method:method||'GET',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:body?JSON.stringify(body):undefined})
+    .then(function(r){return r.json().catch(function(){return {error:'bad_response'};});});
+}
+
+function fillStudios(){
+  var ss=$('fStudio');
+  ss.innerHTML='<option value="">Studio (all)</option>';
+  STUDIOS.forEach(function(x){var o=document.createElement('option');o.value=x;o.textContent=x;ss.appendChild(o);});
+  var fs=$('iStudio');fs.innerHTML='';
+  STUDIOS.forEach(function(x){var o=document.createElement('option');o.value=x;o.textContent=x;fs.appendChild(o);});
+}
+
+function switchTab(tab){
+  currentTab=tab;
+  $('cmsView').classList.toggle('hidden',tab!=='cms');
+  $('usersView').classList.toggle('hidden',tab!=='users');
+  $('tabCms').className='btn '+(tab==='cms'?'active':'inactive');
+  $('tabUsers').className='btn '+(tab==='users'?'active':'inactive');
+  if(tab==='users') loadUsers();
+}
+
+function load(){
+  api('/api/cms').then(function(d){
+    if(d.error==='forbidden'){location.href='/app';return;}
+    if(d.error){$('list').innerHTML='<div class="card"><span class="err">'+(d.detail||d.error)+'</span></div>';return;}
+    items=d.items||[];
+    renderList();
+  }).catch(function(e){
+    $('list').innerHTML='<div class="card"><span class="err">Network error: '+esc(String(e&&e.message||e))+'</span></div>';
+  });
+}
+
+function applyFilter(){
+  var s=$('fStudio').value,p=$('fPlan').value,t=$('fType').value.trim();
+  return items.filter(function(it){
+    if(s&&it.studio!==s)return false;
+    if(p&&it.plan!==p)return false;
+    if(t&&it.type!==t)return false;
+    return true;
+  });
+}
+
+function renderList(){
+  var list=$('list');list.innerHTML='';
+  var rows=applyFilter();
+  if(rows.length===0){list.innerHTML='<div class="card">(no rows yet — tap + Add New)</div>';return;}
+  rows.forEach(function(it){
+    var c=document.createElement('div');
+    c.className='card';
+    c.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">'+
+      '<b>['+esc(it.studio)+' / '+esc(it.plan)+' / '+esc(it.type)+']</b>'+
+      '<span><button class="btn sm" onclick="copyRow('+it.id+')">📋</button> <button class="btn sm" onclick="addEdit('+it.id+')">✏️</button> <button class="btn sm red" onclick="del('+it.id+')">🗑️</button></span></div>'+
+      '<div style="font-size:12px;color:#6B7280;margin-top:6px;"><b>core:</b> '+esc((it.core||'').slice(0,80))+'</div>'+
+      '<div style="font-size:12px;color:#6B7280;margin-top:2px;"><b>prompt:</b> '+esc((it.prompt||'').slice(0,80))+'</div>';
+    list.appendChild(c);
+  });
+}
+
+function addEdit(id){
+  editingId=id;
+  var it=null;
+  if(id){it=items.filter(function(x){return x.id==id;})[0];}
+  $('formTitle').textContent=it?('Edit — '+it.studio+'/'+it.plan+'/'+it.type):'+ Add New';
+  $('iStudio').value=it?it.studio:'STORY';
+  $('iPlan').value=it?it.plan:'FREE';
+  $('iType').value=it?it.type:'1';
+  FIELDS.forEach(function(f){$('i'+f.charAt(0).toUpperCase()+f.slice(1)).value=it?(it[f]||''):'';});
+  $('formWrap').classList.remove('hidden');
+  window.scrollTo(0,0);
+}
+
+function copyRow(id){
+  var it=items.filter(function(x){return x.id==id;})[0];
+  if(!it)return;
+  addEdit(null);
+  $('formTitle').textContent='Copy — '+it.studio+'/'+it.plan+'/'+it.type;
+  $('iStudio').value=it.studio||'STORY';
+  $('iPlan').value=it.plan||'FREE';
+  $('iType').value=it.type||'1';
+  FIELDS.forEach(function(f){$('i'+f.charAt(0).toUpperCase()+f.slice(1)).value=it[f]||'';});
+}
+
+function closeForm(){$('formWrap').classList.add('hidden');}
+
+function save(){
+  var data={studio:$('iStudio').value,plan:$('iPlan').value,type:$('iType').value};
+  FIELDS.forEach(function(f){data[f]=$('i'+f.charAt(0).toUpperCase()+f.slice(1)).value;});
+  var url='/api/cms'+(editingId?'/'+editingId:'');
+  api(url,editingId?'PUT':'POST',data).then(function(d){
+    if(d.ok){closeForm();load();}
+    else{alert('ERROR: '+(d.detail||d.error||'unknown'));}
+  }).catch(function(e){alert('Network error: '+(e&&e.message||e));});
+}
+
+function del(id){
+  if(!confirm('Delete this row?'))return;
+  api('/api/cms/'+id,'DELETE').then(function(d){
+    if(d.ok){load();}else{alert('ERROR: '+(d.detail||d.error||'unknown'));}
+  }).catch(function(e){alert('Network error: '+(e&&e.message||e));});
+}
+
+function loadUsers(){
+  api('/api/admin/users').then(function(d){
+    if(d.error==='forbidden'){location.href='/app';return;}
+    if(d.error){$('usersList').innerHTML='<div class="card"><span class="err">'+(d.detail||d.error)+'</span></div>';return;}
+    users=d.items||[];
+    renderUsers();
+  }).catch(function(e){
+    $('usersList').innerHTML='<div class="card"><span class="err">Network error: '+esc(String(e&&e.message||e))+'</span></div>';
+  });
+}
+
+function renderUsers(){
+  var list=$('usersList');list.innerHTML='';
+  if(users.length===0){list.innerHTML='<div class="card">(no users yet)</div>';return;}
+  users.forEach(function(u){
+    var isPro=(u.plan==='PRO');
+    var c=document.createElement('div');
+    c.className='card';
+    var btnLabel=isPro?'→ FREE':'→ PRO';
+    var btnClass=isPro?'gray':'green';
+    var newPlan=isPro?'FREE':'PRO';
+    c.innerHTML='<div class="user-row">'+
+      '<div><b>'+esc(u.email)+'</b> '+
+      '<span class="badge '+(isPro?'pro':'free')+'">'+esc(u.plan||'FREE')+'</span></div>'+
+      '<button class="btn sm '+btnClass+'" data-id="'+u.id+'" data-plan="'+newPlan+'">'+btnLabel+'</button></div>'+
+      '<div class="user-meta">ID: '+u.id+' · created: '+esc(u.created_at||'-')+(u.expiry?' · expiry: '+esc(u.expiry):'')+'</div>';
+    list.appendChild(c);
+  });
+  var btns=list.querySelectorAll('button[data-id]');
+  for(var i=0;i<btns.length;i++){
+    btns[i].addEventListener('click',function(){
+      togglePlan(this.getAttribute('data-id'),this.getAttribute('data-plan'));
+    });
+  }
+}
+
+function togglePlan(id,plan){
+  var label=plan==='PRO'?'Set PRO?':'Set FREE?';
+  if(!confirm(label))return;
+  api('/api/admin/users/'+id,'PUT',{plan:plan}).then(function(d){
+    if(d.ok){loadUsers();}else{alert('ERROR: '+(d.detail||d.error||'unknown'));}
+  }).catch(function(e){alert('Network error: '+(e&&e.message||e));});
+}
+
+function tokenFromHash(){
+  var h=location.hash||'';
+  if(h.indexOf('#token=')===0){
+    try{localStorage.setItem(TOKEN_KEY,decodeURIComponent(h.slice(7)));}catch(e){}
+    try{token=localStorage.getItem(TOKEN_KEY)||'';}catch(e){}
+    history.replaceState(null,'',location.pathname);
+  }
+}
+
+function init(){
+  try{
+    tokenFromHash();
+    if(!token){
+      $('loading').innerHTML='🔄 Redirecting to Google login...';
+      setTimeout(login,300);
+      return;
+    }
+    $('loading').innerHTML='🔍 Checking login...';
+    api('/api/users/me').then(function(d){
+      if(!d||!d.email){
+        $('loading').innerHTML='🔄 Login expired — redirecting...';
+        setTimeout(login,500);
+        return;
+      }
+      $('userBox').textContent=d.email+' · '+d.plan;
+      fillStudios();
+      showApp();
+      load();
+    }).catch(function(e){
+      showError('Login failed: '+String(e&&e.message||e));
+    });
+  }catch(e){
+    showError('Init error: '+String(e&&e.message||e));
+  }
+}
+init();
 </script>
 </body>
 </html>`;
 
 export async function adminApi(request, path, env, verifyToken) {
+  const isCms = (path === '/api/cms' || path.indexOf('/api/cms/') === 0);
+  const isUsers = (path === '/api/admin/users' || path.indexOf('/api/admin/users/') === 0);
+  if (!isCms && !isUsers) return null;
+
+  const method = request.method;
+  const authHeader = request.headers.get('Authorization') || '';
+  const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : '';
+  if (!token) return json({ error: 'unauthorized', detail: 'login required' }, 401);
+  const user = await verifyToken(env, token);
+  if (!user || !user.email) return json({ error: 'unauthorized', detail: 'login required' }, 401);
+  const adminEmail = env.ADMIN_EMAIL || 'saialin808@gmail.com';
+  if (String(user.email).toLowerCase() !== String(adminEmail).toLowerCase()) {
+    return json({ error: 'forbidden', detail: 'admin only' }, 403);
+  }
+
+  const COLS = ['studio','plan','type','core','memory','knowledge','workflow','template','prompt','quality_check','final_output'];
+
+  if (path === '/api/cms' && method === 'GET') {
+    const { results } = await env.DB.prepare('SELECT * FROM cms_prompts ORDER BY studio, plan, type').all();
+    return json({ ok: true, items: results });
+  }
+
+  if (path === '/api/cms' && method === 'POST') {
+    const body = await readBody(request);
+    if (!body || !body.studio || !body.plan || !body.type) return json({ error: 'missing_fields', detail: 'studio, plan, type required' }, 400);
+    const vals = COLS.map(c => (body[c] === undefined || body[c] === null) ? '' : String(body[c]));
+    vals[0] = vals[0].toUpperCase();
+    vals[1] = vals[1].toUpperCase();
+    try {
+      await env.DB.prepare('INSERT OR REPLACE INTO cms_prompts (studio,plan,type,core,memory,knowledge,workflow,template,prompt,quality_check,final_output,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,datetime(\'now\'))').bind(...vals).run();
+      return json({ ok: true });
+    } catch (e) { return json({ error: 'db_error', detail: String(e && e.message || e) }, 500); }
+  }
+
+  if (path.indexOf('/api/cms/') === 0) {
+    const id = decodeURIComponent(path.slice('/api/cms/'.length));
+    if (method === 'PUT') {
+      const body = await readBody(request);
+      const sets = COLS.map(c => c + '=?').join(',');
+      const vals = COLS.map(c => (body && body[c] !== undefined && body[c] !== null) ? String(body[c]) : '');
+      vals[0] = vals[0].toUpperCase();
+      vals[1] = vals[1].toUpperCase();
+      try {
+        await env.DB.prepare('UPDATE cms_prompts SET ' + sets + ', updated_at=datetime(\'now\') WHERE id=?').bind(...vals, id).run();
+        return json({ ok: true });
+      } catch (e) { return json({ error: 'db_error', detail: String(e && e.message || e) }, 500); }
+    }
+    if (method === 'DELETE') {
+      await env.DB.prepare('DELETE FROM cms_prompts WHERE id=?').bind(id).run();
+      return json({ ok: true });
+    }
+  }
+
+  if (path === '/api/admin/users' && method === 'GET') {
+    const { results } = await env.DB.prepare('SELECT id, email, plan, expiry, created_at FROM users ORDER BY created_at DESC').all();
+    return json({ ok: true, items: results });
+  }
+
+  if (path.indexOf('/api/admin/users/') === 0 && method === 'PUT') {
+    const id = decodeURIComponent(path.slice('/api/admin/users/'.length));
+    const body = await readBody(request);
+    const plan = (body && body.plan === 'PRO') ? 'PRO' : 'FREE';
+    const expiry = (body && body.expiry) ? String(body.expiry) : null;
+    try {
+      await env.DB.prepare('UPDATE users SET plan=?, expiry=?, updated_at=datetime(\'now\') WHERE id=?').bind(plan, expiry, id).run();
+      return json({ ok: true });
+    } catch (e) { return json({ error: 'db_error', detail: String(e && e.message || e) }, 500); }
+  }
+
   return null;
 }
+
+async function readBody(request) { try { return await request.json(); } catch (e) { return null; } }
+function json(data, status = 200) { return new Response(JSON.stringify(data), { status, headers: { 'Content-Type': 'application/json' } }); }
