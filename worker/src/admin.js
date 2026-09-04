@@ -107,6 +107,12 @@ var users=[];
 var editingId=null;
 var currentTab='cms';
 
+window.onerror=function(msg,url,line){
+  document.body.style.display='block';
+  document.body.innerHTML='<div style="padding:20px;color:#d33;font-size:14px;"><b>JS Error:</b> '+String(msg)+'<br>line: '+line+'</div>';
+  return true;
+};
+
 function $(id){return document.getElementById(id);}
 function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function login(){location.href='/api/auth/login?next='+encodeURIComponent(location.origin+'/admin');}
@@ -138,6 +144,8 @@ function load(){
     if(d.error){$('list').innerHTML='<div class="card"><span class="err">'+(d.detail||d.error)+'</span></div>';return;}
     items=d.items||[];
     renderList();
+  }).catch(function(e){
+    $('list').innerHTML='<div class="card"><span class="err">Network error: '+esc(String(e&&e.message||e))+'</span></div>';
   });
 }
 
@@ -200,14 +208,14 @@ function save(){
   api(url,editingId?'PUT':'POST',data).then(function(d){
     if(d.ok){closeForm();load();}
     else{alert('ERROR: '+(d.detail||d.error||'unknown'));}
-  });
+  }).catch(function(e){alert('Network error: '+(e&&e.message||e));});
 }
 
 function del(id){
   if(!confirm('ဒီ row ကို ဖျက်မှာ သေချာလား?'))return;
   api('/api/cms/'+id,'DELETE').then(function(d){
     if(d.ok){load();}else{alert('ERROR: '+(d.detail||d.error||'unknown'));}
-  });
+  }).catch(function(e){alert('Network error: '+(e&&e.message||e));});
 }
 
 function loadUsers(){
@@ -216,6 +224,8 @@ function loadUsers(){
     if(d.error){$('usersList').innerHTML='<div class="card"><span class="err">'+(d.detail||d.error)+'</span></div>';return;}
     users=d.items||[];
     renderUsers();
+  }).catch(function(e){
+    $('usersList').innerHTML='<div class="card"><span class="err">Network error: '+esc(String(e&&e.message||e))+'</span></div>';
   });
 }
 
@@ -241,7 +251,7 @@ function togglePlan(id,plan){
   if(!confirm(label))return;
   api('/api/admin/users/'+id,'PUT',{plan:plan}).then(function(d){
     if(d.ok){loadUsers();}else{alert('ERROR: '+(d.detail||d.error||'unknown'));}
-  });
+  }).catch(function(e){alert('Network error: '+(e&&e.message||e));});
 }
 
 function tokenFromHash(){
@@ -260,13 +270,11 @@ function init(){
     if(!d||!d.email){login();return;}
     $('userBox').textContent=d.email+' · '+d.plan;
     fillStudios();
-    api('/api/cms').then(function(dd){
-      if(dd&&dd.error==='forbidden'){location.href='/app';return;}
-      document.body.style.display='block';
-      if(dd&&dd.error){$('list').innerHTML='<div class="card"><span class="err">'+(dd.detail||dd.error)+'</span></div>';return;}
-      items=(dd&&dd.items)||[];
-      renderList();
-    });
+    document.body.style.display='block';
+    load();
+  }).catch(function(e){
+    document.body.style.display='block';
+    $('list').innerHTML='<div class="card"><span class="err">Login error: '+esc(String(e&&e.message||e))+' — ပြန်ဝင်ပါ</span></div>';
   });
 }
 init();
@@ -291,7 +299,6 @@ export async function adminApi(request, path, env, verifyToken) {
     return json({ error: 'forbidden', detail: 'admin only' }, 403);
   }
 
-  // ── CMS endpoints ──
   const COLS = ['studio','plan','type','core','memory','knowledge','workflow','template','prompt','quality_check','final_output'];
 
   if (path === '/api/cms' && method === 'GET') {
@@ -330,7 +337,6 @@ export async function adminApi(request, path, env, verifyToken) {
     }
   }
 
-  // ── Users endpoints ──
   if (path === '/api/admin/users' && method === 'GET') {
     const { results } = await env.DB.prepare('SELECT id, email, plan, expiry, created_at FROM users ORDER BY created_at DESC').all();
     return json({ ok: true, items: results });
