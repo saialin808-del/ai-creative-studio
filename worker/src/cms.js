@@ -1,4 +1,4 @@
-// AI Creative Studio — CMS Engine (Phase 3b)
+// AI Creative Studio — CMS Engine (Phase 3b — labeled prompt)
 async function getCMSData(env, studio, plan, type) {
   const { results } = await env.DB.prepare(
     'SELECT core, memory, knowledge, workflow, template, prompt, quality_check, final_output ' +
@@ -9,16 +9,20 @@ async function getCMSData(env, studio, plan, type) {
 
 function buildSystemPrompt(c) {
   if (!c) return '';
-  const parts = [];
-  if (c.core) parts.push(c.core);
-  if (c.memory) parts.push(c.memory);
-  if (c.knowledge) parts.push(c.knowledge);
-  if (c.workflow) parts.push(c.workflow);
-  if (c.template) parts.push(c.template);
-  if (c.prompt) parts.push('PROMPT RULE:\n' + c.prompt);
-  if (c.quality_check) parts.push('QUALITY CHECK:\n' + c.quality_check);
-  if (c.final_output) parts.push('FINAL OUTPUT:\n' + c.final_output);
-  return parts.join('\n').trim();
+  const sections = [
+    ['ROLE', c.core],
+    ['MEMORY', c.memory],
+    ['KNOWLEDGE', c.knowledge],
+    ['WORKFLOW', c.workflow],
+    ['TEMPLATE', c.template],
+    ['PROMPT RULE', c.prompt],
+    ['QUALITY CHECK', c.quality_check],
+    ['FINAL OUTPUT', c.final_output],
+  ];
+  return sections
+    .filter(([label, val]) => val && String(val).trim())
+    .map(([label, val]) => label + ':\n' + String(val).trim())
+    .join('\n\n');
 }
 
 export { getCMSData, buildSystemPrompt };
