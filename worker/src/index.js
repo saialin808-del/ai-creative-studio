@@ -1,7 +1,8 @@
-// AI Creative Studio — Cloudflare Worker API (STEP 4 Phase 3b — robust)
+// AI Creative Studio — Cloudflare Worker API (STEP 4 Phase 3c)
 import { signToken, verifyToken, getKey, makeState, parseState, exchangeCode, fetchUserInfo } from './auth';
 import { callGeminiText } from './ai';
 import { getCMSData, buildSystemPrompt } from './cms';
+import { generateStudio } from './studio';
 
 function corsHeaders() {
   return {
@@ -118,6 +119,28 @@ async function route(request, env, ctx) {
     }
   }
 
+  if (path === '/api/studio/generate' && request.method === 'POST') {
+    const token = bearer(request);
+    if (!token) return json({ error: 'unauthorized' }, 401, cors);
+    const payload = await verifyTokenSafe(env, token);
+    if (!payload) return json({ error: 'invalid_token' }, 401, cors);
+    const body = await request.json().catch(() => null);
+    if (!body || !body.studio || !body.idea) return json({ error: 'missing_studio_or_idea' }, 400, cors);
+    try {
+      const out = await generateStudio(env, {
+        studio: String(body.studio).toUpperCase(),
+        type: String(body.type || '1'),
+        idea: body.idea,
+        plan: payload.plan,
+        apiKey: body.apiKey,
+        model: body.model,
+      });
+      return json(out, 200, cors);
+    } catch (e) {
+      return json({ error: 'studio_error', detail: String((e && e.message) || e) }, 500, cors);
+    }
+  }
+
   if (path === '/api/cms/prompt') {
     const token = bearer(request);
     if (!token) return json({ error: 'unauthorized' }, 401, cors);
@@ -133,6 +156,7 @@ async function route(request, env, ctx) {
 
   if (path === '/ai-test') return htmlPage(aiTestPage());
   if (path === '/cms-test') return htmlPage(cmsTestPage());
+  if (path === '/studio-test') return htmlPage(studioTestPage());
 
   return json({ error: 'not_found', path }, 404, cors);
 }
@@ -199,6 +223,31 @@ function cmsTestPage() {
     '.then(function(res){var d;try{d=JSON.parse(res.text);}catch(e){o.textContent="HTTP "+res.status+" | NOT JSON | raw: "+res.text.slice(0,500);return;}' +
     'if(d.error){o.textContent="ERROR: "+d.error+(d.detail?(" | "+d.detail):"");return;}' +
     'o.textContent=d.found?("FOUND ✅ "+d.studio+"/"+d.plan+"/"+d.type+"\\n\\n"+d.systemPrompt):("NOT FOUND "+d.studio+"/"+d.plan+"/"+d.type+" (database ထဲ ဒေတာမရှိသေးဘူး)");})' +
+    '.catch(function(e){o.textContent="Network error: "+e;});}' +
+    '<\/script></body></html>';
+}
+
+function studioTestPage() {
+  return '<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Studio Test</title></head>' +
+    '<body style="font-family:sans-serif;max-width:640px;margin:24px auto;padding:0 16px;background:#F4F3EE;color:#1A1B1C">' +
+    '<h2 style="color:#1b6d96">🎨 Studio Engine Test</h2>' +
+    '<label style="font-size:13px;font-weight:600">Session Token</label><br>' +
+    '<textarea id="tok" rows="3" style="width:100%;font-family:monospace;font-size:12px;box-sizing:border-box"></textarea>' +
+    '<label style="font-size:13px;font-weight:600">Studio</label><br>' +
+    '<input id="st" value="STORY" style="width:100%;font-size:13px;box-sizing:border-box;padding:8px">' +
+    '<label style="font-size:13px;font-weight:600">Type (1-5)</label><br>' +
+    '<input id="ty" value="1" style="width:100%;font-size:13px;box-sizing:border-box;padding:8px">' +
+    '<label style="font-size:13px;font-weight:600">User Idea</label><br>' +
+    '<textarea id="id" rows="3" style="width:100%;font-size:13px;box-sizing:border-box">Write a short story about a boy and his dog.</textarea>' +
+    '<label style="font-size:13px;font-weight:600">Gemini API Key (BYOK — optional)</label><br>' +
+    '<input id="key" type="password" style="width:100%;font-size:13px;box-sizing:border-box;padding:8px">' +
+    '<br><button onclick="run()" style="margin-top:8px;padding:10px 22px;font-size:14px">▶ Run Studio</button>' +
+    '<div id="out" style="margin-top:10px;padding:12px;background:#fff;border-radius:8px;border:1px solid #E4E3DD;font-size:13px;white-space:pre-wrap;min-height:80px">Result will show here.</div>' +
+    '<script>' +
+    'function run(){var o=document.getElementById("out");o.textContent="Loading...";' +
+    'fetch("/api/studio/generate",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+document.getElementById("tok").value},' +
+    'body:JSON.stringify({studio:document.getElementById("st").value,type:document.getElementById("ty").value,idea:document.getElementById("id").value,apiKey:document.getElementById("key").value})})' +
+    '.then(function(r){return r.json();}).then(function(d){o.textContent=d.output?("["+d.studio+"/"+d.plan+"/"+d.type+"]\\n\\n"+d.output):("ERROR: "+(d.error||"")+" "+(d.detail||""));})' +
     '.catch(function(e){o.textContent="Network error: "+e;});}' +
     '<\/script></body></html>';
 }
