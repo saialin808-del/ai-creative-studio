@@ -165,7 +165,17 @@ function del(id){
   });
 }
 
+function tokenFromHash(){
+  var h=location.hash||'';
+  if(h.indexOf('#token=')===0){
+    localStorage.setItem(TOKEN_KEY,decodeURIComponent(h.slice(7)));
+    token=localStorage.getItem(TOKEN_KEY);
+    history.replaceState(null,'',location.pathname);
+  }
+}
+
 function init(){
+  tokenFromHash();
   if(!token){login();return;}
   api('/api/users/me').then(function(d){
     if(d&&d.email){$('userBox').textContent=d.email+' · '+d.plan;}
