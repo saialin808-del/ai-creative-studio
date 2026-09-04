@@ -193,8 +193,11 @@ export async function adminApi(request, path, env, verifyToken) {
   if (path !== '/api/cms' && !(path.indexOf('/api/cms/') === 0)) return null;
   const method = request.method;
 
-  const user = await verifyToken(request, env);
-  if (!user || !user.email) return json({ error: 'unauthorized', detail: 'login required' }, 401);
+    const authHeader = request.headers.get('Authorization') || '';
+  const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : '';
+  if (!token) return json({ error: 'unauthorized', detail: 'login required' }, 401);
+  const user = await verifyToken(env, token);
+  if (!user || !user.email) return json({ error: 'unauthorized', detail: 'login required — ပြန်ဝင်ပါ' }, 401);
   const adminEmail = env.ADMIN_EMAIL || 'saialin808@gmail.com';
   if (String(user.email).toLowerCase() !== String(adminEmail).toLowerCase()) {
     return json({ error: 'forbidden', detail: 'admin only' }, 403);
