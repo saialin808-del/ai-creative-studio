@@ -162,7 +162,7 @@ export default {
 
       if (path === '/' && request.method === 'GET') return htmlPage(homePage());
 
-            if (path === '/api/auth/login' && request.method === 'GET') {
+      if (path === '/api/auth/login' && request.method === 'GET') {
         const origin = url.origin;
         let next = url.searchParams.get('next') || (origin + '/auth/result');
         const okNext = next.indexOf(origin) === 0 || /^https:\/\/aics-frontend-/.test(next) || /^http:\/\/localhost/.test(next);
@@ -208,7 +208,7 @@ export default {
             userId = ins.meta.last_row_id;
           }
 
-                    const token = await signToken(env, { sub: String(userId), email: user.email, plan: 'FREE' });
+          const token = await signToken(env, { sub: String(userId), email: user.email, plan: 'FREE' });
           const state = url.searchParams.get('state') || (origin + '/auth/result');
           return Response.redirect(state + '#token=' + encodeURIComponent(token), 302);
         } catch (e) {
@@ -216,8 +216,8 @@ export default {
         }
       }
 
-            if (path === '/auth/result' && request.method === 'GET') return htmlPage(loginResultPage());
-            if (path === '/app' || path === '/app/') return htmlPage(APP_HTML);
+      if (path === '/auth/result' && request.method === 'GET') return htmlPage(loginResultPage());
+      if (path === '/app' || path === '/app/') return htmlPage(APP_HTML);
       if (path === '/admin' || path === '/admin/') return htmlPage(ADMIN_HTML);
       const adminResp = await adminApi(request, path, env, verifyToken);
       if (adminResp) return adminResp;
@@ -270,7 +270,13 @@ export default {
         if (!payload) return json({ error: 'invalid_token' }, 401, cors);
         const body = await request.json().catch(() => null);
         if (!body || !body.studio || !body.idea) return json({ error: 'missing_studio_or_idea' }, 400, cors);
-        
+        const plan = await resolvePlan(env, payload);
+        const reqType = String(body.type || '1');
+        if (plan === 'FREE' && reqType !== '1') {
+          return json({ error: 'pro_only', detail: 'ဒီ feature က PRO အတွက်ပါ။ Type 1 ကို သုံးပါ၊ သို့မဟုတ် upgrade လုပ်ပါ။' }, 403, cors);
+        }
+        try {
+          const out = await generateStudio(env, {
             studio: String(body.studio).toUpperCase(),
             type: String(body.type || '1'),
             idea: body.idea,
