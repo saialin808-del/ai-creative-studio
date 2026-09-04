@@ -4,6 +4,7 @@ import { callGeminiText } from './ai';
 import { getCMSData, buildSystemPrompt } from './cms';
 import { generateStudio } from './studio';
 import { saveCreation, listCreations } from './creations';
+import { APP_HTML } from './frontend';
 
 const cors = {
   'Access-Control-Allow-Origin': '*',
@@ -160,12 +161,15 @@ export default {
 
       if (path === '/' && request.method === 'GET') return htmlPage(homePage());
 
-      if (path === '/api/auth/login' && request.method === 'GET') {
+            if (path === '/api/auth/login' && request.method === 'GET') {
         const origin = url.origin;
+        let next = url.searchParams.get('next') || (origin + '/auth/result');
+        const okNext = next.indexOf(origin) === 0 || /^https:\/\/aics-frontend-/.test(next) || /^http:\/\/localhost/.test(next);
+        if (!okNext) next = origin + '/auth/result';
         const authUrl = 'https://accounts.google.com/o/oauth2/v2/auth?client_id=' + env.GOOGLE_OAUTH_CLIENT_ID +
           '&redirect_uri=' + encodeURIComponent(origin + '/api/auth/callback') +
           '&response_type=code&scope=openid%20email%20profile' +
-          '&state=' + encodeURIComponent(origin + '/auth/result') + '&access_type=online';
+          '&state=' + encodeURIComponent(next) + '&access_type=online';
         return Response.redirect(authUrl, 302);
       }
 
@@ -203,14 +207,16 @@ export default {
             userId = ins.meta.last_row_id;
           }
 
-          const token = await signToken(env, { sub: String(userId), email: user.email, plan: 'FREE' });
-          return Response.redirect((origin + '/auth/result') + '#token=' + encodeURIComponent(token), 302);
+                    const token = await signToken(env, { sub: String(userId), email: user.email, plan: 'FREE' });
+          const state = url.searchParams.get('state') || (origin + '/auth/result');
+          return Response.redirect(state + '#token=' + encodeURIComponent(token), 302);
         } catch (e) {
           return json({ error: 'auth_error', detail: String((e && e.message) || e) }, 500, cors);
         }
       }
 
-      if (path === '/auth/result' && request.method === 'GET') return htmlPage(loginResultPage());
+            if (path === '/auth/result' && request.method === 'GET') return htmlPage(loginResultPage());
+      if (path === '/app' || path === '/app/') return htmlPage(APP_HTML);
       if (path === '/ai-test') return htmlPage(aiTestPage());
       if (path === '/cms-test') return htmlPage(cmsTestPage());
       if (path === '/studio-test') return htmlPage(studioTestPage());
