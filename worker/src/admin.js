@@ -9,7 +9,7 @@ export const ADMIN_HTML = `<!DOCTYPE html>
 <title>CMS Manager — AI Creative Studio</title>
 <style>
 *{box-sizing:border-box}
-body{margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#F4F3EE;color:#1A1B1C}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#F4F3EE;color:#1A1B1C;display:none}
 header{position:sticky;top:0;background:#1b6d96;color:#fff;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;z-index:10}
 .logo{font-weight:700;font-size:16px}
 .user{font-size:12px}
