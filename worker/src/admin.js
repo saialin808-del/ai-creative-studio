@@ -195,7 +195,7 @@ export async function adminApi(request, path, env, verifyToken) {
 
   const user = await verifyToken(request, env);
   if (!user || !user.email) return json({ error: 'unauthorized', detail: 'login required' }, 401);
-  const adminEmail = env.ADMIN_EMAIL || 'saialin818@gmail.com';
+  const adminEmail = env.ADMIN_EMAIL || 'saialin808@gmail.com';
   if (String(user.email).toLowerCase() !== String(adminEmail).toLowerCase()) {
     return json({ error: 'forbidden', detail: 'admin only' }, 403);
   }
