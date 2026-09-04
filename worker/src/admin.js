@@ -1,5 +1,5 @@
-// Phase 5 — AI Creative Studio CMS Manager (Admin)
-// Served at /admin. CRUD via /api/cms. Admin-only (email check).
+// Phase 5 — AI Creative Studio CMS Manager + Users Manager (Admin)
+// Served at /admin. CMS CRUD via /api/cms. Users via /api/admin/users. Admin-only.
 
 export const ADMIN_HTML = `<!DOCTYPE html>
 <html lang="my">
@@ -20,7 +20,12 @@ main{max-width:720px;margin:0 auto;padding:16px}
 .btn.red{background:#EA6668}
 .btn.gray{background:#bbb}
 .btn.sm{padding:6px 10px;font-size:12px}
+.btn.active{background:#1b6d96}
+.btn.inactive{background:#ccc;color:#555}
 .err{color:#d33}
+.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600}
+.badge.free{background:#eee;color:#666}
+.badge.pro{background:#d4edda;color:#155724}
 select,input,textarea{width:100%;font-size:14px;padding:9px;border:1px solid #ccc;border-radius:8px;font-family:inherit;background:#fff}
 select,input{width:auto}
 textarea{min-height:64px;resize:vertical}
@@ -29,26 +34,43 @@ label{display:block;font-size:12px;font-weight:600;margin:10px 0 3px}
 .overlay{position:fixed;inset:0;background:rgba(0,0,0,0.4);overflow-y:auto;z-index:50;padding:16px}
 .form{max-width:680px;margin:0 auto}
 .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.user-row{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
+.user-meta{font-size:11px;color:#6B7280;margin-top:2px}
 </style>
 </head>
 <body>
 <header>
-  <div class="logo">🗂️ CMS Manager</div>
+  <div class="logo">🗂️ Admin Panel</div>
   <div class="user"><span id="userBox"></span> · <a href="/app" style="color:#fff;">→ App</a></div>
 </header>
 <main>
-  <div class="card row">
-    <select id="fStudio"></select>
-    <select id="fPlan">
-      <option value="">Plan (အကုန်)</option>
-      <option value="FREE">FREE</option>
-      <option value="PRO">PRO</option>
-    </select>
-    <input id="fType" placeholder="Type (1-5)" style="width:110px;">
-    <button class="btn" onclick="load()">⟳ Refresh</button>
-    <button class="btn green" onclick="addEdit(null)">＋ အသစ်ထည့်</button>
+  <div class="card row" style="gap:4px;">
+    <button class="btn active" id="tabCms" onclick="switchTab('cms')">📋 CMS</button>
+    <button class="btn inactive" id="tabUsers" onclick="switchTab('users')">👥 Users</button>
   </div>
-  <div id="list"></div>
+
+  <div id="cmsView">
+    <div class="card row">
+      <select id="fStudio"></select>
+      <select id="fPlan">
+        <option value="">Plan (အကုန်)</option>
+        <option value="FREE">FREE</option>
+        <option value="PRO">PRO</option>
+      </select>
+      <input id="fType" placeholder="Type (1-5)" style="width:110px;">
+      <button class="btn" onclick="load()">⟳ Refresh</button>
+      <button class="btn green" onclick="addEdit(null)">＋ အသစ်ထည့်</button>
+    </div>
+    <div id="list"></div>
+  </div>
+
+  <div id="usersView" class="hidden">
+    <div class="card row">
+      <button class="btn" onclick="loadUsers()">⟳ Refresh</button>
+      <span style="font-size:12px;color:#6B7280;">User plan ကို တစ်ခါနှိပ်နဲ့ ပြောင်းလို့ရတယ်</span>
+    </div>
+    <div id="usersList"></div>
+  </div>
 </main>
 
 <div id="formWrap" class="hidden">
@@ -81,7 +103,9 @@ var token=localStorage.getItem(TOKEN_KEY)||'';
 var STUDIOS=['STORY','STORYVIDEO','CONTENT','CONTENTVIDEO','SHORT','SHORTVIDEO','IMAGE','VOICE','SHOPCONTENT','SHOPVIDEO'];
 var FIELDS=['core','memory','knowledge','workflow','template','prompt','quality_check','final_output'];
 var items=[];
+var users=[];
 var editingId=null;
+var currentTab='cms';
 
 function $(id){return document.getElementById(id);}
 function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
@@ -97,6 +121,15 @@ function fillStudios(){
   STUDIOS.forEach(function(x){var o=document.createElement('option');o.value=x;o.textContent=x;ss.appendChild(o);});
   var fs=$('iStudio');fs.innerHTML='';
   STUDIOS.forEach(function(x){var o=document.createElement('option');o.value=x;o.textContent=x;fs.appendChild(o);});
+}
+
+function switchTab(tab){
+  currentTab=tab;
+  $('cmsView').classList.toggle('hidden',tab!=='cms');
+  $('usersView').classList.toggle('hidden',tab!=='users');
+  $('tabCms').className='btn '+(tab==='cms'?'active':'inactive');
+  $('tabUsers').className='btn '+(tab==='users'?'active':'inactive');
+  if(tab==='users') loadUsers();
 }
 
 function load(){
@@ -177,6 +210,40 @@ function del(id){
   });
 }
 
+function loadUsers(){
+  api('/api/admin/users').then(function(d){
+    if(d.error==='forbidden'){location.href='/app';return;}
+    if(d.error){$('usersList').innerHTML='<div class="card"><span class="err">'+(d.detail||d.error)+'</span></div>';return;}
+    users=d.items||[];
+    renderUsers();
+  });
+}
+
+function renderUsers(){
+  var list=$('usersList');list.innerHTML='';
+  if(users.length===0){list.innerHTML='<div class="card">(user မရှိသေးပါ)</div>';return;}
+  users.forEach(function(u){
+    var isPro=u.plan==='PRO';
+    var c=document.createElement('div');
+    c.className='card';
+    c.innerHTML='<div class="user-row">'+
+      '<div><b>'+esc(u.email)+'</b> '+
+      '<span class="badge '+(isPro?'pro':'free')+'">'+esc(u.plan||'FREE')+'</span></div>'+
+      '<button class="btn sm '+(isPro?'gray':'green')+'" onclick="togglePlan('+u.id+','+(isPro?'\'FREE\'':'\'PRO\'')+')">'+
+      (isPro?'→ FREE':'→ PRO')+'</button></div>'+
+      '<div class="user-meta">ID: '+u.id+' · created: '+esc(u.created_at||'-')+(u.expiry?' · expiry: '+esc(u.expiry):'')+'</div>';
+    list.appendChild(c);
+  });
+}
+
+function togglePlan(id,plan){
+  var label=plan==='PRO'?'PRO လုပ်မှာ သေချာလား?':'FREE ပြန်လုပ်မှာ သေချာလား?';
+  if(!confirm(label))return;
+  api('/api/admin/users/'+id,'PUT',{plan:plan}).then(function(d){
+    if(d.ok){loadUsers();}else{alert('ERROR: '+(d.detail||d.error||'unknown'));}
+  });
+}
+
 function tokenFromHash(){
   var h=location.hash||'';
   if(h.indexOf('#token=')===0){
@@ -208,7 +275,10 @@ init();
 </html>`;
 
 export async function adminApi(request, path, env, verifyToken) {
-  if (path !== '/api/cms' && !(path.indexOf('/api/cms/') === 0)) return null;
+  const isCms = (path === '/api/cms' || path.indexOf('/api/cms/') === 0);
+  const isUsers = (path === '/api/admin/users' || path.indexOf('/api/admin/users/') === 0);
+  if (!isCms && !isUsers) return null;
+
   const method = request.method;
 
   const authHeader = request.headers.get('Authorization') || '';
@@ -221,6 +291,7 @@ export async function adminApi(request, path, env, verifyToken) {
     return json({ error: 'forbidden', detail: 'admin only' }, 403);
   }
 
+  // ── CMS endpoints ──
   const COLS = ['studio','plan','type','core','memory','knowledge','workflow','template','prompt','quality_check','final_output'];
 
   if (path === '/api/cms' && method === 'GET') {
@@ -258,6 +329,24 @@ export async function adminApi(request, path, env, verifyToken) {
       return json({ ok: true });
     }
   }
+
+  // ── Users endpoints ──
+  if (path === '/api/admin/users' && method === 'GET') {
+    const { results } = await env.DB.prepare('SELECT id, email, plan, expiry, created_at FROM users ORDER BY created_at DESC').all();
+    return json({ ok: true, items: results });
+  }
+
+  if (path.indexOf('/api/admin/users/') === 0 && method === 'PUT') {
+    const id = decodeURIComponent(path.slice('/api/admin/users/'.length));
+    const body = await readBody(request);
+    const plan = (body && body.plan === 'PRO') ? 'PRO' : 'FREE';
+    const expiry = (body && body.expiry) ? String(body.expiry) : null;
+    try {
+      await env.DB.prepare('UPDATE users SET plan=?, expiry=?, updated_at=datetime(\'now\') WHERE id=?').bind(plan, expiry, id).run();
+      return json({ ok: true });
+    } catch (e) { return json({ error: 'db_error', detail: String(e && e.message || e) }, 500); }
+  }
+
   return null;
 }
 
