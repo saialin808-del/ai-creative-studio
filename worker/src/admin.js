@@ -101,6 +101,7 @@ function fillStudios(){
 
 function load(){
   api('/api/cms').then(function(d){
+    if(d.error==='forbidden'){location.href='/app';return;}
     if(d.error){$('list').innerHTML='<div class="card"><span class="err">'+(d.detail||d.error)+'</span></div>';return;}
     items=d.items||[];
     renderList();
@@ -175,14 +176,19 @@ function tokenFromHash(){
 }
 
 function init(){
-  tokenFromHash();
   if(!token){login();return;}
   api('/api/users/me').then(function(d){
-    if(d&&d.email){$('userBox').textContent=d.email+' · '+d.plan;}
-    else{login();return;}
+    if(!d||!d.email){login();return;}
+    $('userBox').textContent=d.email+' · '+d.plan;
+    fillStudios();
+    api('/api/cms').then(function(dd){
+      if(dd&&dd.error==='forbidden'){location.href='/app';return;}
+      document.body.style.display='block';
+      if(dd&&dd.error){$('list').innerHTML='<div class="card"><span class="err">'+(dd.detail||dd.error)+'</span></div>';return;}
+      items=(dd&&dd.items)||[];
+      renderList();
+    });
   });
-  fillStudios();
-  load();
 }
 init();
 </script>
