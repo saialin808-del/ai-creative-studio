@@ -127,7 +127,7 @@ function renderList(){
     c.className='card';
     c.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">'+
       '<b>['+esc(it.studio)+' / '+esc(it.plan)+' / '+esc(it.type)+']</b>'+
-      '<span><button class="btn sm" onclick="addEdit('+it.id+')">✏️</button> <button class="btn sm red" onclick="del('+it.id+')">🗑️</button></span></div>'+
+      '<span><button class="btn sm" onclick="copyRow('+it.id+')">📋</button> <button class="btn sm" onclick="addEdit('+it.id+')">✏️</button> <button class="btn sm red" onclick="del('+it.id+')">🗑️</button></span></div>'+
       '<div style="font-size:12px;color:#6B7280;margin-top:6px;"><b>core:</b> '+esc((it.core||'').slice(0,80))+'</div>'+
       '<div style="font-size:12px;color:#6B7280;margin-top:2px;"><b>prompt:</b> '+esc((it.prompt||'').slice(0,80))+'</div>';
     list.appendChild(c);
@@ -145,6 +145,17 @@ function addEdit(id){
   FIELDS.forEach(function(f){$('i'+f.charAt(0).toUpperCase()+f.slice(1)).value=it?(it[f]||''):'';});
   $('formWrap').classList.remove('hidden');
   window.scrollTo(0,0);
+}
+
+function copyRow(id){
+  var it=items.filter(function(x){return x.id==id;})[0];
+  if(!it)return;
+  addEdit(null);
+  $('formTitle').textContent='📋 Copy — '+it.studio+'/'+it.plan+'/'+it.type;
+  $('iStudio').value=it.studio||'STORY';
+  $('iPlan').value=it.plan||'FREE';
+  $('iType').value=it.type||'1';
+  FIELDS.forEach(function(f){$('i'+f.charAt(0).toUpperCase()+f.slice(1)).value=it[f]||'';});
 }
 
 function closeForm(){$('formWrap').classList.add('hidden');}
@@ -176,6 +187,7 @@ function tokenFromHash(){
 }
 
 function init(){
+  tokenFromHash();
   if(!token){login();return;}
   api('/api/users/me').then(function(d){
     if(!d||!d.email){login();return;}
@@ -199,7 +211,7 @@ export async function adminApi(request, path, env, verifyToken) {
   if (path !== '/api/cms' && !(path.indexOf('/api/cms/') === 0)) return null;
   const method = request.method;
 
-    const authHeader = request.headers.get('Authorization') || '';
+  const authHeader = request.headers.get('Authorization') || '';
   const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : '';
   if (!token) return json({ error: 'unauthorized', detail: 'login required' }, 401);
   const user = await verifyToken(env, token);
