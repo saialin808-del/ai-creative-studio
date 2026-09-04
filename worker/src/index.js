@@ -5,6 +5,7 @@ import { getCMSData, buildSystemPrompt } from './cms';
 import { generateStudio } from './studio';
 import { saveCreation, listCreations } from './creations';
 import { APP_HTML } from './frontend';
+import { ADMIN_HTML, adminApi } from './admin';
 
 const cors = {
   'Access-Control-Allow-Origin': '*',
@@ -216,7 +217,10 @@ export default {
       }
 
             if (path === '/auth/result' && request.method === 'GET') return htmlPage(loginResultPage());
-      if (path === '/app' || path === '/app/') return htmlPage(APP_HTML);
+            if (path === '/app' || path === '/app/') return htmlPage(APP_HTML);
+      if (path === '/admin' || path === '/admin/') return htmlPage(ADMIN_HTML);
+      const adminResp = await adminApi(request, path, env, verifyToken);
+      if (adminResp) return adminResp;
       if (path === '/ai-test') return htmlPage(aiTestPage());
       if (path === '/cms-test') return htmlPage(cmsTestPage());
       if (path === '/studio-test') return htmlPage(studioTestPage());
