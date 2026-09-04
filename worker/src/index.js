@@ -270,9 +270,7 @@ export default {
         if (!payload) return json({ error: 'invalid_token' }, 401, cors);
         const body = await request.json().catch(() => null);
         if (!body || !body.studio || !body.idea) return json({ error: 'missing_studio_or_idea' }, 400, cors);
-        const plan = await resolvePlan(env, payload);
-        try {
-          const out = await generateStudio(env, {
+        
             studio: String(body.studio).toUpperCase(),
             type: String(body.type || '1'),
             idea: body.idea,
