@@ -1,4 +1,4 @@
-// AI Creative Studio — Cloudflare Worker (Phase 3e)
+// AI Creative Studio — Cloudflare Worker (Phase 3e+ — hardened errors)
 import { signToken, verifyToken } from './auth';
 import { callGeminiText } from './ai';
 import { getCMSData, buildSystemPrompt } from './cms';
@@ -153,140 +153,148 @@ function creationsTestPage() {
 
 export default {
   async fetch(request, env, ctx) {
-    const url = new URL(request.url);
-    const path = url.pathname;
-    if (request.method === 'OPTIONS') return new Response('ok', { status: 204, headers: cors });
+    try {
+      const url = new URL(request.url);
+      const path = url.pathname;
+      if (request.method === 'OPTIONS') return new Response('ok', { status: 204, headers: cors });
 
-    if (path === '/' && request.method === 'GET') return htmlPage(homePage());
+      if (path === '/' && request.method === 'GET') return htmlPage(homePage());
 
-    if (path === '/api/auth/login' && request.method === 'GET') {
-      const origin = url.origin;
-      const redirect = encodeURIComponent(origin + '/api/auth/callback');
-      const authUrl = 'https://accounts.google.com/o/oauth2/v2/auth?client_id=' + env.GOOGLE_OAUTH_CLIENT_ID +
-        '&redirect_uri=' + encodeURIComponent(origin + '/api/auth/callback') +
-        '&response_type=code&scope=openid%20email%20profile&state=' + redirect + '&access_type=online';
-      return Response.redirect(authUrl, 302);
-    }
-
-    if (path === '/api/auth/callback' && request.method === 'GET') {
-      const code = url.searchParams.get('code');
-      const state = url.searchParams.get('state') || '';
-      if (!code) return json({ error: 'no_code' }, 400, cors);
-      const origin = url.origin;
-      const res = await fetch('https://oauth2.googleapis.com/token', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: 'code=' + encodeURIComponent(code) +
-          '&client_id=' + encodeURIComponent(env.GOOGLE_OAUTH_CLIENT_ID) +
-          '&client_secret=' + encodeURIComponent(env.GOOGLE_OAUTH_CLIENT_SECRET) +
+      if (path === '/api/auth/login' && request.method === 'GET') {
+        const origin = url.origin;
+        const authUrl = 'https://accounts.google.com/o/oauth2/v2/auth?client_id=' + env.GOOGLE_OAUTH_CLIENT_ID +
           '&redirect_uri=' + encodeURIComponent(origin + '/api/auth/callback') +
-          '&grant_type=authorization_code',
-      });
-      const tokenData = await res.json().catch(() => ({}));
-      if (!tokenData.access_token) return json({ error: 'auth_failed', detail: tokenData.error_description || tokenData.error || 'token_exchange_failed' }, 400, cors);
-      const ures = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
-        headers: { Authorization: 'Bearer ' + tokenData.access_token },
-      });
-      const user = await ures.json().catch(() => ({}));
-      if (!user.id || !user.email) return json({ error: 'userinfo_failed' }, 400, cors);
-
-      const existing = env.DB ? await env.DB.prepare('SELECT id FROM users WHERE email = ?').bind(user.email).first() : null;
-      let userId;
-      if (existing) {
-        userId = existing.id;
-        await env.DB.prepare('UPDATE users SET updated_at = datetime(\'now\') WHERE id = ?').bind(userId).run();
-      } else {
-        const ins = await env.DB.prepare('INSERT INTO users (email, plan, created_at, updated_at) VALUES (?, \'FREE\', datetime(\'now\'), datetime(\'now\'))').bind(user.email).run();
-        userId = ins.meta.last_row_id;
+          '&response_type=code&scope=openid%20email%20profile' +
+          '&state=' + encodeURIComponent(origin + '/auth/result') + '&access_type=online';
+        return Response.redirect(authUrl, 302);
       }
 
-      const token = await signToken(env, { sub: String(userId), email: user.email, plan: 'FREE' });
-      const target = (state || (origin + '/auth/result'));
-      return Response.redirect(target + '#token=' + encodeURIComponent(token), 302);
-    }
-
-    if (path === '/auth/result' && request.method === 'GET') return htmlPage(loginResultPage());
-    if (path === '/ai-test') return htmlPage(aiTestPage());
-    if (path === '/cms-test') return htmlPage(cmsTestPage());
-    if (path === '/studio-test') return htmlPage(studioTestPage());
-    if (path === '/creations-test') return htmlPage(creationsTestPage());
-
-    if (path === '/api/users/me' && request.method === 'GET') {
-      const token = bearer(request);
-      if (!token) return json({ error: 'unauthorized' }, 401, cors);
-      const payload = await verifyTokenSafe(env, token);
-      if (!payload) return json({ error: 'invalid_token' }, 401, cors);
-      const plan = await resolvePlan(env, payload);
-      return json({ email: payload.email, plan, user_id: payload.sub }, 200, cors);
-    }
-
-    if (path === '/api/ai/test' && request.method === 'POST') {
-      const body = await request.json().catch(() => null);
-      if (!body) return json({ error: 'bad_request' }, 400, cors);
-      try {
-        const out = await callGeminiText(env, {
-          model: body.model || 'gemini-3.6-flash',
-          prompt: body.prompt || 'Hello',
-          apiKey: body.apiKey,
-        });
-        return json({ output: out }, 200, cors);
-      } catch (e) {
-        return json({ error: 'ai_error', detail: String((e && e.message) || e) }, 500, cors);
-      }
-    }
-
-    if (path === '/api/cms/prompt' && request.method === 'POST') {
-      const token = bearer(request);
-      if (!token) return json({ error: 'unauthorized' }, 401, cors);
-      const payload = await verifyTokenSafe(env, token);
-      if (!payload) return json({ error: 'invalid_token' }, 401, cors);
-      const body = await request.json().catch(() => null);
-      if (!body) return json({ error: 'bad_request' }, 400, cors);
-      const plan = await resolvePlan(env, payload);
-      const c = await getCMSData(env, body.studio || 'STORY', plan, body.type || '1');
-      if (!c) return json({ found: false }, 200, cors);
-      return json({ found: true, studio: c.studio, plan: c.plan, type: c.type, system_prompt: buildSystemPrompt(c) }, 200, cors);
-    }
-
-    if (path === '/api/studio/generate' && request.method === 'POST') {
-      const token = bearer(request);
-      if (!token) return json({ error: 'unauthorized' }, 401, cors);
-      const payload = await verifyTokenSafe(env, token);
-      if (!payload) return json({ error: 'invalid_token' }, 401, cors);
-      const body = await request.json().catch(() => null);
-      if (!body || !body.studio || !body.idea) return json({ error: 'missing_studio_or_idea' }, 400, cors);
-      const plan = await resolvePlan(env, payload);
-      try {
-        const out = await generateStudio(env, {
-          studio: String(body.studio).toUpperCase(),
-          type: String(body.type || '1'),
-          idea: body.idea,
-          plan,
-          apiKey: body.apiKey,
-          model: body.model,
-        });
+      if (path === '/api/auth/callback' && request.method === 'GET') {
         try {
-          if (out.output) await saveCreation(env, {
-            user_id: payload.sub, studio: out.studio, type: out.type,
-            original_prompt: String(body.idea), ai_output: out.output,
-            title: String(body.idea).slice(0, 60),
+          const code = url.searchParams.get('code');
+          if (!code) return json({ error: 'no_code' }, 400, cors);
+          const origin = url.origin;
+          const res = await fetch('https://oauth2.googleapis.com/token', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: 'code=' + encodeURIComponent(code) +
+              '&client_id=' + encodeURIComponent(env.GOOGLE_OAUTH_CLIENT_ID) +
+              '&client_secret=' + encodeURIComponent(env.GOOGLE_OAUTH_CLIENT_SECRET) +
+              '&redirect_uri=' + encodeURIComponent(origin + '/api/auth/callback') +
+              '&grant_type=authorization_code',
           });
-        } catch (e) {}
-        return json(out, 200, cors);
-      } catch (e) {
-        return json({ error: 'studio_error', detail: String((e && e.message) || e) }, 500, cors);
+          const tokenData = await res.json().catch(() => ({}));
+          if (!tokenData.access_token) {
+            return json({ error: 'auth_failed', detail: JSON.stringify(tokenData).slice(0, 300) }, 400, cors);
+          }
+          const ures = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+            headers: { Authorization: 'Bearer ' + tokenData.access_token },
+          });
+          const user = await ures.json().catch(() => ({}));
+          if (!user.id || !user.email) return json({ error: 'userinfo_failed', detail: JSON.stringify(user).slice(0, 300) }, 400, cors);
+
+          const existing = env.DB ? await env.DB.prepare('SELECT id FROM users WHERE email = ?').bind(user.email).first() : null;
+          let userId;
+          if (existing) {
+            userId = existing.id;
+            await env.DB.prepare('UPDATE users SET updated_at = datetime(\'now\') WHERE id = ?').bind(userId).run();
+          } else {
+            const ins = await env.DB.prepare('INSERT INTO users (email, plan, created_at, updated_at) VALUES (?, \'FREE\', datetime(\'now\'), datetime(\'now\'))').bind(user.email).run();
+            userId = ins.meta.last_row_id;
+          }
+
+          const token = await signToken(env, { sub: String(userId), email: user.email, plan: 'FREE' });
+          return Response.redirect((origin + '/auth/result') + '#token=' + encodeURIComponent(token), 302);
+        } catch (e) {
+          return json({ error: 'auth_error', detail: String((e && e.message) || e) }, 500, cors);
+        }
       }
-    }
 
-    if (path === '/api/creations' && request.method === 'GET') {
-      const token = bearer(request);
-      if (!token) return json({ error: 'unauthorized' }, 401, cors);
-      const payload = await verifyTokenSafe(env, token);
-      if (!payload) return json({ error: 'invalid_token' }, 401, cors);
-      const items = await listCreations(env, payload.sub);
-      return json({ items }, 200, cors);
-    }
+      if (path === '/auth/result' && request.method === 'GET') return htmlPage(loginResultPage());
+      if (path === '/ai-test') return htmlPage(aiTestPage());
+      if (path === '/cms-test') return htmlPage(cmsTestPage());
+      if (path === '/studio-test') return htmlPage(studioTestPage());
+      if (path === '/creations-test') return htmlPage(creationsTestPage());
 
-    return json({ error: 'not_found', path }, 404, cors);
+      if (path === '/api/users/me' && request.method === 'GET') {
+        const token = bearer(request);
+        if (!token) return json({ error: 'unauthorized' }, 401, cors);
+        const payload = await verifyTokenSafe(env, token);
+        if (!payload) return json({ error: 'invalid_token' }, 401, cors);
+        const plan = await resolvePlan(env, payload);
+        return json({ email: payload.email, plan, user_id: payload.sub }, 200, cors);
+      }
+
+      if (path === '/api/ai/test' && request.method === 'POST') {
+        const body = await request.json().catch(() => null);
+        if (!body) return json({ error: 'bad_request' }, 400, cors);
+        try {
+          const out = await callGeminiText(env, {
+            model: body.model || 'gemini-3.6-flash',
+            prompt: body.prompt || 'Hello',
+            apiKey: body.apiKey,
+          });
+          return json({ output: out }, 200, cors);
+        } catch (e) {
+          return json({ error: 'ai_error', detail: String((e && e.message) || e) }, 500, cors);
+        }
+      }
+
+      if (path === '/api/cms/prompt' && request.method === 'POST') {
+        const token = bearer(request);
+        if (!token) return json({ error: 'unauthorized' }, 401, cors);
+        const payload = await verifyTokenSafe(env, token);
+        if (!payload) return json({ error: 'invalid_token' }, 401, cors);
+        const body = await request.json().catch(() => null);
+        if (!body) return json({ error: 'bad_request' }, 400, cors);
+        const plan = await resolvePlan(env, payload);
+        const c = await getCMSData(env, body.studio || 'STORY', plan, body.type || '1');
+        if (!c) return json({ found: false }, 200, cors);
+        return json({ found: true, studio: c.studio, plan: c.plan, type: c.type, system_prompt: buildSystemPrompt(c) }, 200, cors);
+      }
+
+      if (path === '/api/studio/generate' && request.method === 'POST') {
+        const token = bearer(request);
+        if (!token) return json({ error: 'unauthorized' }, 401, cors);
+        const payload = await verifyTokenSafe(env, token);
+        if (!payload) return json({ error: 'invalid_token' }, 401, cors);
+        const body = await request.json().catch(() => null);
+        if (!body || !body.studio || !body.idea) return json({ error: 'missing_studio_or_idea' }, 400, cors);
+        const plan = await resolvePlan(env, payload);
+        try {
+          const out = await generateStudio(env, {
+            studio: String(body.studio).toUpperCase(),
+            type: String(body.type || '1'),
+            idea: body.idea,
+            plan,
+            apiKey: body.apiKey,
+            model: body.model,
+          });
+          try {
+            if (out.output) await saveCreation(env, {
+              user_id: payload.sub, studio: out.studio, type: out.type,
+              original_prompt: String(body.idea), ai_output: out.output,
+              title: String(body.idea).slice(0, 60),
+            });
+          } catch (e) {}
+          return json(out, 200, cors);
+        } catch (e) {
+          return json({ error: 'studio_error', detail: String((e && e.message) || e) }, 500, cors);
+        }
+      }
+
+      if (path === '/api/creations' && request.method === 'GET') {
+        const token = bearer(request);
+        if (!token) return json({ error: 'unauthorized' }, 401, cors);
+        const payload = await verifyTokenSafe(env, token);
+        if (!payload) return json({ error: 'invalid_token' }, 401, cors);
+        const items = await listCreations(env, payload.sub);
+        return json({ items }, 200, cors);
+      }
+
+      return json({ error: 'not_found', path }, 404, cors);
+    } catch (e) {
+      return json({ error: 'internal', detail: String((e && e.message) || e) }, 500, cors);
+    }
   },
 };
