@@ -233,7 +233,7 @@ function studioTestPage() {
     '<h2 style="color:#1b6d96">🎨 Studio Engine Test</h2>' +
     '<label style="font-size:13px;font-weight:600">Session Token</label><br>' +
     '<textarea id="tok" rows="3" style="width:100%;font-family:monospace;font-size:12px;box-sizing:border-box"></textarea>' +
-    '<label style="font-size:13px;font-weight:600">Studio</label><br>' +
+    '<label style="font-size:13px;font-weight:600">Studio (STORY / IMAGE / CONTENT ...)</label><br>' +
     '<input id="st" value="STORY" style="width:100%;font-size:13px;box-sizing:border-box;padding:8px">' +
     '<label style="font-size:13px;font-weight:600">Type (1-5)</label><br>' +
     '<input id="ty" value="1" style="width:100%;font-size:13px;box-sizing:border-box;padding:8px">' +
@@ -247,7 +247,9 @@ function studioTestPage() {
     'function run(){var o=document.getElementById("out");o.textContent="Loading...";' +
     'fetch("/api/studio/generate",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+document.getElementById("tok").value},' +
     'body:JSON.stringify({studio:document.getElementById("st").value,type:document.getElementById("ty").value,idea:document.getElementById("id").value,apiKey:document.getElementById("key").value})})' +
-    '.then(function(r){return r.json();}).then(function(d){o.textContent=d.output?("["+d.studio+"/"+d.plan+"/"+d.type+"]\\n\\n"+d.output):("ERROR: "+(d.error||"")+" "+(d.detail||""));})' +
+    '.then(function(r){return r.json();}).then(function(d){' +
+    'if(d.data){o.innerHTML="";var im=document.createElement("img");im.src="data:"+d.mimeType+";base64,"+d.data;im.style.maxWidth="100%";im.style.borderRadius="8px";o.appendChild(im);return;}' +
+    'o.textContent=d.output?("["+d.studio+"/"+d.plan+"/"+d.type+"]\\n\\n"+d.output):("ERROR: "+(d.error||"")+" "+(d.detail||""));})' +
     '.catch(function(e){o.textContent="Network error: "+e;});}' +
     '<\/script></body></html>';
 }
