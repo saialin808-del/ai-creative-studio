@@ -76,8 +76,9 @@ var STUDIOS=[
  {key:'SHORT',label:'📱 ဗီဒီယိုစာသား (Short)'},
  {key:'SHORTVIDEO',label:'🎬 Short Video'},
  {key:'IMAGE',label:'🖼️ ပုံ (Image)'},
+ {key:'IMAGE',label:'🎁 ပုံ (Ad Image)'},
  {key:'VOICE',label:'🎙️ အသံ (Voice)'},
- {key:'SHOP',label:'🛍️ ဈေးဆိုင် (Shop)'},
+ {key:'SHOP',label:'🛍️ရောင်းချရန် (Shop)'},
  {key:'SHOPVIDEO',label:'🎬 Shop Video'}
 ];
 var NAV=[
