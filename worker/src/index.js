@@ -2,7 +2,7 @@
 import { signToken, verifyToken } from './auth';
 import { callGeminiText } from './ai';
 import { getCMSData, buildSystemPrompt } from './cms';
-import { generateStudio } from './studio';
+import { generateStudio, studioAction } from './studio';
 import { saveCreation, listCreations } from './creations';
 import { APP_HTML } from './frontend';
 import { ADMIN_HTML, adminApi } from './admin';
@@ -294,6 +294,57 @@ export default {
           return json(out, 200, cors);
         } catch (e) {
           return json({ error: 'studio_error', detail: String((e && e.message) || e) }, 500, cors);
+        }
+      }
+
+      // ===== Generic Studio Action endpoint =====
+      // "generate" မဟုတ်တဲ့ Studio ကိုယ်ပိုင် feature တွေ (revise / video plan /
+      // per-scene image, စသည်) အားလုံးအတွက် ဒီ endpoint တစ်ခုတည်း လုံလောက်ပါတယ်။
+      // Studio အသစ်တစ်ခု ထပ်ထည့်ချင်ရင်တောင် ဒီဖိုင်ကို ထပ်ပြင်စရာ မလိုပါ —
+      // studios/<name>.js ထဲမှာ actions{} export ထားရုံပါပဲ (studio.js ကို ကြည့်ပါ)။
+      if (path === '/api/studio/action' && request.method === 'POST') {
+        const token = bearer(request);
+        if (!token) return json({ error: 'unauthorized' }, 401, cors);
+        const payload = await verifyTokenSafe(env, token);
+        if (!payload) return json({ error: 'invalid_token' }, 401, cors);
+        const body = await request.json().catch(() => null);
+        if (!body || !body.studio || !body.action) return json({ error: 'missing_studio_or_action' }, 400, cors);
+        const plan = await resolvePlan(env, payload);
+        if (body.type !== undefined) {
+          const reqType = String(body.type || '1');
+          if (plan === 'FREE' && reqType !== '1') {
+            return json({ error: 'pro_only', detail: 'ဒီ feature က PRO အတွက်ပါ။ Type 1 ကို သုံးပါ၊ သို့မဟုတ် upgrade လုပ်ပါ။' }, 403, cors);
+          }
+        }
+        try {
+          const { studio, action, ...rest } = body;
+          const out = await studioAction(env, { studio: String(studio).toUpperCase(), action, ...rest, plan });
+          if (out === null) return json({ error: 'not_found', detail: 'studio/action မရှိပါ' }, 404, cors);
+          return json(out, 200, cors);
+        } catch (e) {
+          return json({ error: 'studio_action_error', detail: String((e && e.message) || e) }, 500, cors);
+        }
+      }
+
+      // ===== Manual "save creation" endpoint =====
+      // Studio result တစ်ခုစီမှာ auto-save (output ရှိရင်) အပြင် လက်ဖြင့် Save
+      // ချင်တဲ့ feature (Story Video, revise ပြီးသား version, စသည်) အတွက်။
+      if (path === '/api/creations/save' && request.method === 'POST') {
+        const token = bearer(request);
+        if (!token) return json({ error: 'unauthorized' }, 401, cors);
+        const payload = await verifyTokenSafe(env, token);
+        if (!payload) return json({ error: 'invalid_token' }, 401, cors);
+        const body = await request.json().catch(() => null);
+        if (!body || !body.studio || !body.ai_output) return json({ error: 'missing_fields' }, 400, cors);
+        try {
+          const saved = await saveCreation(env, {
+            user_id: payload.sub, studio: String(body.studio).toUpperCase(), type: body.type || '1',
+            original_prompt: body.original_prompt || '', ai_output: body.ai_output,
+            title: (body.title || String(body.original_prompt || body.ai_output).slice(0, 60)),
+          });
+          return json({ ok: true, id: saved.id }, 200, cors);
+        } catch (e) {
+          return json({ error: 'save_error', detail: String((e && e.message) || e) }, 500, cors);
         }
       }
 
