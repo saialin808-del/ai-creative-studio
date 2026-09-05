@@ -1,4 +1,6 @@
 // AI Creative Studio — Frontend UI (served at /app) — Phase 4
+import { STORY_STUDIO_HTML } from './ui/story';
+
 export const APP_HTML = `<!DOCTYPE html>
 <html lang="my">
 <head>
@@ -57,6 +59,10 @@ h2{margin:4px 0 8px;font-size:18px}
     <div class="result" id="studioResult">ရလဒ် ဤနေရာတွင် ပေါ်မည်...</div>
   </section>
 
+  <section id="view-storystudio" class="hidden">
+    ${STORY_STUDIO_HTML}
+  </section>
+
   <section id="view-creations" class="hidden">
     <div class="card">
       <button class="btn" onclick="loadCreations()">📂 ကျွန်ုပ်၏ ဖန်တီးမှုများ တင်မည်</button>
@@ -85,6 +91,7 @@ var STUDIOS=[
 var NAV=[
  {view:'home',label:'🏠 ပင်မ'},
  {view:'studio',label:'🎨 Studio'},
+ {view:'storystudio',label:'📖 Story Studio'},
  {view:'creations',label:'💾 ဖန်တီးမှုများ'}
 ];
 
@@ -135,10 +142,11 @@ function renderNav(){
 }
 
 function showView(v){
-  ['home','studio','creations'].forEach(function(x){$('view-'+x).classList.toggle('hidden',x!==v);});
+  ['home','studio','storystudio','creations'].forEach(function(x){$('view-'+x).classList.toggle('hidden',x!==v);});
   var nav=$('nav');
   for(var i=0;i<nav.children.length;i++){nav.children[i].classList.toggle('active',NAV[i].view===v);}
   if(v==='creations')loadCreations();
+  if(v==='storystudio' && window.StoryStudio)window.StoryStudio.init();
 }
 
 function renderStudios(){
