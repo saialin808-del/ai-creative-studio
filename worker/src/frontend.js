@@ -70,11 +70,15 @@ var TOKEN_KEY='aics_token';
 var token=localStorage.getItem(TOKEN_KEY)||'';
 var STUDIOS=[
  {key:'STORY',label:'📖 ဇာတ်လမ်း (Story)'},
+ {key:'STORYVIDEO',label:'🎬 ဇာတ်လမ်းဗီဒီယို (Story Video)'},
  {key:'CONTENT',label:'📝 အကြောင်းအရာ (Content)'},
- {key:'SHORT',label:'🎬 ဗီဒီယိုစာသား (Short)'},
+ {key:'CONTENTVIDEO',label:'🎬 အကြောင်းအရာဗီဒီယို (Content Video)'},
+ {key:'SHORT',label:'📱 ဗီဒီယိုစာသား (Short)'},
+ {key:'SHORTVIDEO',label:'🎬 Short Video'},
  {key:'IMAGE',label:'🖼️ ပုံ (Image)'},
  {key:'VOICE',label:'🎙️ အသံ (Voice)'},
- {key:'SHOP',label:'🛍️ ဈေးဆိုင် (Shop)'}
+ {key:'SHOP',label:'🛍️ ဈေးဆိုင် (Shop)'},
+ {key:'SHOPVIDEO',label:'🎬 Shop Video'}
 ];
 var NAV=[
  {view:'home',label:'🏠 ပင်မ'},
