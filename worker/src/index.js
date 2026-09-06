@@ -3,6 +3,7 @@ import { signToken, verifyToken } from './core/auth';
 import { callGeminiText } from './core/ai';
 import { getCMSData, buildSystemPrompt } from './core/cms';
 import { generateStudio } from './studio';
+import { generateContent, reviseContent, generateContentVideo, generateContentVideoImage, generateContentSrt, translateContentSrt } from './studios/content';
 import { saveCreation, listCreations } from './core/creations';
 import { getUserApiKey, saveUserApiKey } from './core/utilities';
 import { APP_HTML } from './frontend';
@@ -321,8 +322,145 @@ export default {
             });
           } catch (e) {}
           return json(out, 200, cors);
-        } catch (e) {
+                } catch (e) {
           return json({ error: 'studio_error', detail: String((e && e.message) || e) }, 500, cors);
+        }
+      }
+
+      // ===== Content Studio — Tab 1: Generate =====
+      if (path === '/api/studio/content/generate' && request.method === 'POST') {
+        const token = bearer(request);
+        if (!token) return json({ error: 'unauthorized' }, 401, cors);
+        const payload = await verifyTokenSafe(env, token);
+        if (!payload) return json({ error: 'invalid_token' }, 401, cors);
+        const body = await request.json().catch(() => null);
+        if (!body || !body.idea) return json({ error: 'missing_idea' }, 400, cors);
+        const plan = await resolvePlan(env, payload);
+        const reqType = String(body.type || '1');
+        if (plan === 'FREE' && reqType !== '1') {
+          return json({ error: 'pro_only', detail: 'ဒီ feature က PRO အတွက်ပါ။ Type 1 ကို သုံးပါ၊ သို့မဟုတ် upgrade လုပ်ပါ။' }, 403, cors);
+        }
+        try {
+          let apiKey = body.apiKey;
+          if (!apiKey) apiKey = await getUserApiKey(env, payload.sub);
+          const out = await generateContent(env, { idea: body.idea, type: reqType, plan, apiKey });
+          return json({ ok: true, ...out }, 200, cors);
+        } catch (e) {
+          return json({ error: 'content_error', detail: String((e && e.message) || e) }, 500, cors);
+        }
+      }
+
+      // ===== Content Studio — Tab 1: Revise (Chat) =====
+      if (path === '/api/studio/content/revise' && request.method === 'POST') {
+        const token = bearer(request);
+        if (!token) return json({ error: 'unauthorized' }, 401, cors);
+        const payload = await verifyTokenSafe(env, token);
+        if (!payload) return json({ error: 'invalid_token' }, 401, cors);
+        const body = await request.json().catch(() => null);
+        if (!body || !body.feedback) return json({ error: 'missing_feedback' }, 400, cors);
+        const plan = await resolvePlan(env, payload);
+        const reqType = String(body.type || '1');
+        if (plan === 'FREE' && reqType !== '1') {
+          return json({ error: 'pro_only', detail: 'ဒီ feature က PRO အတွက်ပါ။' }, 403, cors);
+        }
+        try {
+          let apiKey = body.apiKey;
+          if (!apiKey) apiKey = await getUserApiKey(env, payload.sub);
+          const out = await reviseContent(env, {
+            originalContent: body.originalContent || '',
+            originalSpeaking: body.originalSpeaking || '',
+            originalVoice: body.originalVoice || '',
+            feedback: body.feedback,
+            type: reqType, plan, apiKey,
+          });
+          return json({ ok: true, ...out }, 200, cors);
+        } catch (e) {
+          return json({ error: 'revise_error', detail: String((e && e.message) || e) }, 500, cors);
+        }
+      }
+
+      // ===== Content Studio — Tab 2: Video Plan =====
+      if (path === '/api/studio/content/video' && request.method === 'POST') {
+        const token = bearer(request);
+        if (!token) return json({ error: 'unauthorized' }, 401, cors);
+        const payload = await verifyTokenSafe(env, token);
+        if (!payload) return json({ error: 'invalid_token' }, 401, cors);
+        const body = await request.json().catch(() => null);
+        if (!body || !body.idea) return json({ error: 'missing_idea' }, 400, cors);
+        const plan = await resolvePlan(env, payload);
+        const reqType = String(body.type || '1');
+        if (plan === 'FREE' && reqType !== '1') {
+          return json({ error: 'pro_only', detail: 'ဒီ feature က PRO အတွက်ပါ။' }, 403, cors);
+        }
+        try {
+          let apiKey = body.apiKey;
+          if (!apiKey) apiKey = await getUserApiKey(env, payload.sub);
+          const out = await generateContentVideo(env, { idea: body.idea, type: reqType, plan, apiKey });
+          return json({ ok: true, ...out }, 200, cors);
+        } catch (e) {
+          return json({ error: 'video_error', detail: String((e && e.message) || e) }, 500, cors);
+        }
+      }
+
+      // ===== Content Studio — Tab 2: Video Scene Image =====
+      if (path === '/api/studio/content/video-image' && request.method === 'POST') {
+        const token = bearer(request);
+        if (!token) return json({ error: 'unauthorized' }, 401, cors);
+        const payload = await verifyTokenSafe(env, token);
+        if (!payload) return json({ error: 'invalid_token' }, 401, cors);
+        const body = await request.json().catch(() => null);
+        if (!body || !body.prompt) return json({ error: 'missing_prompt' }, 400, cors);
+        try {
+          let apiKey = body.apiKey;
+          if (!apiKey) apiKey = await getUserApiKey(env, payload.sub);
+          const out = await generateContentVideoImage(env, { prompt: body.prompt, apiKey });
+          return json({ ok: true, data: out.data, mimeType: out.mimeType }, 200, cors);
+        } catch (e) {
+          return json({ error: 'image_error', detail: String((e && e.message) || e) }, 500, cors);
+        }
+      }
+
+      // ===== Content Studio — Tab 3: SRT from Audio =====
+      if (path === '/api/studio/content/srt' && request.method === 'POST') {
+        const token = bearer(request);
+        if (!token) return json({ error: 'unauthorized' }, 401, cors);
+        const payload = await verifyTokenSafe(env, token);
+        if (!payload) return json({ error: 'invalid_token' }, 401, cors);
+        const body = await request.json().catch(() => null);
+        if (!body || !body.audioBase64) return json({ error: 'missing_audio' }, 400, cors);
+        try {
+          let apiKey = body.apiKey;
+          if (!apiKey) apiKey = await getUserApiKey(env, payload.sub);
+          const out = await generateContentSrt(env, {
+            audioBase64: body.audioBase64,
+            mimeType: body.mimeType || 'audio/mpeg',
+            apiKey,
+          });
+          return json({ ok: true, srt: out.srt }, 200, cors);
+        } catch (e) {
+          return json({ error: 'srt_error', detail: String((e && e.message) || e) }, 500, cors);
+        }
+      }
+
+      // ===== Content Studio — Tab 3: Translate SRT =====
+      if (path === '/api/studio/content/translate-srt' && request.method === 'POST') {
+        const token = bearer(request);
+        if (!token) return json({ error: 'unauthorized' }, 401, cors);
+        const payload = await verifyTokenSafe(env, token);
+        if (!payload) return json({ error: 'invalid_token' }, 401, cors);
+        const body = await request.json().catch(() => null);
+        if (!body || !body.srtText) return json({ error: 'missing_srt' }, 400, cors);
+        try {
+          let apiKey = body.apiKey;
+          if (!apiKey) apiKey = await getUserApiKey(env, payload.sub);
+          const out = await translateContentSrt(env, {
+            srtText: body.srtText,
+            direction: body.direction || 'my-to-cn',
+            apiKey,
+          });
+          return json({ ok: true, srt: out.srt }, 200, cors);
+        } catch (e) {
+          return json({ error: 'translate_error', detail: String((e && e.message) || e) }, 500, cors);
         }
       }
 
