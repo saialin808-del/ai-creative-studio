@@ -3,7 +3,7 @@ import { signToken, verifyToken } from './core/auth';
 import { callGeminiText } from './core/ai';
 import { getCMSData, buildSystemPrompt } from './core/cms';
 import { generateStudio } from './studio';
-import { generateContent, reviseContent, generateContentVideo, generateContentVideoImage, generateContentSrt, translateContentSrt } from './studios/content';
+import { generateContent, reviseContent, generateContentVoice, generateContentVideo, generateContentVideoImage, generateContentSrt, translateContentSrt } from './studios/content';
 import { saveCreation, listCreations } from './core/creations';
 import { getUserApiKey, saveUserApiKey } from './core/utilities';
 import { APP_HTML } from './frontend';
@@ -377,6 +377,28 @@ export default {
           return json({ ok: true, ...out }, 200, cors);
         } catch (e) {
           return json({ error: 'revise_error', detail: String((e && e.message) || e) }, 500, cors);
+        }
+      }
+
+            // ===== Content Studio — Tab 1: Text → Voice (TTS) =====
+      if (path === '/api/studio/content/tts' && request.method === 'POST') {
+        const token = bearer(request);
+        if (!token) return json({ error: 'unauthorized' }, 401, cors);
+        const payload = await verifyTokenSafe(env, token);
+        if (!payload) return json({ error: 'invalid_token' }, 401, cors);
+        const body = await request.json().catch(() => null);
+        if (!body || !body.text) return json({ error: 'missing_text' }, 400, cors);
+        try {
+          let apiKey = body.apiKey;
+          if (!apiKey) apiKey = await getUserApiKey(env, payload.sub);
+          const out = await generateContentVoice(env, {
+            text: body.text,
+            voiceName: body.voiceName || 'Kore',
+            apiKey,
+          });
+          return json({ ok: true, data: out.data, mimeType: out.mimeType }, 200, cors);
+        } catch (e) {
+          return json({ error: 'tts_error', detail: String((e && e.message) || e) }, 500, cors);
         }
       }
 
