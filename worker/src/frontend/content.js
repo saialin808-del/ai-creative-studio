@@ -1,7 +1,8 @@
-// AI Creative Studio — Content Studio Frontend (Phase 3b)
+// AI Creative Studio — Content Studio Frontend (Phase 3c)
 // Tab 1: Content Generator + Revise (Chat)
+// Tab 2: Video Plan + Scenes + Characters + Scene Image Generate
+// Tab 3: SRT & Translation (Phase 3d မှာ ထပ်ဖြည့်မည်)
 // Dark Theme preserved from Source (Google Apps Script UI)
-// Studio Isolation: ဤ File သည် Content Studio UI နှင့်သာ သက်ဆိုင်သည်။
 
 export const CONTENT_HTML = `<!DOCTYPE html>
 <html lang="my">
@@ -238,7 +239,6 @@ select option { background: var(--bg-card); color: var(--text); }
   white-space: pre-wrap;
   word-break: break-word;
 }
-.result-empty { color: var(--text3); font-style: italic; font-size: 13px; }
 .revise-section {
   margin-top: 20px;
   padding-top: 20px;
@@ -306,6 +306,58 @@ select option { background: var(--bg-card); color: var(--text); }
 }
 .login-prompt h2 { color: var(--cyan); margin-bottom: 12px; }
 .login-prompt p { color: var(--text2); margin-bottom: 20px; }
+
+/* ===== Video Plan (Tab 2) ===== */
+.characters-list { display: flex; flex-wrap: wrap; gap: 10px; }
+.character-chip {
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 14px;
+  flex: 1 1 200px;
+  min-width: 180px;
+}
+.character-name { font-weight: 600; color: var(--cyan); font-size: 13px; margin-bottom: 4px; }
+.character-desc { font-size: 12px; color: var(--text2); line-height: 1.5; }
+.scene-item {
+  background: var(--bg-card2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  margin-bottom: 14px;
+}
+.scene-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+.scene-num { font-weight: 700; color: var(--cyan); font-size: 14px; }
+.scene-duration { font-size: 11px; color: var(--text3); background: var(--bg-input); padding: 2px 8px; border-radius: 10px; }
+.scene-field { margin-bottom: 10px; }
+.scene-field-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--purple);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.scene-field-text { font-size: 13px; color: var(--text); line-height: 1.6; white-space: pre-wrap; word-break: break-word; }
+.scene-image-area { margin-top: 12px; text-align: center; }
+.scene-image-area img { max-width: 100%; border-radius: 8px; border: 1px solid var(--border); }
+.scene-image-placeholder {
+  background: var(--bg-input);
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+  padding: 20px;
+  color: var(--text3);
+  font-size: 12px;
+}
+
 @media (max-width: 768px) {
   .menu-btn { display: block; }
   .sidebar {
@@ -359,6 +411,8 @@ select option { background: var(--bg-card); color: var(--text); }
         <button class="tab" onclick="switchTab(2)">Tab 2 — ဗီဒီယိုအစီအစဉ်</button>
         <button class="tab" onclick="switchTab(3)">Tab 3 — SRT & ဘာသာပြန်</button>
       </div>
+
+      <!-- Tab 1: Content Generator -->
       <div class="tab-content active" id="tab1">
         <div class="card">
           <div class="card-title">&#9997; ကอนเทนต် ဖန်တီးရန်</div>
@@ -425,13 +479,48 @@ select option { background: var(--bg-card); color: var(--text); }
           </div>
         </div>
       </div>
+
+      <!-- Tab 2: Video Plan -->
       <div class="tab-content" id="tab2">
-        <div class="card" style="text-align:center;padding:40px 20px;">
-          <div style="font-size:40px;margin-bottom:12px;">&#127916;</div>
-          <div class="card-title" style="justify-content:center;">Tab 2 — ဗီဒီယိုအစီအစဉ်</div>
-          <p style="color:var(--text2);">ဒီ Tab ကို Phase 3c မှာ တည်ဆောက်မည်ဖြစ်သည်။<br>Scenes + Characters + Image Generate အားလုံး ပါဝင်မည်ဖြစ်ပါတယ်။</p>
+        <div class="card">
+          <div class="card-title">&#127916; ဗီဒီယိုအစီအစဉ် ဖန်တီးရန် (Video Plan)</div>
+          <div class="form-group">
+            <label>သင့် အကြံ / အကြောင်းအရာ (User Idea)</label>
+            <textarea id="videoIdeaInput" placeholder="ဥပမာ — ကော်ဖီဆိုင်တစ်ဆင်အတွက် 30-second promo video အစီအစဉ်ရေးပါ..."></textarea>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>အမျိုးအစား (Type 1-5)</label>
+              <select id="videoTypeSelect">
+                <option value="1">Type 1 — Basic (FREE)</option>
+                <option value="2">Type 2 — Standard (PRO)</option>
+                <option value="3">Type 3 — Advanced (PRO)</option>
+                <option value="4">Type 4 — Premium (PRO)</option>
+                <option value="5">Type 5 — Ultimate (PRO)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Gemini API Key (ရွေးစရာ — BYOK)</label>
+              <input type="password" id="videoByokInput" placeholder="ထည့်လိုပါက သင့် Key ကိုထည့်ပါ">
+            </div>
+          </div>
+          <button class="btn btn-primary" id="videoGenBtn" onclick="generateVideo()">&#9654; ဗီဒီယိုအစီအစဉ် ဖန်တီးမယ်</button>
+          <div class="loading" id="videoLoading"><div class="spinner"></div> ဗီဒီယိုအစီအစဉ် ရေးဆွဲနေပါသည်...</div>
+          <div class="error-box" id="videoError"></div>
+        </div>
+        <div id="videoResult" style="display:none;">
+          <div class="card" id="charactersCard" style="display:none;">
+            <div class="card-title">&#128100; ဇာတ်ကောင်များ (Characters)</div>
+            <div id="charactersList" class="characters-list"></div>
+          </div>
+          <div class="card">
+            <div class="card-title">&#127916; ဖြစ်စဉ်များ (Scenes)</div>
+            <div id="scenesList"></div>
+          </div>
         </div>
       </div>
+
+      <!-- Tab 3: Coming Soon (Phase 3d) -->
       <div class="tab-content" id="tab3">
         <div class="card" style="text-align:center;padding:40px 20px;">
           <div style="font-size:40px;margin-bottom:12px;">&#127908;</div>
@@ -448,6 +537,8 @@ var token = localStorage.getItem('aics_token') || '';
 var userEmail = localStorage.getItem('aics_email') || '';
 var userPlan = localStorage.getItem('aics_plan') || 'FREE';
 var lastResult = null;
+var videoPlan = null;
+
 (function init() {
   if (!token) {
     document.getElementById('loginView').style.display = 'block';
@@ -457,6 +548,7 @@ var lastResult = null;
   document.getElementById('userEmail').textContent = userEmail || '—';
   document.getElementById('planBadge').textContent = userPlan || 'FREE';
 })();
+
 function toggleSidebar() {
   document.getElementById('sidebar').classList.toggle('open');
 }
@@ -484,6 +576,8 @@ function apiCall(url, body) {
     });
   });
 }
+
+// ===== Tab 1: Content =====
 function generateContent() {
   var idea = document.getElementById('ideaInput').value.trim();
   var type = document.getElementById('typeSelect').value;
@@ -504,9 +598,7 @@ function generateContent() {
       document.getElementById('resultSection').style.display = 'block';
       document.getElementById('reviseHistory').innerHTML = '';
     })
-    .catch(function(err) {
-      showError('genError', err.message);
-    })
+    .catch(function(err) { showError('genError', err.message); })
     .finally(function() {
       setLoading('genLoading', false);
       document.getElementById('generateBtn').disabled = false;
@@ -539,9 +631,7 @@ function reviseContent() {
       document.getElementById('feedbackInput').value = '';
       addHistory('ai', 'ပြင်ဆင်ပြီးပါပြီ — အထက်ပါရလဒ်ကို ကြည့်ပါ။');
     })
-    .catch(function(err) {
-      showError('revError', err.message);
-    })
+    .catch(function(err) { showError('revError', err.message); })
     .finally(function() {
       setLoading('revLoading', false);
       document.getElementById('reviseBtn').disabled = false;
@@ -554,6 +644,125 @@ function addHistory(role, text) {
   div.innerHTML = '<div class="role">' + roleLabel + '</div>' + escapeHtml(text);
   document.getElementById('reviseHistory').appendChild(div);
 }
+
+// ===== Tab 2: Video Plan =====
+function generateVideo() {
+  var idea = document.getElementById('videoIdeaInput').value.trim();
+  var type = document.getElementById('videoTypeSelect').value;
+  var byok = document.getElementById('videoByokInput').value.trim();
+  if (!idea) { showError('videoError', 'အကြောင်းအရာ (User Idea) ထည့်ပါ။'); return; }
+  setLoading('videoLoading', true);
+  hideError('videoError');
+  document.getElementById('videoGenBtn').disabled = true;
+  var body = { idea: idea, type: type };
+  if (byok) body.apiKey = byok;
+  apiCall('/api/studio/content/video', body)
+    .then(function(data) {
+      videoPlan = data;
+      renderVideoPlan(data);
+      document.getElementById('videoResult').style.display = 'block';
+    })
+    .catch(function(err) { showError('videoError', err.message); })
+    .finally(function() {
+      setLoading('videoLoading', false);
+      document.getElementById('videoGenBtn').disabled = false;
+    });
+}
+function renderVideoPlan(data) {
+  var charsCard = document.getElementById('charactersCard');
+  var charsList = document.getElementById('charactersList');
+  if (data.characters && data.characters.length > 0) {
+    charsCard.style.display = 'block';
+    charsList.innerHTML = '';
+    for (var i = 0; i < data.characters.length; i++) {
+      var c = data.characters[i];
+      var div = document.createElement('div');
+      div.className = 'character-chip';
+      div.innerHTML = '<div class="character-name">' + escapeHtml(c.name || 'Character ' + (i + 1)) + '</div>' +
+                      '<div class="character-desc">' + escapeHtml(c.description || '') + '</div>';
+      charsList.appendChild(div);
+    }
+  } else {
+    charsCard.style.display = 'none';
+  }
+  var scenesList = document.getElementById('scenesList');
+  scenesList.innerHTML = '';
+  if (data.scenes && data.scenes.length > 0) {
+    for (var i = 0; i < data.scenes.length; i++) {
+      (function(idx) {
+        var s = data.scenes[idx];
+        var item = document.createElement('div');
+        item.className = 'scene-item';
+        var html = '<div class="scene-header">' +
+          '<span class="scene-num">Scene ' + (s.number || (idx + 1)) + '</span>' +
+          (s.duration ? '<span class="scene-duration">' + escapeHtml(s.duration) + '</span>' : '') +
+          '</div>';
+        if (s.description) {
+          html += '<div class="scene-field"><div class="scene-field-label">ဖော်ပြချက် (Description)</div>' +
+                  '<div class="scene-field-text">' + escapeHtml(s.description) + '</div></div>';
+        }
+        if (s.visualPrompt) {
+          html += '<div class="scene-field"><div class="scene-field-label">' +
+                  'ရုပ်ပုံ Prompt <button class="btn-ghost" onclick="copySceneText(' + idx + ')">&#128203; Copy</button></div>' +
+                  '<div class="scene-field-text" id="sceneVP_' + idx + '">' + escapeHtml(s.visualPrompt) + '</div></div>';
+        }
+        if (s.dialogue) {
+          html += '<div class="scene-field"><div class="scene-field-label">စကားပြော (Dialogue)</div>' +
+                  '<div class="scene-field-text">' + escapeHtml(s.dialogue) + '</div></div>';
+        }
+        html += '<div class="scene-image-area" id="sceneImg_' + idx + '">' +
+                '<button class="btn btn-secondary" onclick="generateSceneImage(' + idx + ')">&#128444; ဤဖြစ်စဉ်၏ ရုပ်ပုံဖန်တီးပါ</button>' +
+                '</div>';
+        item.innerHTML = html;
+        scenesList.appendChild(item);
+      })(i);
+    }
+  } else {
+    scenesList.innerHTML = '<div style="color:var(--text3);text-align:center;padding:20px;">Scenes မတွေ့ရှိပါ</div>';
+  }
+}
+function copySceneText(idx) {
+  if (!videoPlan || !videoPlan.scenes || !videoPlan.scenes[idx]) return;
+  var text = videoPlan.scenes[idx].visualPrompt || '';
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(text).then(function() { showToast(); });
+  } else {
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    showToast();
+  }
+}
+function generateSceneImage(idx) {
+  if (!videoPlan || !videoPlan.scenes || !videoPlan.scenes[idx]) return;
+  var scene = videoPlan.scenes[idx];
+  var prompt = scene.visualPrompt || scene.description || '';
+  if (!prompt) { alert('ဒီဖြစ်စဉ်တွင် Visual Prompt မရှိပါ'); return; }
+  var area = document.getElementById('sceneImg_' + idx);
+  area.innerHTML = '<div class="loading show"><div class="spinner"></div> ရုပ်ပုံဖန်တီးနေပါသည်...</div>';
+  var byok = document.getElementById('videoByokInput').value.trim();
+  var body = { prompt: prompt };
+  if (byok) body.apiKey = byok;
+  apiCall('/api/studio/content/video-image', body)
+    .then(function(data) {
+      if (data.data) {
+        var imgSrc = 'data:' + (data.mimeType || 'image/png') + ';base64,' + data.data;
+        area.innerHTML = '<img src="' + imgSrc + '" alt="Scene ' + (idx + 1) + '">' +
+                         '<div style="margin-top:8px;"><button class="btn-ghost" onclick="generateSceneImage(' + idx + ')">&#128260; ပြန်ဖန်တီးပါ</button></div>';
+      } else {
+        area.innerHTML = '<div class="scene-image-placeholder">ရုပ်ပုံမထွက်ပါ — နောက်မှ ကြိုးစားပါ</div>';
+      }
+    })
+    .catch(function(err) {
+      area.innerHTML = '<div style="color:var(--error);font-size:12px;padding:10px;">Error: ' + escapeHtml(err.message) + '</div>' +
+                       '<button class="btn-ghost" onclick="generateSceneImage(' + idx + ')">ထပ်စမ်းပါ</button>';
+    });
+}
+
+// ===== Helpers =====
 function setLoading(id, show) {
   var el = document.getElementById(id);
   if (show) el.classList.add('show'); else el.classList.remove('show');
