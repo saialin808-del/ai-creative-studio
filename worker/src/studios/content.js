@@ -4,8 +4,8 @@
 // Shared Logic (Parser, AI Call, CMS) ကို core/ မှ ခေါ်သုံးသည်။
 
 import { getCMSData, buildSystemPrompt } from '../core/cms';
-import { callGeminiText, callGeminiImage, callGeminiMultimodal } from '../core/ai';
-import { parseContentResponse, parseVideoPlan } from '../core/utilities';
+import { callGeminiText, callGeminiImage, callGeminiMultimodal, callGeminiTTS } from '../core/ai';
+import { parseContentResponse, parseVideoPlan, pcmToWavBase64 } from '../core/utilities';
 
 const CMS_STUDIO = 'CONTENT';
 const CMS_VIDEO = 'CONTENTVIDEO';
@@ -22,8 +22,23 @@ export async function generateContent(env, { idea, type, plan, apiKey }) {
   const prompt = system
     ? (system + '\n\nUSER IDEA:\n' + String(idea).trim())
     : String(idea).trim();
-  const raw = await callGeminiText(env, { model: TEXT_MODEL, prompt, apiKey });
+    const raw = await callGeminiText(env, { model: TEXT_MODEL, prompt, apiKey });
   return parseContentResponse(raw);
+}
+
+// ============================================================
+// Tab 1 — Text → Voice (TTS)
+// Gemini TTS မှ L16 PCM ကို WAV အဖြစ် ပြောင်းပြီး ပြန်ပေးသည်
+// ============================================================
+export async function generateContentVoice(env, { text, voiceName, apiKey }) {
+  if (!text || !String(text).trim()) throw new Error('missing_text');
+  const tts = await callGeminiTTS(env, {
+    text: String(text).trim(),
+    voiceName: voiceName || 'Kore',
+    apiKey,
+  });
+  const wavBase64 = pcmToWavBase64(tts.data, { sampleRate: 24000, bitsPerSample: 16, channels: 1 });
+  return { data: wavBase64, mimeType: 'audio/wav' };
 }
 
 // ============================================================
@@ -73,7 +88,7 @@ export async function generateContentVideoImage(env, { prompt, apiKey }) {
 }
 
 // ============================================================
-// Tab 3 — SRT from Audio (Audio → Transcribe → SRT)
+// Tab 1 — SRT from Audio (Audio → Transcribe → SRT)
 // Gemini Multimodal ဖြင့် Audio ကို တိုက်ရိုက် ပေးပို့သည်
 // ============================================================
 export async function generateContentSrt(env, { audioBase64, mimeType, apiKey }) {
@@ -95,7 +110,7 @@ export async function generateContentSrt(env, { audioBase64, mimeType, apiKey })
 }
 
 // ============================================================
-// Tab 3 — Translate SRT (MY ↔ CN)
+// Tab 1 — Translate SRT (MY ↔ CN)
 // SRT Format (နံပါတ် + အချိန်) ကို ထိန်းသိမ်းပြီး စာသားကိုသာ ဘာသာပြန်သည်
 // ============================================================
 export async function translateContentSrt(env, { srtText, direction, apiKey }) {
@@ -111,4 +126,4 @@ export async function translateContentSrt(env, { srtText, direction, apiKey }) {
     String(srtText).trim();
   const raw = await callGeminiText(env, { model: TEXT_MODEL, prompt, apiKey });
   return { srt: raw ? raw.trim() : '' };
-}
+}   မှန်တလား
