@@ -1,4 +1,4 @@
-// AI Creative Studio — Cloudflare Worker 
+// AI Creative Studio — Cloudflare Worker (Phase 3e+ — hardened errors + Phase 2 core modular)
 import { signToken, verifyToken } from './core/auth';
 import { callGeminiText } from './core/ai';
 import { getCMSData, buildSystemPrompt } from './core/cms';
@@ -8,6 +8,7 @@ import { generateStory, reviseStory, generateStoryVideoPlan, generateStoryVideoI
 import { generateShort, reviseShort, generateShortVideoPlan, generateShortVideoImage } from './studios/short';
 import { generateImagePrompt, generateAdImagePrompt, generateImageFromPrompt } from './studios/image';
 import { generateVoiceAudio, transcribeAudio, generateVoiceSrt, translateVoiceSrt } from './studios/voice';
+import { generateShopContent, reviseShopContent, generateShopVideo, generateShopVideoImage } from './studios/shop';
 import { saveCreation, listCreations } from './core/creations';
 import { getUserApiKey, saveUserApiKey } from './core/utilities';
 import { APP_HTML } from './frontend';
@@ -16,6 +17,7 @@ import { STORY_HTML } from './frontend/story';
 import { SHORT_HTML } from './frontend/short';
 import { IMAGE_HTML } from './frontend/image';
 import { VOICE_HTML } from './frontend/voice';
+import { SHOP_HTML } from './frontend/shop';
 import { ADMIN_HTML, adminApi } from './admin';
 
 const cors = {
@@ -234,6 +236,7 @@ export default {
       if (path === '/app/short' || path === '/app/short/') return htmlPage(SHORT_HTML);
       if (path === '/app/image' || path === '/app/image/') return htmlPage(IMAGE_HTML);
       if (path === '/app/voice' || path === '/app/voice/') return htmlPage(VOICE_HTML);
+      if (path === '/app/shop' || path === '/app/shop/') return htmlPage(SHOP_HTML);
       if (path === '/admin' || path === '/admin/') return htmlPage(ADMIN_HTML);
       const adminResp = await adminApi(request, path, env, verifyToken);
       if (adminResp) return adminResp;
@@ -856,6 +859,97 @@ export default {
           return json({ ok: true, ...out }, 200, cors);
         } catch (e) {
           return json({ error: 'translate_error', detail: String((e && e.message) || e) }, 500, cors);
+        }
+      }
+
+      // ===== Shop Studio — Tab 1: Generate =====
+      if (path === '/api/studio/shop/content/generate' && request.method === 'POST') {
+        const token = bearer(request);
+        if (!token) return json({ error: 'unauthorized' }, 401, cors);
+        const payload = await verifyTokenSafe(env, token);
+        if (!payload) return json({ error: 'invalid_token' }, 401, cors);
+        const body = await request.json().catch(() => null);
+        if (!body || !body.idea) return json({ error: 'missing_idea' }, 400, cors);
+        const plan = await resolvePlan(env, payload);
+        const reqType = String(body.type || '1');
+        if (plan === 'FREE' && reqType !== '1') {
+          return json({ error: 'pro_only', detail: 'ဒီ feature က PRO အတွက်ပါ။' }, 403, cors);
+        }
+        try {
+          let apiKey = body.apiKey;
+          if (!apiKey) apiKey = await getUserApiKey(env, payload.sub);
+          const out = await generateShopContent(env, { idea: body.idea, type: reqType, plan, apiKey, images: body.images || [] });
+          return json({ ok: true, ...out }, 200, cors);
+        } catch (e) {
+          return json({ error: 'shop_content_error', detail: String((e && e.message) || e) }, 500, cors);
+        }
+      }
+
+      // ===== Shop Studio — Tab 1: Revise (Chat) =====
+      if (path === '/api/studio/shop/content/revise' && request.method === 'POST') {
+        const token = bearer(request);
+        if (!token) return json({ error: 'unauthorized' }, 401, cors);
+        const payload = await verifyTokenSafe(env, token);
+        if (!payload) return json({ error: 'invalid_token' }, 401, cors);
+        const body = await request.json().catch(() => null);
+        if (!body || !body.instruction) return json({ error: 'missing_instruction' }, 400, cors);
+        if (!body.currentContent) return json({ error: 'missing_current_content' }, 400, cors);
+        const plan = await resolvePlan(env, payload);
+        const reqType = String(body.type || '1');
+        if (plan === 'FREE' && reqType !== '1') {
+          return json({ error: 'pro_only', detail: 'ဒီ feature က PRO အတွက်ပါ။' }, 403, cors);
+        }
+        try {
+          let apiKey = body.apiKey;
+          if (!apiKey) apiKey = await getUserApiKey(env, payload.sub);
+          const out = await reviseShopContent(env, {
+            idea: body.idea || '', type: reqType, currentContent: body.currentContent,
+            instruction: body.instruction, plan, apiKey,
+          });
+          return json({ ok: true, ...out }, 200, cors);
+        } catch (e) {
+          return json({ error: 'revise_error', detail: String((e && e.message) || e) }, 500, cors);
+        }
+      }
+
+      // ===== Shop Studio — Tab 2: Video Plan =====
+      if (path === '/api/studio/shop/video/generate' && request.method === 'POST') {
+        const token = bearer(request);
+        if (!token) return json({ error: 'unauthorized' }, 401, cors);
+        const payload = await verifyTokenSafe(env, token);
+        if (!payload) return json({ error: 'invalid_token' }, 401, cors);
+        const body = await request.json().catch(() => null);
+        if (!body || !body.idea) return json({ error: 'missing_idea' }, 400, cors);
+        const plan = await resolvePlan(env, payload);
+        const reqType = String(body.type || '1');
+        if (plan === 'FREE' && reqType !== '1') {
+          return json({ error: 'pro_only', detail: 'ဒီ feature က PRO အတွက်ပါ။' }, 403, cors);
+        }
+        try {
+          let apiKey = body.apiKey;
+          if (!apiKey) apiKey = await getUserApiKey(env, payload.sub);
+          const out = await generateShopVideo(env, { idea: body.idea, type: reqType, plan, apiKey, images: body.images || [] });
+          return json({ ok: true, ...out }, 200, cors);
+        } catch (e) {
+          return json({ error: 'video_error', detail: String((e && e.message) || e) }, 500, cors);
+        }
+      }
+
+      // ===== Shop Studio — Tab 2: Video Scene/Character/Product Image =====
+      if (path === '/api/studio/shop/video-image' && request.method === 'POST') {
+        const token = bearer(request);
+        if (!token) return json({ error: 'unauthorized' }, 401, cors);
+        const payload = await verifyTokenSafe(env, token);
+        if (!payload) return json({ error: 'invalid_token' }, 401, cors);
+        const body = await request.json().catch(() => null);
+        if (!body || !body.prompt) return json({ error: 'missing_prompt' }, 400, cors);
+        try {
+          let apiKey = body.apiKey;
+          if (!apiKey) apiKey = await getUserApiKey(env, payload.sub);
+          const out = await generateShopVideoImage(env, { prompt: body.prompt, apiKey });
+          return json({ ok: true, data: out.data, mimeType: out.mimeType }, 200, cors);
+        } catch (e) {
+          return json({ error: 'image_error', detail: String((e && e.message) || e) }, 500, cors);
         }
       }
 
