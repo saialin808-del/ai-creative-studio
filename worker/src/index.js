@@ -581,6 +581,29 @@ export default {
         }
       }
 
+            // ===== Creations — Save (Studio UIs က Save ခလုတ်တွေက ဒီ endpoint ကို သုံးသည်) =====
+      if (path === '/api/creations' && request.method === 'POST') {
+        const token = bearer(request);
+        if (!token) return json({ error: 'unauthorized' }, 401, cors);
+        const payload = await verifyTokenSafe(env, token);
+        if (!payload) return json({ error: 'invalid_token' }, 401, cors);
+        const body = await request.json().catch(() => null);
+        if (!body || !body.ai_output) return json({ error: 'missing_output' }, 400, cors);
+        try {
+          await saveCreation(env, {
+            user_id: payload.sub,
+            studio: body.studio || 'UNKNOWN',
+            type: body.type || '1',
+            original_prompt: body.original_prompt || '',
+            ai_output: body.ai_output,
+            title: body.title || 'Untitled',
+          });
+          return json({ ok: true }, 200, cors);
+        } catch (e) {
+          return json({ error: 'save_error', detail: String((e && e.message) || e) }, 500, cors);
+        }
+      }
+
       if (path === '/api/creations' && request.method === 'GET') {
         const token = bearer(request);
         if (!token) return json({ error: 'unauthorized' }, 401, cors);
