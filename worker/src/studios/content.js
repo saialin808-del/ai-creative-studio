@@ -126,4 +126,4 @@ export async function translateContentSrt(env, { srtText, direction, apiKey }) {
     String(srtText).trim();
   const raw = await callGeminiText(env, { model: TEXT_MODEL, prompt, apiKey });
   return { srt: raw ? raw.trim() : '' };
-}   မှန်တလား
+} 
