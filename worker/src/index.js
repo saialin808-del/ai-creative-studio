@@ -1,15 +1,17 @@
-// AI Creative Studio — Cloudflare Worker (Content Studio UI + Backend)
+// AI Creative Studio — Cloudflare Worker (Phase 5 — Short Studio added)
 import { signToken, verifyToken } from './core/auth';
 import { callGeminiText } from './core/ai';
 import { getCMSData, buildSystemPrompt } from './core/cms';
 import { generateStudio } from './studio';
 import { generateContent, reviseContent, generateContentVoice, generateContentVideo, generateContentVideoImage, generateContentSrt, translateContentSrt } from './studios/content';
 import { generateStory, reviseStory, generateStoryVideoPlan, generateStoryVideoImage } from './studios/story';
+import { generateShort, reviseShort, generateShortVideoPlan, generateShortVideoImage } from './studios/short';
 import { saveCreation, listCreations } from './core/creations';
 import { getUserApiKey, saveUserApiKey } from './core/utilities';
 import { APP_HTML } from './frontend';
 import { CONTENT_HTML } from './frontend/content';
 import { STORY_HTML } from './frontend/story';
+import { SHORT_HTML } from './frontend/short';
 import { ADMIN_HTML, adminApi } from './admin';
 
 const cors = {
@@ -50,7 +52,7 @@ function homePage() {
     '<body style="font-family:sans-serif;max-width:640px;margin:24px auto;padding:0 16px;background:#F4F3EE;color:#1A1B1C">' +
     '<h1 style="color:#1b6d96">🎨 AI Creative Studio</h1>' +
     '<p>API is running.</p>' +
-    '<ul><li><a href="/auth/result">Login (Google)</a></li><li><a href="/ai-test">AI Router Test</a></li><li><a href="/cms-test">CMS Test</a></li><li><a href="/studio-test">Studio Test</a></li><li><a href="/creations-test">Creations Test</a></li><li><a href="/app/content">Content Studio (New)</a></li></ul>' +
+    '<ul><li><a href="/auth/result">Login (Google)</a></li><li><a href="/ai-test">AI Router Test</a></li><li><a href="/cms-test">CMS Test</a></li><li><a href="/studio-test">Studio Test</a></li><li><a href="/creations-test">Creations Test</a></li><li><a href="/app/content">Content Studio (New)</a></li><li><a href="/app/story">Story Studio (New)</a></li><li><a href="/app/short">Short Studio (New)</a></li></ul>' +
     '</body></html>';
 }
 
@@ -63,7 +65,7 @@ function loginResultPage() {
     '<br><button onclick="cp()" style="margin-top:8px;padding:10px 22px;font-size:14px">📋 Copy Token</button>' +
     '<div id="status" style="margin-top:8px;font-size:13px"></div>' +
     '<script>' +
-    'var h=location.hash.replace("#token=","");' +
+    'var h=location.hash.replace("#token="","");' +
     'document.getElementById("tok").value=decodeURIComponent(h);' +
     'function cp(){var t=document.getElementById("tok");t.select();document.execCommand("copy");document.getElementById("status").textContent="Copied ✅";}' +
     '<\/script></body></html>';
@@ -223,8 +225,9 @@ export default {
 
       if (path === '/auth/result' && request.method === 'GET') return htmlPage(loginResultPage());
       if (path === '/app' || path === '/app/') return htmlPage(APP_HTML);
-            if (path === '/app/content' || path === '/app/content/') return htmlPage(CONTENT_HTML);
+      if (path === '/app/content' || path === '/app/content/') return htmlPage(CONTENT_HTML);
       if (path === '/app/story' || path === '/app/story/') return htmlPage(STORY_HTML);
+      if (path === '/app/short' || path === '/app/short/') return htmlPage(SHORT_HTML);
       if (path === '/admin' || path === '/admin/') return htmlPage(ADMIN_HTML);
       const adminResp = await adminApi(request, path, env, verifyToken);
       if (adminResp) return adminResp;
@@ -383,7 +386,7 @@ export default {
         }
       }
 
-            // ===== Content Studio — Tab 1: Text → Voice (TTS) =====
+      // ===== Content Studio — Tab 1: Text → Voice (TTS) =====
       if (path === '/api/studio/content/tts' && request.method === 'POST') {
         const token = bearer(request);
         if (!token) return json({ error: 'unauthorized' }, 401, cors);
@@ -490,7 +493,7 @@ export default {
         }
       }
 
-            // ===== Story Studio — Tab 1: Generate =====
+      // ===== Story Studio — Tab 1: Generate =====
       if (path === '/api/studio/story/generate' && request.method === 'POST') {
         const token = bearer(request);
         if (!token) return json({ error: 'unauthorized' }, 401, cors);
@@ -581,7 +584,101 @@ export default {
         }
       }
 
-            // ===== Creations — Save (Studio UIs က Save ခလုတ်တွေက ဒီ endpoint ကို သုံးသည်) =====
+      // ===== Short Studio — Tab 1: Generate =====
+      if (path === '/api/studio/short/generate' && request.method === 'POST') {
+        const token = bearer(request);
+        if (!token) return json({ error: 'unauthorized' }, 401, cors);
+        const payload = await verifyTokenSafe(env, token);
+        if (!payload) return json({ error: 'invalid_token' }, 401, cors);
+        const body = await request.json().catch(() => null);
+        if (!body || !body.idea) return json({ error: 'missing_idea' }, 400, cors);
+        const plan = await resolvePlan(env, payload);
+        const reqType = String(body.type || '1');
+        if (plan === 'FREE' && reqType !== '1') {
+          return json({ error: 'pro_only', detail: 'ဒီ feature က PRO အတွက်ပါ။ Type 1 ကို သုံးပါ၊ သို့မဟုတ် upgrade လုပ်ပါ။' }, 403, cors);
+        }
+        try {
+          let apiKey = body.apiKey;
+          if (!apiKey) apiKey = await getUserApiKey(env, payload.sub);
+          const out = await generateShort(env, { idea: body.idea, type: reqType, plan, apiKey });
+          return json({ ok: true, ...out }, 200, cors);
+        } catch (e) {
+          return json({ error: 'short_error', detail: String((e && e.message) || e) }, 500, cors);
+        }
+      }
+
+      // ===== Short Studio — Tab 1: Revise (Chat) =====
+      if (path === '/api/studio/short/revise' && request.method === 'POST') {
+        const token = bearer(request);
+        if (!token) return json({ error: 'unauthorized' }, 401, cors);
+        const payload = await verifyTokenSafe(env, token);
+        if (!payload) return json({ error: 'invalid_token' }, 401, cors);
+        const body = await request.json().catch(() => null);
+        if (!body || !body.instruction) return json({ error: 'missing_instruction' }, 400, cors);
+        if (!body.currentShort) return json({ error: 'missing_current_short' }, 400, cors);
+        const plan = await resolvePlan(env, payload);
+        const reqType = String(body.type || '1');
+        if (plan === 'FREE' && reqType !== '1') {
+          return json({ error: 'pro_only', detail: 'ဒီ feature က PRO အတွက်ပါ။' }, 403, cors);
+        }
+        try {
+          let apiKey = body.apiKey;
+          if (!apiKey) apiKey = await getUserApiKey(env, payload.sub);
+          const out = await reviseShort(env, {
+            idea: body.idea || '', type: reqType, currentShort: body.currentShort,
+            instruction: body.instruction, plan, apiKey,
+          });
+          return json({ ok: true, ...out }, 200, cors);
+        } catch (e) {
+          return json({ error: 'revise_error', detail: String((e && e.message) || e) }, 500, cors);
+        }
+      }
+
+      // ===== Short Studio — Tab 2: Video Plan (with Reference Images) =====
+      if (path === '/api/studio/short/video' && request.method === 'POST') {
+        const token = bearer(request);
+        if (!token) return json({ error: 'unauthorized' }, 401, cors);
+        const payload = await verifyTokenSafe(env, token);
+        if (!payload) return json({ error: 'invalid_token' }, 401, cors);
+        const body = await request.json().catch(() => null);
+        if (!body || !body.idea) return json({ error: 'missing_idea' }, 400, cors);
+        const plan = await resolvePlan(env, payload);
+        const reqType = String(body.type || '1');
+        if (plan === 'FREE' && reqType !== '1') {
+          return json({ error: 'pro_only', detail: 'ဒီ feature က PRO အတွက်ပါ။' }, 403, cors);
+        }
+        try {
+          let apiKey = body.apiKey;
+          if (!apiKey) apiKey = await getUserApiKey(env, payload.sub);
+          const out = await generateShortVideoPlan(env, {
+            idea: body.idea, type: reqType, plan, apiKey,
+            images: body.images || [],
+          });
+          return json({ ok: true, ...out }, 200, cors);
+        } catch (e) {
+          return json({ error: 'video_error', detail: String((e && e.message) || e) }, 500, cors);
+        }
+      }
+
+      // ===== Short Studio — Tab 2: Video Scene/Character Image =====
+      if (path === '/api/studio/short/video-image' && request.method === 'POST') {
+        const token = bearer(request);
+        if (!token) return json({ error: 'unauthorized' }, 401, cors);
+        const payload = await verifyTokenSafe(env, token);
+        if (!payload) return json({ error: 'invalid_token' }, 401, cors);
+        const body = await request.json().catch(() => null);
+        if (!body || !body.prompt) return json({ error: 'missing_prompt' }, 400, cors);
+        try {
+          let apiKey = body.apiKey;
+          if (!apiKey) apiKey = await getUserApiKey(env, payload.sub);
+          const out = await generateShortVideoImage(env, { prompt: body.prompt, apiKey });
+          return json({ ok: true, data: out.data, mimeType: out.mimeType }, 200, cors);
+        } catch (e) {
+          return json({ error: 'image_error', detail: String((e && e.message) || e) }, 500, cors);
+        }
+      }
+
+      // ===== Creations — Save (Studio UIs က Save ခလုတ်တွေက ဒီ endpoint ကို သုံးသည်) =====
       if (path === '/api/creations' && request.method === 'POST') {
         const token = bearer(request);
         if (!token) return json({ error: 'unauthorized' }, 401, cors);
