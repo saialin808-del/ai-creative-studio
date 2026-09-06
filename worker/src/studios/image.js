@@ -1,4 +1,4 @@
-// AI Creative Studio — Image Studio Backend (Phase 6)
+// AI Creative Studio — Image Studio Backend 
 // Studio Isolation: ဤ File သည် Image Studio နှင့်သာ သက်ဆိုင်သည်။
 // အခြား Studio ကို မထိခိုက်စေရ။
 
