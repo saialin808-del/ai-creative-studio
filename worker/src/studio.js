@@ -1,4 +1,4 @@
-// AI Creative Studio — Studio Service (Phase 3d — text + image) [Phase 2: core imports]
+// AI Creative Studio — Studio Service 
 import { getCMSData, buildSystemPrompt } from './core/cms';
 import { callGeminiText, callGeminiImage } from './core/ai';
 
