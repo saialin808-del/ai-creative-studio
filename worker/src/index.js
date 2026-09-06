@@ -1,4 +1,4 @@
-// AI Creative Studio — Cloudflare Worker (Phase 3e+ — hardened errors + Phase 2 core modular)
+// AI Creative Studio — Cloudflare Worker (Phase 3b — Content Studio UI + Backend)
 import { signToken, verifyToken } from './core/auth';
 import { callGeminiText } from './core/ai';
 import { getCMSData, buildSystemPrompt } from './core/cms';
@@ -7,6 +7,7 @@ import { generateContent, reviseContent, generateContentVideo, generateContentVi
 import { saveCreation, listCreations } from './core/creations';
 import { getUserApiKey, saveUserApiKey } from './core/utilities';
 import { APP_HTML } from './frontend';
+import { CONTENT_HTML } from './frontend/content';
 import { ADMIN_HTML, adminApi } from './admin';
 
 const cors = {
@@ -47,7 +48,7 @@ function homePage() {
     '<body style="font-family:sans-serif;max-width:640px;margin:24px auto;padding:0 16px;background:#F4F3EE;color:#1A1B1C">' +
     '<h1 style="color:#1b6d96">🎨 AI Creative Studio</h1>' +
     '<p>API is running.</p>' +
-    '<ul><li><a href="/auth/result">Login (Google)</a></li><li><a href="/ai-test">AI Router Test</a></li><li><a href="/cms-test">CMS Test</a></li><li><a href="/studio-test">Studio Test</a></li><li><a href="/creations-test">Creations Test</a></li></ul>' +
+    '<ul><li><a href="/auth/result">Login (Google)</a></li><li><a href="/ai-test">AI Router Test</a></li><li><a href="/cms-test">CMS Test</a></li><li><a href="/studio-test">Studio Test</a></li><li><a href="/creations-test">Creations Test</a></li><li><a href="/app/content">Content Studio (New)</a></li></ul>' +
     '</body></html>';
 }
 
@@ -220,6 +221,7 @@ export default {
 
       if (path === '/auth/result' && request.method === 'GET') return htmlPage(loginResultPage());
       if (path === '/app' || path === '/app/') return htmlPage(APP_HTML);
+      if (path === '/app/content' || path === '/app/content/') return htmlPage(CONTENT_HTML);
       if (path === '/admin' || path === '/admin/') return htmlPage(ADMIN_HTML);
       const adminResp = await adminApi(request, path, env, verifyToken);
       if (adminResp) return adminResp;
@@ -303,7 +305,6 @@ export default {
           return json({ error: 'pro_only', detail: 'ဒီ feature က PRO အတွက်ပါ။ Type 1 ကို သုံးပါ၊ သို့မဟုတ် upgrade လုပ်ပါ။' }, 403, cors);
         }
         try {
-          // BYOK: Request ထဲ Key မပါလျှင် User သိမ်းထားသော Key ကို အလိုအလျောက် ရှာသည်
           let apiKey = body.apiKey;
           if (!apiKey) apiKey = await getUserApiKey(env, payload.sub);
           const out = await generateStudio(env, {
@@ -322,7 +323,7 @@ export default {
             });
           } catch (e) {}
           return json(out, 200, cors);
-                } catch (e) {
+        } catch (e) {
           return json({ error: 'studio_error', detail: String((e && e.message) || e) }, 500, cors);
         }
       }
