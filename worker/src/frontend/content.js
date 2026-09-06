@@ -1,4 +1,4 @@
-// AI Creative Studio — Content Studio Frontend (Phase 3 — Fixed, 2 Tabs)
+// AI Creative Studio — Content Studio Frontend 
 // Tab 1: Content + Revise + Text→Voice + SRT & Translation
 // Tab 2: Video Plan + Scene Image
 // Dark Theme preserved from Source
