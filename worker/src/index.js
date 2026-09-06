@@ -1,4 +1,4 @@
-// AI Creative Studio — Cloudflare Worker (Phase 3e+ — hardened errors + Phase 2 core modular)
+// AI Creative Studio — Cloudflare Worker 
 import { signToken, verifyToken } from './core/auth';
 import { callGeminiText } from './core/ai';
 import { getCMSData, buildSystemPrompt } from './core/cms';
