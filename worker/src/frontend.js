@@ -1,4 +1,4 @@
-// AI Creative Studio — Home Page Frontend (Phase 9 — Dark Theme)
+// AI Creative Studio — Home Page Frontend 
 // Replaces old generic light-theme frontend.js
 // Features: Sidebar nav, Hero banner, 6 Studio cards, Recent Projects, BYOK API Key setting
 
