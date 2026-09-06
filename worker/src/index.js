@@ -1,4 +1,4 @@
-// AI Creative Studio — Cloudflare Worker (Phase 6 — Image Studio added)
+// AI Creative Studio — Cloudflare Worker 
 import { signToken, verifyToken } from './core/auth';
 import { callGeminiText } from './core/ai';
 import { getCMSData, buildSystemPrompt } from './core/cms';
@@ -7,6 +7,7 @@ import { generateContent, reviseContent, generateContentVoice, generateContentVi
 import { generateStory, reviseStory, generateStoryVideoPlan, generateStoryVideoImage } from './studios/story';
 import { generateShort, reviseShort, generateShortVideoPlan, generateShortVideoImage } from './studios/short';
 import { generateImagePrompt, generateAdImagePrompt, generateImageFromPrompt } from './studios/image';
+import { generateVoiceAudio, transcribeAudio, generateVoiceSrt, translateVoiceSrt } from './studios/voice';
 import { saveCreation, listCreations } from './core/creations';
 import { getUserApiKey, saveUserApiKey } from './core/utilities';
 import { APP_HTML } from './frontend';
@@ -14,6 +15,7 @@ import { CONTENT_HTML } from './frontend/content';
 import { STORY_HTML } from './frontend/story';
 import { SHORT_HTML } from './frontend/short';
 import { IMAGE_HTML } from './frontend/image';
+import { VOICE_HTML } from './frontend/voice';
 import { ADMIN_HTML, adminApi } from './admin';
 
 const cors = {
@@ -54,7 +56,7 @@ function homePage() {
     '<body style="font-family:sans-serif;max-width:640px;margin:24px auto;padding:0 16px;background:#F4F3EE;color:#1A1B1C">' +
     '<h1 style="color:#1b6d96">🎨 AI Creative Studio</h1>' +
     '<p>API is running.</p>' +
-    '<ul><li><a href="/auth/result">Login (Google)</a></li><li><a href="/ai-test">AI Router Test</a></li><li><a href="/cms-test">CMS Test</a></li><li><a href="/studio-test">Studio Test</a></li><li><a href="/creations-test">Creations Test</a></li><li><a href="/app/content">Content Studio</a></li><li><a href="/app/story">Story Studio</a></li><li><a href="/app/short">Short Studio</a></li><li><a href="/app/image">Image Studio</a></li></ul>' +
+    '<ul><li><a href="/auth/result">Login (Google)</a></li><li><a href="/ai-test">AI Router Test</a></li><li><a href="/cms-test">CMS Test</a></li><li><a href="/studio-test">Studio Test</a></li><li><a href="/creations-test">Creations Test</a></li></ul>' +
     '</body></html>';
 }
 
@@ -231,6 +233,7 @@ export default {
       if (path === '/app/story' || path === '/app/story/') return htmlPage(STORY_HTML);
       if (path === '/app/short' || path === '/app/short/') return htmlPage(SHORT_HTML);
       if (path === '/app/image' || path === '/app/image/') return htmlPage(IMAGE_HTML);
+      if (path === '/app/voice' || path === '/app/voice/') return htmlPage(VOICE_HTML);
       if (path === '/admin' || path === '/admin/') return htmlPage(ADMIN_HTML);
       const adminResp = await adminApi(request, path, env, verifyToken);
       if (adminResp) return adminResp;
@@ -314,6 +317,7 @@ export default {
           return json({ error: 'pro_only', detail: 'ဒီ feature က PRO အတွက်ပါ။ Type 1 ကို သုံးပါ၊ သို့မဟုတ် upgrade လုပ်ပါ။' }, 403, cors);
         }
         try {
+          // BYOK: Request ထဲ Key မပါလျှင် User သိမ်းထားသော Key ကို အလိုအလျောက် ရှာသည်
           let apiKey = body.apiKey;
           if (!apiKey) apiKey = await getUserApiKey(env, payload.sub);
           const out = await generateStudio(env, {
@@ -452,7 +456,7 @@ export default {
         }
       }
 
-      // ===== Content Studio — Tab 1: SRT from Audio =====
+      // ===== Content Studio — Tab 3: SRT from Audio =====
       if (path === '/api/studio/content/srt' && request.method === 'POST') {
         const token = bearer(request);
         if (!token) return json({ error: 'unauthorized' }, 401, cors);
@@ -474,7 +478,7 @@ export default {
         }
       }
 
-      // ===== Content Studio — Tab 1: Translate SRT =====
+      // ===== Content Studio — Tab 3: Translate SRT =====
       if (path === '/api/studio/content/translate-srt' && request.method === 'POST') {
         const token = bearer(request);
         if (!token) return json({ error: 'unauthorized' }, 401, cors);
@@ -537,8 +541,11 @@ export default {
           let apiKey = body.apiKey;
           if (!apiKey) apiKey = await getUserApiKey(env, payload.sub);
           const out = await reviseStory(env, {
-            idea: body.idea || '', type: reqType, currentStory: body.currentStory,
-            instruction: body.instruction, plan, apiKey,
+            idea: body.idea || '',
+            type: reqType,
+            currentStory: body.currentStory,
+            instruction: body.instruction,
+            plan, apiKey,
           });
           return json({ ok: true, ...out }, 200, cors);
         } catch (e) {
@@ -748,6 +755,107 @@ export default {
           return json({ ok: true, data: out.data, mimeType: out.mimeType }, 200, cors);
         } catch (e) {
           return json({ error: 'image_generate_error', detail: String((e && e.message) || e) }, 500, cors);
+        }
+      }
+
+      // ===== Voice Studio — Tab 1: Text → Voice (TTS) =====
+      if (path === '/api/studio/voice/tts' && request.method === 'POST') {
+        const token = bearer(request);
+        if (!token) return json({ error: 'unauthorized' }, 401, cors);
+        const payload = await verifyTokenSafe(env, token);
+        if (!payload) return json({ error: 'invalid_token' }, 401, cors);
+        const body = await request.json().catch(() => null);
+        if (!body || !body.text) return json({ error: 'missing_text' }, 400, cors);
+        try {
+          let apiKey = body.apiKey;
+          if (!apiKey) apiKey = await getUserApiKey(env, payload.sub);
+          const out = await generateVoiceAudio(env, {
+            text: body.text,
+            voiceName: body.voiceName || 'Kore',
+            apiKey,
+          });
+          return json({ ok: true, data: out.data, mimeType: out.mimeType }, 200, cors);
+        } catch (e) {
+          return json({ error: 'tts_error', detail: String((e && e.message) || e) }, 500, cors);
+        }
+      }
+
+      // ===== Voice Studio — Tab 2: Audio → Text (Transcribe) =====
+      if (path === '/api/studio/voice/transcribe' && request.method === 'POST') {
+        const token = bearer(request);
+        if (!token) return json({ error: 'unauthorized' }, 401, cors);
+        const payload = await verifyTokenSafe(env, token);
+        if (!payload) return json({ error: 'invalid_token' }, 401, cors);
+        const body = await request.json().catch(() => null);
+        if (!body || !body.audioBase64) return json({ error: 'missing_audio' }, 400, cors);
+        const plan = await resolvePlan(env, payload);
+        const reqType = String(body.type || '1');
+        if (plan === 'FREE' && reqType !== '1') {
+          return json({ error: 'pro_only', detail: 'ဒီ feature က PRO အတွက်ပါ။' }, 403, cors);
+        }
+        try {
+          let apiKey = body.apiKey;
+          if (!apiKey) apiKey = await getUserApiKey(env, payload.sub);
+          const out = await transcribeAudio(env, {
+            audioBase64: body.audioBase64,
+            mimeType: body.mimeType || 'audio/mpeg',
+            type: reqType, plan, apiKey,
+          });
+          return json({ ok: true, ...out }, 200, cors);
+        } catch (e) {
+          return json({ error: 'transcribe_error', detail: String((e && e.message) || e) }, 500, cors);
+        }
+      }
+
+      // ===== Voice Studio — Tab 1 & 2: SRT from Audio (PRO only) =====
+      if (path === '/api/studio/voice/srt' && request.method === 'POST') {
+        const token = bearer(request);
+        if (!token) return json({ error: 'unauthorized' }, 401, cors);
+        const payload = await verifyTokenSafe(env, token);
+        if (!payload) return json({ error: 'invalid_token' }, 401, cors);
+        const body = await request.json().catch(() => null);
+        if (!body || !body.audioBase64) return json({ error: 'missing_audio' }, 400, cors);
+        const plan = await resolvePlan(env, payload);
+        if (plan !== 'PRO') {
+          return json({ error: 'pro_only', detail: 'ဒီ feature က PRO အတွက်ပါ။' }, 403, cors);
+        }
+        try {
+          let apiKey = body.apiKey;
+          if (!apiKey) apiKey = await getUserApiKey(env, payload.sub);
+          const out = await generateVoiceSrt(env, {
+            audioBase64: body.audioBase64,
+            mimeType: body.mimeType || 'audio/mpeg',
+            type: String(body.type || '2'), plan, apiKey,
+          });
+          return json({ ok: true, ...out }, 200, cors);
+        } catch (e) {
+          return json({ error: 'srt_error', detail: String((e && e.message) || e) }, 500, cors);
+        }
+      }
+
+      // ===== Voice Studio — Tab 1 & 2: Translate SRT (PRO only) =====
+      if (path === '/api/studio/voice/translate-srt' && request.method === 'POST') {
+        const token = bearer(request);
+        if (!token) return json({ error: 'unauthorized' }, 401, cors);
+        const payload = await verifyTokenSafe(env, token);
+        if (!payload) return json({ error: 'invalid_token' }, 401, cors);
+        const body = await request.json().catch(() => null);
+        if (!body || !body.srtText) return json({ error: 'missing_srt' }, 400, cors);
+        const plan = await resolvePlan(env, payload);
+        if (plan !== 'PRO') {
+          return json({ error: 'pro_only', detail: 'ဒီ feature က PRO အတွက်ပါ။' }, 403, cors);
+        }
+        try {
+          let apiKey = body.apiKey;
+          if (!apiKey) apiKey = await getUserApiKey(env, payload.sub);
+          const out = await translateVoiceSrt(env, {
+            srtText: body.srtText,
+            direction: body.direction || 'MY_TO_CN',
+            type: String(body.type || '2'), plan, apiKey,
+          });
+          return json({ ok: true, ...out }, 200, cors);
+        } catch (e) {
+          return json({ error: 'translate_error', detail: String((e && e.message) || e) }, 500, cors);
         }
       }
 
