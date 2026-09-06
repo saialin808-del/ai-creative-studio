@@ -9,7 +9,7 @@ import { generateShort, reviseShort, generateShortVideoPlan, generateShortVideoI
 import { generateImagePrompt, generateAdImagePrompt, generateImageFromPrompt } from './studios/image';
 import { generateVoiceAudio, transcribeAudio, generateVoiceSrt, translateVoiceSrt } from './studios/voice';
 import { generateShopContent, reviseShopContent, generateShopVideo, generateShopVideoImage } from './studios/shop';
-import { saveCreation, listCreations } from './core/creations';
+import { saveCreation, listCreations, deleteCreation } from './core/creations';
 import { getUserApiKey, saveUserApiKey } from './core/utilities';
 import { APP_HTML } from './frontend';
 import { CONTENT_HTML } from './frontend/content';
@@ -18,11 +18,12 @@ import { SHORT_HTML } from './frontend/short';
 import { IMAGE_HTML } from './frontend/image';
 import { VOICE_HTML } from './frontend/voice';
 import { SHOP_HTML } from './frontend/shop';
+import { CREATIONS_HTML } from './frontend/creations';
 import { ADMIN_HTML, adminApi } from './admin';
 
 const cors = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
+  'Access-Control-Allow-Methods': 'GET,POST,DELETE,OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type, Authorization',
 };
 
@@ -237,6 +238,7 @@ export default {
       if (path === '/app/image' || path === '/app/image/') return htmlPage(IMAGE_HTML);
       if (path === '/app/voice' || path === '/app/voice/') return htmlPage(VOICE_HTML);
       if (path === '/app/shop' || path === '/app/shop/') return htmlPage(SHOP_HTML);
+      if (path === '/app/creations' || path === '/app/creations/') return htmlPage(CREATIONS_HTML);
       if (path === '/admin' || path === '/admin/') return htmlPage(ADMIN_HTML);
       const adminResp = await adminApi(request, path, env, verifyToken);
       if (adminResp) return adminResp;
@@ -983,6 +985,22 @@ export default {
         if (!payload) return json({ error: 'invalid_token' }, 401, cors);
         const items = await listCreations(env, payload.sub);
         return json({ items }, 200, cors);
+      }
+
+      // ===== Creations — Delete (User ကိုယ်ပိုင် Creation သာ ဖျက်နိုင်သည်) =====
+      if (path.startsWith('/api/creations/') && request.method === 'DELETE') {
+        const token = bearer(request);
+        if (!token) return json({ error: 'unauthorized' }, 401, cors);
+        const payload = await verifyTokenSafe(env, token);
+        if (!payload) return json({ error: 'invalid_token' }, 401, cors);
+        const id = path.split('/').pop();
+        if (!id) return json({ error: 'missing_id' }, 400, cors);
+        try {
+          await deleteCreation(env, payload.sub, id);
+          return json({ ok: true }, 200, cors);
+        } catch (e) {
+          return json({ error: 'delete_error', detail: String((e && e.message) || e) }, 500, cors);
+        }
       }
 
       return json({ error: 'not_found', path }, 404, cors);
