@@ -4,10 +4,12 @@ import { callGeminiText } from './core/ai';
 import { getCMSData, buildSystemPrompt } from './core/cms';
 import { generateStudio } from './studio';
 import { generateContent, reviseContent, generateContentVoice, generateContentVideo, generateContentVideoImage, generateContentSrt, translateContentSrt } from './studios/content';
+import { generateStory, reviseStory, generateStoryVideoPlan, generateStoryVideoImage } from './studios/story';
 import { saveCreation, listCreations } from './core/creations';
 import { getUserApiKey, saveUserApiKey } from './core/utilities';
 import { APP_HTML } from './frontend';
 import { CONTENT_HTML } from './frontend/content';
+import { STORY_HTML } from './frontend/story';
 import { ADMIN_HTML, adminApi } from './admin';
 
 const cors = {
@@ -221,7 +223,8 @@ export default {
 
       if (path === '/auth/result' && request.method === 'GET') return htmlPage(loginResultPage());
       if (path === '/app' || path === '/app/') return htmlPage(APP_HTML);
-      if (path === '/app/content' || path === '/app/content/') return htmlPage(CONTENT_HTML);
+            if (path === '/app/content' || path === '/app/content/') return htmlPage(CONTENT_HTML);
+      if (path === '/app/story' || path === '/app/story/') return htmlPage(STORY_HTML);
       if (path === '/admin' || path === '/admin/') return htmlPage(ADMIN_HTML);
       const adminResp = await adminApi(request, path, env, verifyToken);
       if (adminResp) return adminResp;
@@ -484,6 +487,97 @@ export default {
           return json({ ok: true, srt: out.srt }, 200, cors);
         } catch (e) {
           return json({ error: 'translate_error', detail: String((e && e.message) || e) }, 500, cors);
+        }
+      }
+
+            // ===== Story Studio — Tab 1: Generate =====
+      if (path === '/api/studio/story/generate' && request.method === 'POST') {
+        const token = bearer(request);
+        if (!token) return json({ error: 'unauthorized' }, 401, cors);
+        const payload = await verifyTokenSafe(env, token);
+        if (!payload) return json({ error: 'invalid_token' }, 401, cors);
+        const body = await request.json().catch(() => null);
+        if (!body || !body.idea) return json({ error: 'missing_idea' }, 400, cors);
+        const plan = await resolvePlan(env, payload);
+        const reqType = String(body.type || '1');
+        if (plan === 'FREE' && reqType !== '1') {
+          return json({ error: 'pro_only', detail: 'ဒီ feature က PRO အတွက်ပါ။ Type 1 ကို သုံးပါ၊ သို့မဟုတ် upgrade လုပ်ပါ။' }, 403, cors);
+        }
+        try {
+          let apiKey = body.apiKey;
+          if (!apiKey) apiKey = await getUserApiKey(env, payload.sub);
+          const out = await generateStory(env, { idea: body.idea, type: reqType, plan, apiKey });
+          return json({ ok: true, ...out }, 200, cors);
+        } catch (e) {
+          return json({ error: 'story_error', detail: String((e && e.message) || e) }, 500, cors);
+        }
+      }
+
+      // ===== Story Studio — Tab 1: Revise (Chat) =====
+      if (path === '/api/studio/story/revise' && request.method === 'POST') {
+        const token = bearer(request);
+        if (!token) return json({ error: 'unauthorized' }, 401, cors);
+        const payload = await verifyTokenSafe(env, token);
+        if (!payload) return json({ error: 'invalid_token' }, 401, cors);
+        const body = await request.json().catch(() => null);
+        if (!body || !body.instruction) return json({ error: 'missing_instruction' }, 400, cors);
+        if (!body.currentStory) return json({ error: 'missing_current_story' }, 400, cors);
+        const plan = await resolvePlan(env, payload);
+        const reqType = String(body.type || '1');
+        if (plan === 'FREE' && reqType !== '1') {
+          return json({ error: 'pro_only', detail: 'ဒီ feature က PRO အတွက်ပါ။' }, 403, cors);
+        }
+        try {
+          let apiKey = body.apiKey;
+          if (!apiKey) apiKey = await getUserApiKey(env, payload.sub);
+          const out = await reviseStory(env, {
+            idea: body.idea || '', type: reqType, currentStory: body.currentStory,
+            instruction: body.instruction, plan, apiKey,
+          });
+          return json({ ok: true, ...out }, 200, cors);
+        } catch (e) {
+          return json({ error: 'revise_error', detail: String((e && e.message) || e) }, 500, cors);
+        }
+      }
+
+      // ===== Story Studio — Tab 2: Video Plan =====
+      if (path === '/api/studio/story/video' && request.method === 'POST') {
+        const token = bearer(request);
+        if (!token) return json({ error: 'unauthorized' }, 401, cors);
+        const payload = await verifyTokenSafe(env, token);
+        if (!payload) return json({ error: 'invalid_token' }, 401, cors);
+        const body = await request.json().catch(() => null);
+        if (!body || !body.idea) return json({ error: 'missing_idea' }, 400, cors);
+        const plan = await resolvePlan(env, payload);
+        const reqType = String(body.type || '1');
+        if (plan === 'FREE' && reqType !== '1') {
+          return json({ error: 'pro_only', detail: 'ဒီ feature က PRO အတွက်ပါ။' }, 403, cors);
+        }
+        try {
+          let apiKey = body.apiKey;
+          if (!apiKey) apiKey = await getUserApiKey(env, payload.sub);
+          const out = await generateStoryVideoPlan(env, { idea: body.idea, type: reqType, plan, apiKey });
+          return json({ ok: true, ...out }, 200, cors);
+        } catch (e) {
+          return json({ error: 'video_error', detail: String((e && e.message) || e) }, 500, cors);
+        }
+      }
+
+      // ===== Story Studio — Tab 2: Video Scene/Character Image =====
+      if (path === '/api/studio/story/video-image' && request.method === 'POST') {
+        const token = bearer(request);
+        if (!token) return json({ error: 'unauthorized' }, 401, cors);
+        const payload = await verifyTokenSafe(env, token);
+        if (!payload) return json({ error: 'invalid_token' }, 401, cors);
+        const body = await request.json().catch(() => null);
+        if (!body || !body.prompt) return json({ error: 'missing_prompt' }, 400, cors);
+        try {
+          let apiKey = body.apiKey;
+          if (!apiKey) apiKey = await getUserApiKey(env, payload.sub);
+          const out = await generateStoryVideoImage(env, { prompt: body.prompt, apiKey });
+          return json({ ok: true, data: out.data, mimeType: out.mimeType }, 200, cors);
+        } catch (e) {
+          return json({ error: 'image_error', detail: String((e && e.message) || e) }, 500, cors);
         }
       }
 
