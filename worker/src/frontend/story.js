@@ -1,4 +1,4 @@
-// AI Creative Studio — Story Studio Frontend (Phase 4)
+// AI Creative Studio — Story Studio Frontend 
 // Tab 1: Story Generator + Revise + Save Creations + Transfer to Video
 // Tab 2: Video Plan (Characters + Scenes with Environment/Video + Images)
 // Dark Theme preserved from Source
