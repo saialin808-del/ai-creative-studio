@@ -443,7 +443,7 @@ export default {
         }
       }
 
-      // ===== Content Studio — Tab 3: SRT from Audio =====
+      // ===== Content Studio — Tab 1: SRT from Audio =====
       if (path === '/api/studio/content/srt' && request.method === 'POST') {
         const token = bearer(request);
         if (!token) return json({ error: 'unauthorized' }, 401, cors);
@@ -465,7 +465,7 @@ export default {
         }
       }
 
-      // ===== Content Studio — Tab 3: Translate SRT =====
+      // ===== Content Studio — Tab 1: Translate SRT =====
       if (path === '/api/studio/content/translate-srt' && request.method === 'POST') {
         const token = bearer(request);
         if (!token) return json({ error: 'unauthorized' }, 401, cors);
