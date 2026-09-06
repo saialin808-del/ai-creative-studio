@@ -1,4 +1,4 @@
-// AI Creative Studio — Cloudflare Worker (Phase 3b — Content Studio UI + Backend)
+// AI Creative Studio — Cloudflare Worker (Content Studio UI + Backend)
 import { signToken, verifyToken } from './core/auth';
 import { callGeminiText } from './core/ai';
 import { getCMSData, buildSystemPrompt } from './core/cms';
