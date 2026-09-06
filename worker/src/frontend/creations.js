@@ -15,7 +15,7 @@ a{color:var(--cyan);text-decoration:none;}
 .hamburger{display:none;position:fixed;top:14px;left:14px;z-index:200;background:var(--card);border:1px solid #333;color:#fff;font-size:18px;width:42px;height:42px;border-radius:10px;cursor:pointer;}
 .backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:99;}
 .backdrop.show{display:block;}
-.sidebar{position:fixed;left:14px;top:14px;width:220px;height:calc(100vh - 28px);background:#0d1425;border:1.5px solid #eb549e;border-radius:16px;padding:22px 14px;overflow-y:auto;z-index:100;transition:transform 0.3s,left 0.3s;box-shadow:0 0 20px rgba(235,84,158,0.18);}
+.sidebar{position:fixed;left:14px;top:14px;width:220px;height:calc(100vh - 28px);background:#0d1425;border-radius:16px;padding:22px 14px;overflow-y:auto;z-index:100;transition:transform 0.3s,left 0.3s;}
 .brand{margin-bottom:22px;}
 .brand-title{font-weight:800;font-size:18px;letter-spacing:0.5px;background:linear-gradient(90deg,var(--purple),var(--cyan));-webkit-background-clip:text;background-clip:text;color:transparent;}
 .nav-label{font-size:11px;color:var(--text3);letter-spacing:1.5px;margin:18px 0 8px 10px;text-transform:uppercase;}
@@ -76,8 +76,7 @@ a{color:var(--cyan);text-decoration:none;}
     <div class="license-badge" id="licenseBadge">Checking plan...</div>
     <div class="side-email" id="sideEmail" style="font-size:11.5px;color:var(--text3);margin-bottom:8px;word-break:break-all;">—</div>
     <button class="side-btn" onclick="setApiKey()">🔑 API Key Setting</button>
-    <a class="side-btn" href="https://aistudio.google.com/apikey" target="_blank">🆓 အခမဲ့ API Key ယူရန်</a>
-    <a class="side-btn" id="adminLink" href="/admin" style="display:none;">⚙️ Admin Panel</a>
+        <a class="side-btn" id="adminLink" href="/admin" style="display:none;">⚙️ Admin Panel</a>
     <a class="side-btn" id="tgLink" href="#" target="_blank">📨 Telegram</a>
     <a class="side-btn" id="fbLink" href="#" target="_blank">📘 Facebook</a>
     <button class="side-btn" onclick="logout()">🚪 Logout</button>
