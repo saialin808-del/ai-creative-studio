@@ -1,4 +1,4 @@
-// AI Creative Studio — Frontend UI (served at /app) — Phase 4
+// AI Creative Studio — Frontend UI (served at /app) 
 export const APP_HTML = `<!DOCTYPE html>
 <html lang="my">
 <head>
