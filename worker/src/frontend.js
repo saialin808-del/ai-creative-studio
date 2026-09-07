@@ -44,6 +44,25 @@ a{color:var(--cyan);text-decoration:none;}
 .topbar .subtitle{color:var(--text2);}
 .api-pill{display:flex;align-items:center;gap:6px;background:var(--card);border:1px solid var(--border);color:#ccc;padding:9px 14px;border-radius:20px;cursor:pointer;font-size:13px;white-space:nowrap;transition:border-color 0.2s;flex-shrink:0;}
 .api-pill:hover{border-color:var(--cyan);}
+/* Phase 8 — အခမဲ့ API Key ခလုတ် (Sparkle) + လမ်းညွှန် Modal */
+.api-pill.sparkle{background:linear-gradient(135deg,rgba(123,92,255,0.28),rgba(0,229,255,0.2));border:1px solid var(--purple);color:#fff;box-shadow:0 0 14px rgba(123,92,255,0.5);animation:sparklePulse 2s ease-in-out infinite;}
+@keyframes sparklePulse{0%,100%{box-shadow:0 0 8px rgba(123,92,255,0.4);}50%{box-shadow:0 0 22px rgba(0,229,255,0.6);}}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.72);z-index:500;align-items:center;justify-content:center;padding:16px;}
+.modal-overlay.show{display:flex;}
+.free-key-modal{width:100%;max-width:440px;max-height:85vh;overflow-y:auto;background:#111827;border:1px solid var(--border);border-radius:16px;padding:22px;position:relative;box-shadow:0 8px 40px rgba(0,0,0,0.6);}
+.free-key-modal h3{margin:0 0 6px;font-size:19px;background:linear-gradient(90deg,var(--purple),var(--cyan));-webkit-background-clip:text;background-clip:text;color:transparent;}
+.free-key-modal .sub{color:var(--text2);font-size:13px;margin-bottom:16px;}
+.free-key-step{display:flex;gap:12px;margin-bottom:13px;align-items:flex-start;}
+.free-key-step .num{flex-shrink:0;width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,var(--purple),var(--cyan));color:#001014;font-weight:bold;font-size:13px;display:flex;align-items:center;justify-content:center;margin-top:1px;}
+.free-key-step .txt{color:var(--text);font-size:14px;line-height:1.55;}
+.free-key-step .txt b{color:#fff;}
+.free-key-actions{display:flex;flex-direction:column;gap:10px;margin-top:18px;}
+.btn-primary-glow{display:inline-block;text-align:center;padding:13px 18px;border-radius:12px;background:linear-gradient(135deg,var(--purple),var(--cyan));color:#001014;font-weight:bold;font-size:14px;text-decoration:none;cursor:pointer;border:none;}
+.btn-primary-glow:hover{filter:brightness(1.15);}
+.btn-ghost-full{display:inline-block;text-align:center;padding:12px 18px;border-radius:12px;background:transparent;color:var(--cyan);border:1px solid var(--cyan);font-size:14px;cursor:pointer;text-decoration:none;}
+.btn-ghost-full:hover{background:rgba(0,229,255,0.1);}
+.modal-close{position:absolute;top:12px;right:14px;background:none;border:none;color:var(--text2);font-size:22px;cursor:pointer;line-height:1;}
+.modal-close:hover{color:#fff;}
 .hero-banner{position:relative;width:100%;aspect-ratio:42/9;border-radius:16px;overflow:hidden;background:linear-gradient(135deg,#1a1030 0%,#0e1424 50%,#0a1f2e 100%);border:1px solid #3a2f7a;display:flex;align-items:center;justify-content:center;margin-bottom:8px;}
 .hero-banner-icons{position:absolute;inset:0;}
 .hero-banner-icons span{position:absolute;font-size:clamp(20px,6vw,46px);opacity:0.14;}
@@ -96,7 +115,7 @@ ${renderSidebar('home')}
       <h1 id="greeting">မင်္ဂလာပါ 👋</h1>
       <p class="subtitle">ဒီနေ့ ဘာဖန်တီးချင်ပါသလဲ?</p>
     </div>
-    <div class="api-pill" onclick="setApiKey()">🔑 API Key Setting</div>
+    <div class="api-pill sparkle" onclick="openFreeKeyGuide()">✨ အခမဲ့ API KEY ယူရန်</div>
   </div>
   <div class="hero-banner">
     <div class="hero-banner-icons">
@@ -144,6 +163,22 @@ ${renderSidebar('home')}
   </div>
   <div id="recentProjectsArea"><p style="color:var(--text3);">Loading...</p></div>
 </main>
+<div class="modal-overlay" id="freeKeyModal">
+  <div class="free-key-modal">
+    <button class="modal-close" onclick="closeFreeKeyGuide()" aria-label="Close">✕</button>
+    <h3>✨ အခမဲ့ API Key ယူနည်း</h3>
+    <div class="sub">Gemini API Key အခမဲ့ ရယူနည်း — အဆင့် ၅ ဆင့်သာ လိုပါသည်</div>
+    <div class="free-key-step"><div class="num">1</div><div class="txt">အောက်က <b>အပြာရောင် ခလုတ်</b> ကို နှိပ်ပါ — Google AI Studio ၏ API Key စာမျက်နှာသို့ အလိုအလျောက် ရောက်ပါမည်</div></div>
+    <div class="free-key-step"><div class="num">2</div><div class="txt">ထိုစာမျက်နှာတွင် <b>Google အကောင့်</b> ဖြင့် Login ဝင်ပါ</div></div>
+    <div class="free-key-step"><div class="num">3</div><div class="txt"><b>"Create API key"</b> ခလုတ်ကို နှိပ်ပါ (ပထမဆုံးအကြိမ်ဆိုလျှင် သဘောတူညီချက်ကို လက်ခံပါ)</div></div>
+    <div class="free-key-step"><div class="num">4</div><div class="txt">ထွက်လာသော <b>Key ကို Copy</b> လုပ်ပါ (AIza... ဖြင့် စတင်ပါသည်)</div></div>
+    <div class="free-key-step"><div class="num">5</div><div class="txt">အောက်က <b>"ဆက်တင်များတွင် Key ထည့်ရန်"</b> ကို နှိပ်၍ Key ကို ထည့်ပါ — ပြီးပါပြီ! 🎉</div></div>
+    <div class="free-key-actions">
+      <a class="btn-primary-glow" href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener">🚀 API Key ဖန်တီးရန် သွားမည်</a>
+      <a class="btn-ghost-full" href="/app/settings">🔑 ဆက်တင်များတွင် Key ထည့်ရန်</a>
+    </div>
+  </div>
+</div>
 <div class="toast" id="toast"></div>
 ${sidebarScript()}
 <script>
@@ -179,6 +214,13 @@ Object.keys(CARD_MESSAGES).forEach(function(key,i){setTimeout(function(){rotateC
 var STUDIO_ICONS={"STORY":"📖","STORYVIDEO":"🎬","CONTENT":"✍️","CONTENTVIDEO":"🎥","SHORT":"🎬","SHORTVIDEO":"🎬","IMAGE":"🎨","VOICE":"🎙","VOICETRANSCRIBE":"📝","SHOPCONTENT":"🛒","SHOPVIDEO":"🛒"};
 (function(){var h=new Date().getHours();var t="မင်္ဂလာပါ 🌙";if(h<12)t="မင်္ဂလာပါ 👋";else if(h<17)t="မင်္ဂလာပါ ☀️";document.getElementById('greeting').innerText=t;})();
 function api(path,opts){opts=opts||{};var h=opts.headers||{};h['Content-Type']='application/json';if(TOKEN)h['Authorization']='Bearer '+TOKEN;return fetch(path,{method:opts.method||'GET',headers:h,body:opts.body?JSON.stringify(opts.body):undefined}).then(function(r){return r.json();});}
+// Phase 8 — အခမဲ့ API Key လမ်းညွှန် Modal ဖွင့်/ပိတ်
+function openFreeKeyGuide(){var m=document.getElementById('freeKeyModal');if(m)m.classList.add('show');}
+function closeFreeKeyGuide(){var m=document.getElementById('freeKeyModal');if(m)m.classList.remove('show');}
+(function(){
+  var m=document.getElementById('freeKeyModal');
+  if(m)m.addEventListener('click',function(e){if(e.target===m)closeFreeKeyGuide();});
+})();
 function showToast(msg,type){var t=document.getElementById('toast');t.textContent=msg;t.className='toast show'+(type?' '+type:'');setTimeout(function(){t.className='toast';},2500);}
 // (toggleSidebar / logout / setApiKey / TG-FB link များကို Shared Sidebar Script သို့ ရွှေ့ပြီးပါပြီ — Phase 2)
 if(!TOKEN){
