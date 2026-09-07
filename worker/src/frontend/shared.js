@@ -89,7 +89,45 @@ function studioPageSidebar(activeId) {
 // opts.variant: 'app' (Home/Creations) | 'studio' (Studio မျက်နှာများ)
 export function renderSidebar(activeId, opts) {
   opts = opts || {};
-  return opts.variant === 'studio' ? studioPageSidebar(activeId) : appShellSidebar(activeId);
+  return responsiveStyles() + (opts.variant === 'studio' ? studioPageSidebar(activeId) : appShellSidebar(activeId));
+}
+
+// ---- Shared Responsive CSS (Phase 6 — Rule 7) ----
+// Desktop ≥1200px / iPad 769–1199px (Compact Sidebar) / Phone ≤768px (Topbar + Drawer Sidebar + Touch)
+// စာမျက်နှာတိုင်း ဤ Style ကို ရရှိသောကြောင့် Responsive ကို နေရာတစ်ခုတည်းမှ ထိန်းချုပ်သည်
+function responsiveStyles() {
+  return '<style>\n' +
+    '/* ===== AI Creative Studio — Shared Responsive (Phase 6 — Rule 7) ===== */\n' +
+    '/* Desktop ≥1200px — မူလ Layout (ပြောင်းစရာမလို) */\n' +
+    '/* iPad / Tablet 769–1199px — Compact Sidebar */\n' +
+    '@media (min-width:769px) and (max-width:1199px){\n' +
+    '  .sidebar{width:200px;padding:18px 12px;}\n' +
+    '  .main-content{margin-left:240px;padding:20px;}\n' +
+    '  .layout > .sidebar{width:190px;padding:12px 10px;margin:12px 10px;}\n' +
+    '  .layout > .sidebar .nav-item{font-size:13px;padding:8px 10px;gap:8px;min-height:42px;}\n' +
+    '  .layout > .sidebar .nav-icon-circle{width:26px;height:26px;font-size:13px;border-radius:8px;}\n' +
+    '  .layout > .sidebar .nav-label{font-size:9.5px;margin:14px 0 6px 8px;}\n' +
+    '  .layout > .sidebar .side-btn{padding:8px 10px;font-size:12px;}\n' +
+    '  .layout > .sidebar .license-badge{font-size:11px;padding:4px 10px;}\n' +
+    '  .layout > .main,.layout > main.main{padding:20px;}\n' +
+    '}\n' +
+    '/* Phone ≤768px — Topbar + Drawer Sidebar + Touch-friendly */\n' +
+    '@media (max-width:768px){\n' +
+    '  .sidebar{width:220px;}\n' +
+    '  /* Voice/Shop မူလ CSS တွင် Sidebar ကို ဖျောက်ထားသော Bug ကို ပြင် → Drawer ပြုလုပ်သည် */\n' +
+    '  .layout > .sidebar{display:flex !important;}\n' +
+    '  .layout > .sidebar{position:fixed;left:-280px;top:57px;bottom:0;z-index:99;width:256px;max-width:82vw;margin:0;border-radius:0 16px 16px 0;padding:16px 14px;overflow-y:auto;transition:left .3s;box-shadow:4px 0 20px rgba(0,0,0,.5);}\n' +
+    '  .layout > .sidebar.open{left:0;}\n' +
+    '  .layout > .main,.layout > main.main{padding:14px;}\n' +
+    '  .main-content{margin-left:0;padding:64px 14px 20px;}\n' +
+    '  .menu-btn{min-width:44px;min-height:44px;font-size:20px;}\n' +
+    '  .hamburger{width:44px;height:44px;}\n' +
+    '  .nav-item,.side-btn{min-height:46px;}\n' +
+    '  .btn,button,select,input,textarea{min-height:44px;}\n' +
+    '  .card{padding:14px;}\n' +
+    '  .quick-grid,.recent-grid{grid-template-columns:1fr;}\n' +
+    '}\n' +
+    '</style>';
 }
 
 // ---- Shared Sidebar Script (Browser တွင် လုပ်ဆောင်သည်) ----
