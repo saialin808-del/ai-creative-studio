@@ -9,7 +9,10 @@ import { generateShort, reviseShort, generateShortVideoPlan, generateShortVideoI
 import { generateImagePrompt, generateAdImagePrompt, generateImageFromPrompt } from './studios/image';
 import { generateVoiceAudio, transcribeAudio, generateVoiceSrt, translateVoiceSrt } from './studios/voice';
 import { generateShopContent, reviseShopContent, generateShopVideo, generateShopVideoImage } from './studios/shop';
-import { saveCreation, listCreations, deleteCreation } from './core/creations';
+import { saveCreation, listCreations, deleteCreation, toggleFavorite } from './core/creations';
+import { getUserSettings, updateUserSettings, getUserPreferences, updateUserPreferences } from './core/settings';
+import { createProject, listProjects, deleteProject } from './core/projects';
+import { trackUsage } from './core/usage';
 import { getUserApiKey, saveUserApiKey } from './core/utilities';
 import { APP_HTML } from './frontend';
 import { CONTENT_HTML } from './frontend/content';
@@ -19,6 +22,8 @@ import { IMAGE_HTML } from './frontend/image';
 import { VOICE_HTML } from './frontend/voice';
 import { SHOP_HTML } from './frontend/shop';
 import { CREATIONS_HTML } from './frontend/creations';
+import { SETTINGS_HTML } from './frontend/settings';
+import { PROJECTS_HTML } from './frontend/projects';
 import { ADMIN_HTML, adminApi } from './admin';
 
 const cors = {
@@ -52,6 +57,11 @@ async function resolvePlan(env, payload) {
     if (row.plan === 'PRO' && row.expiry && new Date(row.expiry) < new Date()) return 'FREE';
     return row.plan || 'FREE';
   } catch (e) { return 'FREE'; }
+}
+
+// Usage Tracking — Track လုပ်ရာတွင် မှားယွင်းမှု ရှိလျှင်ပင် အဓိက API မထိခိုက်စေရန် Safe Wrapper (Phase 3)
+async function trackUsageSafe(env, userId, category) {
+  try { await trackUsage(env, userId, category); } catch (e) {}
 }
 
 function homePage() {
@@ -239,6 +249,8 @@ export default {
       if (path === '/app/voice' || path === '/app/voice/') return htmlPage(VOICE_HTML);
       if (path === '/app/shop' || path === '/app/shop/') return htmlPage(SHOP_HTML);
       if (path === '/app/creations' || path === '/app/creations/') return htmlPage(CREATIONS_HTML);
+      if (path === '/app/settings' || path === '/app/settings/') return htmlPage(SETTINGS_HTML);
+      if (path === '/app/projects' || path === '/app/projects/') return htmlPage(PROJECTS_HTML);
       if (path === '/admin' || path === '/admin/') {
         // Admin Panel — admin မဟုတ်သူတွေ မမြင်ရအောင် ပိတ်ထားသည်
         const token = bearer(request);
@@ -265,7 +277,28 @@ export default {
         const plan = await resolvePlan(env, payload);
         const adminEmail = env.ADMIN_EMAIL || 'saialin808@gmail.com';
         const isAdmin = String(payload.email || '').toLowerCase() === String(adminEmail).toLowerCase();
-        return json({ email: payload.email, plan, user_id: payload.sub, is_admin: isAdmin }, 200, cors);
+        // Phase 3 — User ၏ Settings / Preferences များကိုပါ ပြန်ပို့သည်
+        const settings = await getUserSettings(env, payload.sub);
+        const preferences = await getUserPreferences(env, payload.sub);
+        return json({ email: payload.email, plan, user_id: payload.sub, is_admin: isAdmin, settings, preferences }, 200, cors);
+      }
+
+      // ===== Personal Settings — Profile/Preferences သိမ်းခြင်း (Phase 3) =====
+      // Server-side တွင် Whitelist စစ်ပြီးမှသာ သိမ်းသည် (Frontend ကို မယုံပါ)
+      if (path === '/api/users/me/settings' && request.method === 'PUT') {
+        const token = bearer(request);
+        if (!token) return json({ error: 'unauthorized' }, 401, cors);
+        const payload = await verifyTokenSafe(env, token);
+        if (!payload) return json({ error: 'invalid_token' }, 401, cors);
+        const body = await request.json().catch(() => null);
+        if (!body || typeof body !== 'object') return json({ error: 'bad_request' }, 400, cors);
+        try {
+          const settings = await updateUserSettings(env, payload.sub, body.settings || {});
+          const preferences = await updateUserPreferences(env, payload.sub, body.preferences || {});
+          return json({ ok: true, settings, preferences }, 200, cors);
+        } catch (e) {
+          return json({ error: 'settings_error', detail: String((e && e.message) || e) }, 500, cors);
+        }
       }
 
       // ===== BYOK — User ကိုယ်ပိုင် Gemini Key သိမ်းခြင်း / အခြေအနေ စစ်ခြင်း =====
@@ -345,6 +378,7 @@ export default {
             apiKey,
             model: body.model,
           });
+          await trackUsageSafe(env, payload.sub, 'ai');
           try {
             if (out.output) await saveCreation(env, {
               user_id: payload.sub, studio: out.studio, type: out.type,
@@ -375,6 +409,7 @@ export default {
           let apiKey = body.apiKey;
           if (!apiKey) apiKey = await getUserApiKey(env, payload.sub);
           const out = await generateContent(env, { idea: body.idea, type: reqType, plan, apiKey });
+          await trackUsageSafe(env, payload.sub, 'ai');
           return json({ ok: true, ...out }, 200, cors);
         } catch (e) {
           return json({ error: 'content_error', detail: String((e && e.message) || e) }, 500, cors);
@@ -426,6 +461,7 @@ export default {
             voiceName: body.voiceName || 'Kore',
             apiKey,
           });
+          await trackUsageSafe(env, payload.sub, 'voice');
           return json({ ok: true, data: out.data, mimeType: out.mimeType }, 200, cors);
         } catch (e) {
           return json({ error: 'tts_error', detail: String((e && e.message) || e) }, 500, cors);
@@ -449,6 +485,7 @@ export default {
           let apiKey = body.apiKey;
           if (!apiKey) apiKey = await getUserApiKey(env, payload.sub);
           const out = await generateContentVideo(env, { idea: body.idea, type: reqType, plan, apiKey });
+          await trackUsageSafe(env, payload.sub, 'ai');
           return json({ ok: true, ...out }, 200, cors);
         } catch (e) {
           return json({ error: 'video_error', detail: String((e && e.message) || e) }, 500, cors);
@@ -534,6 +571,7 @@ export default {
           let apiKey = body.apiKey;
           if (!apiKey) apiKey = await getUserApiKey(env, payload.sub);
           const out = await generateStory(env, { idea: body.idea, type: reqType, plan, apiKey });
+          await trackUsageSafe(env, payload.sub, 'ai');
           return json({ ok: true, ...out }, 200, cors);
         } catch (e) {
           return json({ error: 'story_error', detail: String((e && e.message) || e) }, 500, cors);
@@ -587,6 +625,7 @@ export default {
           let apiKey = body.apiKey;
           if (!apiKey) apiKey = await getUserApiKey(env, payload.sub);
           const out = await generateStoryVideoPlan(env, { idea: body.idea, type: reqType, plan, apiKey });
+          await trackUsageSafe(env, payload.sub, 'ai');
           return json({ ok: true, ...out }, 200, cors);
         } catch (e) {
           return json({ error: 'video_error', detail: String((e && e.message) || e) }, 500, cors);
@@ -628,6 +667,7 @@ export default {
           let apiKey = body.apiKey;
           if (!apiKey) apiKey = await getUserApiKey(env, payload.sub);
           const out = await generateShort(env, { idea: body.idea, type: reqType, plan, apiKey });
+          await trackUsageSafe(env, payload.sub, 'ai');
           return json({ ok: true, ...out }, 200, cors);
         } catch (e) {
           return json({ error: 'short_error', detail: String((e && e.message) || e) }, 500, cors);
@@ -681,6 +721,7 @@ export default {
             idea: body.idea, type: reqType, plan, apiKey,
             images: body.images || [],
           });
+          await trackUsageSafe(env, payload.sub, 'ai');
           return json({ ok: true, ...out }, 200, cors);
         } catch (e) {
           return json({ error: 'video_error', detail: String((e && e.message) || e) }, 500, cors);
@@ -769,6 +810,7 @@ export default {
           let apiKey = body.apiKey;
           if (!apiKey) apiKey = await getUserApiKey(env, payload.sub);
           const out = await generateImageFromPrompt(env, { prompt: body.prompt, apiKey });
+          await trackUsageSafe(env, payload.sub, 'image');
           return json({ ok: true, data: out.data, mimeType: out.mimeType }, 200, cors);
         } catch (e) {
           return json({ error: 'image_generate_error', detail: String((e && e.message) || e) }, 500, cors);
@@ -791,6 +833,7 @@ export default {
             voiceName: body.voiceName || 'Kore',
             apiKey,
           });
+          await trackUsageSafe(env, payload.sub, 'voice');
           return json({ ok: true, data: out.data, mimeType: out.mimeType }, 200, cors);
         } catch (e) {
           return json({ error: 'tts_error', detail: String((e && e.message) || e) }, 500, cors);
@@ -818,6 +861,7 @@ export default {
             mimeType: body.mimeType || 'audio/mpeg',
             type: reqType, plan, apiKey,
           });
+          await trackUsageSafe(env, payload.sub, 'ai');
           return json({ ok: true, ...out }, 200, cors);
         } catch (e) {
           return json({ error: 'transcribe_error', detail: String((e && e.message) || e) }, 500, cors);
@@ -893,6 +937,7 @@ export default {
           let apiKey = body.apiKey;
           if (!apiKey) apiKey = await getUserApiKey(env, payload.sub);
           const out = await generateShopContent(env, { idea: body.idea, type: reqType, plan, apiKey, images: body.images || [] });
+          await trackUsageSafe(env, payload.sub, 'ai');
           return json({ ok: true, ...out }, 200, cors);
         } catch (e) {
           return json({ error: 'shop_content_error', detail: String((e && e.message) || e) }, 500, cors);
@@ -943,6 +988,7 @@ export default {
           let apiKey = body.apiKey;
           if (!apiKey) apiKey = await getUserApiKey(env, payload.sub);
           const out = await generateShopVideo(env, { idea: body.idea, type: reqType, plan, apiKey, images: body.images || [] });
+          await trackUsageSafe(env, payload.sub, 'ai');
           return json({ ok: true, ...out }, 200, cors);
         } catch (e) {
           return json({ error: 'video_error', detail: String((e && e.message) || e) }, 500, cors);
@@ -964,6 +1010,67 @@ export default {
           return json({ ok: true, data: out.data, mimeType: out.mimeType }, 200, cors);
         } catch (e) {
           return json({ error: 'image_error', detail: String((e && e.message) || e) }, 500, cors);
+        }
+      }
+
+      // ===== Projects — User ကိုယ်ပိုင် Project များ (Phase 3) =====
+      // Server-side တွင် user_id ကို အမြဲ စစ်သည် — အခြားသူ၏ Project ကို မမြင်ရ/မဖျက်ရပါ
+      if (path === '/api/projects' && request.method === 'POST') {
+        const token = bearer(request);
+        if (!token) return json({ error: 'unauthorized' }, 401, cors);
+        const payload = await verifyTokenSafe(env, token);
+        if (!payload) return json({ error: 'invalid_token' }, 401, cors);
+        const body = await request.json().catch(() => null);
+        if (!body || !body.title) return json({ error: 'missing_title' }, 400, cors);
+        try {
+          const p = await createProject(env, payload.sub, String(body.title), body.description || '');
+          return json({ ok: true, project: p }, 200, cors);
+        } catch (e) {
+          return json({ error: 'project_error', detail: String((e && e.message) || e) }, 500, cors);
+        }
+      }
+
+      if (path === '/api/projects' && request.method === 'GET') {
+        const token = bearer(request);
+        if (!token) return json({ error: 'unauthorized' }, 401, cors);
+        const payload = await verifyTokenSafe(env, token);
+        if (!payload) return json({ error: 'invalid_token' }, 401, cors);
+        try {
+          const items = await listProjects(env, payload.sub);
+          return json({ items }, 200, cors);
+        } catch (e) {
+          return json({ error: 'project_error', detail: String((e && e.message) || e) }, 500, cors);
+        }
+      }
+
+      if (path.startsWith('/api/projects/') && request.method === 'DELETE') {
+        const token = bearer(request);
+        if (!token) return json({ error: 'unauthorized' }, 401, cors);
+        const payload = await verifyTokenSafe(env, token);
+        if (!payload) return json({ error: 'invalid_token' }, 401, cors);
+        const id = path.split('/').pop();
+        if (!id) return json({ error: 'missing_id' }, 400, cors);
+        try {
+          await deleteProject(env, payload.sub, id);
+          return json({ ok: true }, 200, cors);
+        } catch (e) {
+          return json({ error: 'delete_error', detail: String((e && e.message) || e) }, 500, cors);
+        }
+      }
+
+      // ===== Creations — Favorite Toggle (Phase 3 — User ကိုယ်ပိုင် Creation သာ) =====
+      if (path.startsWith('/api/creations/') && path.endsWith('/favorite') && request.method === 'POST') {
+        const token = bearer(request);
+        if (!token) return json({ error: 'unauthorized' }, 401, cors);
+        const payload = await verifyTokenSafe(env, token);
+        if (!payload) return json({ error: 'invalid_token' }, 401, cors);
+        const id = path.split('/')[3];
+        if (!id) return json({ error: 'missing_id' }, 400, cors);
+        try {
+          const r = await toggleFavorite(env, payload.sub, id);
+          return json({ ok: true, favorite: r.favorite }, 200, cors);
+        } catch (e) {
+          return json({ error: 'favorite_error', detail: String((e && e.message) || e) }, 500, cors);
         }
       }
 

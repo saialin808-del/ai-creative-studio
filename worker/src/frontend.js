@@ -3,7 +3,7 @@
 // Features: Sidebar nav, Hero banner, 6 Studio cards, Recent Projects, BYOK API Key setting
 // Phase 2 — Sidebar + Helper Script များကို Shared Component (frontend/shared.js) မှ ယူသည်
 
-import { renderSidebar, sidebarScript } from './frontend/shared';
+import { renderSidebar, sidebarScript } from './frontend/shared.js';
 
 export const APP_HTML = `<!DOCTYPE html>
 <html lang="my">
