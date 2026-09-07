@@ -107,32 +107,32 @@ ${renderSidebar('home')}
   </div>
   <div class="section-label">အမြန်ဖန်တီးရန်</div>
   <div class="quick-grid">
-    <div class="studio-card card-story" onclick="location.href='/app/story'">
+    <div class="studio-card card-story" data-studio="story" onclick="location.href='/app/story'">
       <div class="sparkle">✨</div><div class="bg-icon">📖</div>
       <div class="title">ဇာတ်လမ်း Studio</div>
       <div class="desc" id="desc-story">AI ဖြင့် Story ရေးပါ</div>
     </div>
-    <div class="studio-card card-content" onclick="location.href='/app/content'">
+    <div class="studio-card card-content" data-studio="content" onclick="location.href='/app/content'">
       <div class="sparkle">✨</div><div class="bg-icon">✍️</div>
       <div class="title">Content Studio</div>
       <div class="desc" id="desc-content">AI ဖြင့် Content ရေးပါ</div>
     </div>
-    <div class="studio-card card-short" onclick="location.href='/app/short'">
+    <div class="studio-card card-short" data-studio="short" onclick="location.href='/app/short'">
       <div class="sparkle">✨</div><div class="bg-icon">🎬</div>
       <div class="title">Short Studio</div>
       <div class="desc" id="desc-short">TikTok/Reels Script ဖန်တီးပါ</div>
     </div>
-    <div class="studio-card card-image" onclick="location.href='/app/image'">
+    <div class="studio-card card-image" data-studio="image" onclick="location.href='/app/image'">
       <div class="sparkle">✨</div><div class="bg-icon">🎨</div>
       <div class="title">ပုံ Studio</div>
       <div class="desc" id="desc-image">AI Image Prompt ဖန်တီးပါ</div>
     </div>
-    <div class="studio-card card-voice" onclick="location.href='/app/voice'">
+    <div class="studio-card card-voice" data-studio="voice" onclick="location.href='/app/voice'">
       <div class="sparkle">✨</div><div class="bg-icon">🎙</div>
       <div class="title">အသံ Studio</div>
       <div class="desc" id="desc-voice">Voice နဲ့ Text ပြောင်းပါ</div>
     </div>
-    <div class="studio-card card-shop" onclick="location.href='/app/shop'">
+    <div class="studio-card card-shop" data-studio="shop" onclick="location.href='/app/shop'">
       <div class="sparkle">✨</div><div class="bg-icon">🛒</div>
       <div class="title">ရောင်းချရေး Studio</div>
       <div class="desc" id="desc-shop">Marketing Content ဖန်တီးပါ</div>

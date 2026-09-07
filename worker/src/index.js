@@ -13,6 +13,8 @@ import { saveCreation, listCreations, deleteCreation, toggleFavorite } from './c
 import { getUserSettings, updateUserSettings, getUserPreferences, updateUserPreferences } from './core/settings';
 import { createProject, listProjects, deleteProject } from './core/projects';
 import { trackUsage } from './core/usage';
+import { getStudioSettings, isStudioEnabled, setStudioEnabled } from './core/studioSettings';
+import { getStudio } from './config/studios';
 import { getUserApiKey, saveUserApiKey } from './core/utilities';
 import { APP_HTML } from './frontend';
 import { CONTENT_HTML } from './frontend/content';
@@ -62,6 +64,20 @@ async function resolvePlan(env, payload) {
 // Usage Tracking — Track လုပ်ရာတွင် မှားယွင်းမှု ရှိလျှင်ပင် အဓိက API မထိခိုက်စေရန် Safe Wrapper (Phase 3)
 async function trackUsageSafe(env, userId, category) {
   try { await trackUsage(env, userId, category); } catch (e) {}
+}
+
+// Studio Disabled ဖြစ်ပါက ပြမည့် Friendly စာမျက်နှာ (Phase 4 — Rule 14)
+function studioDisabledPage(studioId) {
+  const s = getStudio(studioId);
+  const name = s ? s.nameMy : studioId;
+  return '<!DOCTYPE html><html lang="my"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>' + name + ' — ပိတ်ထားသည်</title></head>' +
+    '<body style="font-family:sans-serif;background:#080c18;color:#e8ecf4;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;padding:16px">' +
+    '<div style="max-width:420px;text-align:center;background:#151b2b;border:1px solid #26324a;border-radius:14px;padding:32px">' +
+    '<div style="font-size:40px">🔒</div>' +
+    '<h2 style="margin:12px 0;color:#00e5ff">' + name + ' ကို ယခု ပိတ်ထားပါသည်</h2>' +
+    '<p style="color:#94a3b8;font-size:14px;line-height:1.7">ဤ Studio ကို Admin မှ ခေတ္တ ပိတ်ထားပါသည်။ နောက်မှ ပြန်ဖွင့်ပါမည်။</p>' +
+    '<a href="/app" style="display:inline-block;margin-top:16px;padding:11px 22px;background:#00e5ff;color:#001014;border-radius:10px;text-decoration:none;font-weight:bold">🏠 ပင်မသို့ ပြန်သွားရန်</a>' +
+    '</div></body></html>';
 }
 
 function homePage() {
@@ -242,12 +258,17 @@ export default {
 
       if (path === '/auth/result' && request.method === 'GET') return htmlPage(loginResultPage());
       if (path === '/app' || path === '/app/') return htmlPage(APP_HTML);
-      if (path === '/app/content' || path === '/app/content/') return htmlPage(CONTENT_HTML);
-      if (path === '/app/story' || path === '/app/story/') return htmlPage(STORY_HTML);
-      if (path === '/app/short' || path === '/app/short/') return htmlPage(SHORT_HTML);
-      if (path === '/app/image' || path === '/app/image/') return htmlPage(IMAGE_HTML);
-      if (path === '/app/voice' || path === '/app/voice/') return htmlPage(VOICE_HTML);
-      if (path === '/app/shop' || path === '/app/shop/') return htmlPage(SHOP_HTML);
+      // ===== Studio Pages (Phase 4 — Registry + Admin ON/OFF နှင့် ချိတ်သည်) =====
+      // Studio Disabled ဖြစ်ပါက Friendly Message ပြပြီး Access ပိတ်သည် (Rule 14 — Server-side)
+      {
+        const STUDIO_PAGES = { content: CONTENT_HTML, story: STORY_HTML, short: SHORT_HTML, image: IMAGE_HTML, voice: VOICE_HTML, shop: SHOP_HTML };
+        const studioSlug = path.replace(/\/+$/, '').split('/').pop();
+        if (STUDIO_PAGES[studioSlug]) {
+          const enabled = await isStudioEnabled(env, studioSlug);
+          if (!enabled) return htmlPage(studioDisabledPage(studioSlug));
+          return htmlPage(STUDIO_PAGES[studioSlug]);
+        }
+      }
       if (path === '/app/creations' || path === '/app/creations/') return htmlPage(CREATIONS_HTML);
       if (path === '/app/settings' || path === '/app/settings/') return htmlPage(SETTINGS_HTML);
       if (path === '/app/projects' || path === '/app/projects/') return htmlPage(PROJECTS_HTML);
@@ -280,7 +301,9 @@ export default {
         // Phase 3 — User ၏ Settings / Preferences များကိုပါ ပြန်ပို့သည်
         const settings = await getUserSettings(env, payload.sub);
         const preferences = await getUserPreferences(env, payload.sub);
-        return json({ email: payload.email, plan, user_id: payload.sub, is_admin: isAdmin, settings, preferences }, 200, cors);
+        // Phase 4 — Studio ON/OFF အနေအထားကိုပါ ပြန်ပို့သည် (Sidebar မှ ပိတ်ထားသော Studio ကို ဖျောက်ရန်)
+        const studio_settings = await getStudioSettings(env);
+        return json({ email: payload.email, plan, user_id: payload.sub, is_admin: isAdmin, settings, preferences, studio_settings }, 200, cors);
       }
 
       // ===== Personal Settings — Profile/Preferences သိမ်းခြင်း (Phase 3) =====
@@ -393,6 +416,16 @@ export default {
       }
 
       // ===== Content Studio — Tab 1: Generate =====
+      // ===== Studio API — Disabled Studio ကို Server-side တွင် ပိတ်သည် (Rule 14) =====
+      // UI တွင် ဖျောက်ထားရုံဖြင့် မရ — API ကိုယ်တိုင် စစ်ဆေးသည်
+      {
+        const studioApiId = (path.match(/^\/api\/studio\/(story|content|short|image|voice|shop)\//) || [])[1];
+        if (studioApiId) {
+          const enabled = await isStudioEnabled(env, studioApiId);
+          if (!enabled) return json({ error: 'studio_disabled', message: 'This studio is currently disabled.' }, 403, cors);
+        }
+      }
+
       if (path === '/api/studio/content/generate' && request.method === 'POST') {
         const token = bearer(request);
         if (!token) return json({ error: 'unauthorized' }, 401, cors);

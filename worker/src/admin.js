@@ -1,5 +1,9 @@
 // Phase 5 — AI Creative Studio CMS Manager + Users Manager (Admin)
-// Served at /admin. CMS CRUD via /api/cms. Users via /api/admin/users. Admin-only.
+// Phase 4 — Studio Control (ON/OFF) ထည့်သည် (Rule 14 — Admin က Code မပြင်ဘဲ ထိန်းချုပ်နိုင်)
+// Served at /admin. CMS CRUD via /api/cms. Users via /api/admin/users. Studios via /api/admin/studios. Admin-only.
+
+import { setStudioEnabled, getStudioSettings } from './core/studioSettings.js';
+import { STUDIO_REGISTRY } from './config/studios.js';
 
 export const ADMIN_HTML = `<!DOCTYPE html>
 <html lang="my">
@@ -50,6 +54,7 @@ label{display:block;font-size:12px;font-weight:600;margin:10px 0 3px}
   <div class="card row" style="gap:4px;">
     <button class="btn active" id="tabCms" onclick="switchTab('cms')">📋 CMS</button>
     <button class="btn inactive" id="tabUsers" onclick="switchTab('users')">👥 Users</button>
+    <button class="btn inactive" id="tabStudios" onclick="switchTab('studios')">🎛️ Studios</button>
   </div>
   <div id="cmsView">
     <div class="card row">
@@ -71,6 +76,13 @@ label{display:block;font-size:12px;font-weight:600;margin:10px 0 3px}
       <span style="font-size:12px;color:#6B7280;">Tap button to toggle user plan</span>
     </div>
     <div id="usersList"></div>
+  </div>
+  <div id="studiosView" class="hidden">
+    <div class="card row">
+      <button class="btn" onclick="loadStudios()">⟳ Refresh</button>
+      <span style="font-size:12px;color:#6B7280;">Studio ကို ON/OFF ပြုလုပ်ပါက User App ၏ Sidebar နှင့် Access ချက်ချင်း ပြောင်းပါမည်</span>
+    </div>
+    <div id="studiosList"></div>
   </div>
 </main>
 <div id="formWrap" class="hidden">
@@ -142,9 +154,12 @@ function switchTab(tab){
   currentTab=tab;
   $('cmsView').classList.toggle('hidden',tab!=='cms');
   $('usersView').classList.toggle('hidden',tab!=='users');
+  $('studiosView').classList.toggle('hidden',tab!=='studios');
   $('tabCms').className='btn '+(tab==='cms'?'active':'inactive');
   $('tabUsers').className='btn '+(tab==='users'?'active':'inactive');
+  $('tabStudios').className='btn '+(tab==='studios'?'active':'inactive');
   if(tab==='users') loadUsers();
+  if(tab==='studios') loadStudios();
 }
 
 function load(){
@@ -238,6 +253,33 @@ function loadUsers(){
   });
 }
 
+// ===== Studios Control (Phase 4 — Admin က Studio ON/OFF ပြုလုပ်နိုင်) =====
+function loadStudios(){
+  api('/api/admin/studios').then(function(d){
+    if(d.error==='forbidden'){location.href='/app';return;}
+    if(d.error){$('studiosList').innerHTML='<div class="card"><span class="err">'+(d.detail||d.error)+'</span></div>';return;}
+    var list=$('studiosList');list.innerHTML='';
+    (d.items||[]).forEach(function(s){
+      var c=document.createElement('div');
+      c.className='card';
+      c.innerHTML='<div class="user-row"><div><b>'+esc(s.nameMy)+'</b> <span style="font-size:11px;color:#6B7280;">('+esc(s.name)+')</span>'+
+        '<div class="user-meta">'+(s.enabled?'<span class="badge pro">ON</span>':'<span class="badge free">OFF</span>')+'</div></div>'+
+        '<button class="btn sm '+(s.enabled?'red':'green')+'" data-on="'+(s.enabled?'1':'0')+'" onclick="toggleStudio(\\''+esc(s.id)+'\\',this)">'+(s.enabled?'⏻ ပိတ်မည်':'⏻ ဖွင့်မည်')+'</button></div>';
+      list.appendChild(c);
+    });
+  }).catch(function(e){
+    $('studiosList').innerHTML='<div class="card"><span class="err">Network error: '+esc(String(e&&e.message||e))+'</span></div>';
+  });
+}
+function toggleStudio(id,btn){
+  var next=!(btn.getAttribute('data-on')==='1');
+  btn.disabled=true;
+  api('/api/admin/studios/'+id,'PUT',{enabled:next}).then(function(d){
+    if(d.error){alert('ERROR: '+(d.detail||d.error||'unknown'));btn.disabled=false;return;}
+    loadStudios();
+  }).catch(function(e){alert('Network error: '+(e&&e.message||e));btn.disabled=false;});
+}
+
 function renderUsers(){
   var list=$('usersList');list.innerHTML='';
   if(users.length===0){list.innerHTML='<div class="card">(no users yet)</div>';return;}
@@ -314,7 +356,8 @@ init();
 export async function adminApi(request, path, env, verifyToken) {
   const isCms = (path === '/api/cms' || path.indexOf('/api/cms/') === 0);
   const isUsers = (path === '/api/admin/users' || path.indexOf('/api/admin/users/') === 0);
-  if (!isCms && !isUsers) return null;
+  const isStudios = (path === '/api/admin/studios' || path.indexOf('/api/admin/studios/') === 0);
+  if (!isCms && !isUsers && !isStudios) return null;
 
   const method = request.method;
   const authHeader = request.headers.get('Authorization') || '';
@@ -378,6 +421,29 @@ export async function adminApi(request, path, env, verifyToken) {
     try {
       await env.DB.prepare('UPDATE users SET plan=?, expiry=?, updated_at=datetime(\'now\') WHERE id=?').bind(plan, expiry, id).run();
       return json({ ok: true });
+    } catch (e) { return json({ error: 'db_error', detail: String(e && e.message || e) }, 500); }
+  }
+
+  // ===== Studios Control (Phase 4 — Admin က Code မပြင်ဘဲ ON/OFF ပြုလုပ်နိုင်) =====
+  if (path === '/api/admin/studios' && method === 'GET') {
+    try {
+      const settings = await getStudioSettings(env);
+      const items = Object.keys(STUDIO_REGISTRY).map((id) => ({
+        id,
+        name: STUDIO_REGISTRY[id].name,
+        nameMy: STUDIO_REGISTRY[id].nameMy,
+        enabled: settings[id] !== false,
+      }));
+      return json({ ok: true, items });
+    } catch (e) { return json({ error: 'db_error', detail: String(e && e.message || e) }, 500); }
+  }
+
+  if (path.indexOf('/api/admin/studios/') === 0 && method === 'PUT') {
+    const id = decodeURIComponent(path.slice('/api/admin/studios/'.length));
+    const body = await readBody(request);
+    try {
+      const r = await setStudioEnabled(env, id, !!(body && body.enabled));
+      return json({ ok: true, id: r.id, enabled: r.enabled });
     } catch (e) { return json({ error: 'db_error', detail: String(e && e.message || e) }, 500); }
   }
 
