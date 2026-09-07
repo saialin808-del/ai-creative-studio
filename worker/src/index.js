@@ -1,5 +1,5 @@
 // AI Creative Studio — Cloudflare Worker (Phase 3e+ — hardened errors + Phase 2 core modular)
-import { signToken, verifyToken } from './core/auth.js';
+import { signToken, verifyToken, hashPassword, verifyPassword } from './core/auth.js';
 import { callGeminiText } from './core/ai.js';
 import { getCMSData, buildSystemPrompt } from './core/cms.js';
 import { generateStudio } from './studio.js';
@@ -27,6 +27,7 @@ import { SHOP_HTML } from './frontend/shop.js';
 import { CREATIONS_HTML } from './frontend/creations.js';
 import { SETTINGS_HTML } from './frontend/settings.js';
 import { PROJECTS_HTML } from './frontend/projects.js';
+import { LOGIN_HTML } from './frontend/login.js';
 import { ADMIN_HTML, adminApi } from './admin.js';
 
 const cors = {
@@ -53,6 +54,10 @@ function htmlPage(html) {
 function bearer(req) {
   const h = req.headers.get('Authorization') || '';
   return h.startsWith('Bearer ') ? h.slice(7).trim() : '';
+}
+
+async function readBody(request) {
+  try { return await request.json(); } catch (e) { return null; }
 }
 
 // Admin Panel ကို Browser မှ တိုက်ရိုက် နှိပ်ဝင်နိုင်ရန် Cookie Session (Phase 11 — Rule 13)
@@ -277,14 +282,22 @@ export default {
           let userId;
           if (existing) {
             userId = existing.id;
-            await env.DB.prepare('UPDATE users SET updated_at = datetime(\'now\') WHERE id = ?').bind(userId).run();
+            // Phase 12 — Google မှ Name ပါလာပါက User နာမည် ဖြည့်ပေးသည် (Name ရှိပြီးသားဆိုလျှင် မပြောင်း)
+            if (user.name) {
+              try {
+                await env.DB.prepare('UPDATE users SET name = CASE WHEN name = \'\' THEN ? ELSE name END, updated_at = datetime(\'now\') WHERE id = ?').bind(String(user.name).slice(0, 60), userId).run();
+              } catch (e) { console.error('[AICS] update google name failed', String(e)); }
+            } else {
+              await env.DB.prepare('UPDATE users SET updated_at = datetime(\'now\') WHERE id = ?').bind(userId).run();
+            }
           } else {
-            const ins = await env.DB.prepare('INSERT INTO users (email, plan, created_at, updated_at) VALUES (?, \'FREE\', datetime(\'now\'), datetime(\'now\'))').bind(user.email).run();
+            const ins = await env.DB.prepare('INSERT INTO users (email, name, plan, created_at, updated_at) VALUES (?, ?, \'FREE\', datetime(\'now\'), datetime(\'now\'))').bind(user.email, String(user.name || '').slice(0, 60)).run();
             userId = ins.meta.last_row_id;
           }
 
           const token = await signToken(env, { sub: String(userId), email: user.email, plan: 'FREE' });
-          const state = url.searchParams.get('state') || (origin + '/auth/result');
+          // Phase 12 — Default ကို Personal Workspace (/app) သို့ ပြောင်းသည်
+          const state = url.searchParams.get('state') || (origin + '/app');
           // Phase 11 — Browser မှ Page Navigation များတွင် Header မပါသော်လည်း Admin Panel ဝင်နိုင်ရန်
           // HttpOnly Cookie ကိုပါ ထည့်ပေးသည် (Authorization Header ကို မူလအတိုင်း ထားသည်)
           const sessionCookie = 'aics_token=' + encodeURIComponent(token) + '; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=604800';
@@ -298,6 +311,8 @@ export default {
       }
 
       if (path === '/auth/result' && request.method === 'GET') return htmlPage(loginResultPage());
+      // Phase 12 — Professional Personal Login UI (/login)
+      if (path === '/login' || path === '/login/') return htmlPage(LOGIN_HTML);
       if (path === '/app' || path === '/app/') return htmlPage(APP_HTML);
       // ===== Studio Pages (Phase 4 — Registry + Admin ON/OFF နှင့် ချိတ်သည်) =====
       // Studio Disabled ဖြစ်ပါက Friendly Message ပြပြီး Access ပိတ်သည် (Rule 14 — Server-side)
@@ -344,6 +359,40 @@ export default {
           headers: { Location: url.origin + '/app', 'Set-Cookie': clearSessionCookie() },
         });
       }
+
+      // ===== Phase 12 — Email/Password Sign Up (PBKDF2 — Plain Text မသိမ်းပါ) =====
+      if (path === '/api/auth/signup' && request.method === 'POST') {
+        const body = await readBody(request).catch(() => null);
+        const name = String((body && body.name) || '').trim().slice(0, 60);
+        const email = String((body && body.email) || '').trim().toLowerCase();
+        const password = String((body && body.password) || '');
+        if (!name) return json({ error: 'missing_name', detail: 'Name ထည့်ပါ။' }, 400, cors);
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return json({ error: 'invalid_email', detail: 'Email ပုံစံ မမှန်ပါ။' }, 400, cors);
+        if (password.length < 6) return json({ error: 'weak_password', detail: 'Password အနည်းဆုံး ၆ လုံး ရှိရပါမည်။' }, 400, cors);
+        if (!env.DB) return json({ error: 'db_missing' }, 500, cors);
+        const dup = await env.DB.prepare('SELECT id FROM users WHERE email = ?').bind(email).first();
+        if (dup) return json({ error: 'email_taken', detail: 'ဒီ Email နဲ့ Account ရှိပြီးသားပါ။ Google Login သုံးပါ သို့မဟုတ် Sign in လုပ်ပါ။' }, 409, cors);
+        const hash = await hashPassword(password);
+        const ins = await env.DB.prepare('INSERT INTO users (email, name, password_hash, plan, created_at, updated_at) VALUES (?, ?, ?, \'FREE\', datetime(\'now\'), datetime(\'now\'))').bind(email, name, hash).run();
+        const userId = ins.meta.last_row_id;
+        const token = await signToken(env, { sub: String(userId), email, plan: 'FREE' });
+        return json({ ok: true, token, email, name, plan: 'FREE', user_id: String(userId) }, 201, cors);
+      }
+
+      // ===== Phase 12 — Email/Password Sign In =====
+      if (path === '/api/auth/signin' && request.method === 'POST') {
+        const body = await readBody(request).catch(() => null);
+        const email = String((body && body.email) || '').trim().toLowerCase();
+        const password = String((body && body.password) || '');
+        if (!email || !password || !env.DB) return json({ error: 'invalid_credentials', detail: 'Email သို့မဟုတ် Password မှားနေပါသည်။' }, 401, cors);
+        const row = await env.DB.prepare('SELECT id, name, plan, expiry, password_hash FROM users WHERE email = ?').bind(email).first();
+        if (!row || !row.password_hash) return json({ error: 'invalid_credentials', detail: 'Email သို့မဟုတ် Password မှားနေပါသည်။' }, 401, cors);
+        const okPass = await verifyPassword(password, row.password_hash);
+        if (!okPass) return json({ error: 'invalid_credentials', detail: 'Email သို့မဟုတ် Password မှားနေပါသည်။' }, 401, cors);
+        const token = await signToken(env, { sub: String(row.id), email, plan: row.plan || 'FREE' });
+        return json({ ok: true, token, email, name: row.name || '', plan: row.plan || 'FREE', user_id: String(row.id) }, 200, cors);
+      }
+
       const adminResp = await adminApi(request, path, env, verifyToken);
       if (adminResp) return adminResp;
       if (path === '/ai-test') return htmlPage(aiTestPage());
@@ -364,7 +413,38 @@ export default {
         const preferences = await getUserPreferences(env, payload.sub);
         // Phase 4 — Studio ON/OFF အနေအထားကိုပါ ပြန်ပို့သည် (Sidebar မှ ပိတ်ထားသော Studio ကို ဖျောက်ရန်)
         const studio_settings = await getStudioSettings(env);
-        return json({ email: payload.email, plan, user_id: payload.sub, is_admin: isAdmin, settings, preferences, studio_settings }, 200, cors);
+        // Phase 12 — Name + Usage Summary (Personal Profile အတွက်)
+        let name = '';
+        let usage = { ai_requests: 0, image_generations: 0, voice_generations: 0 };
+        try {
+          const row = env.DB ? await env.DB.prepare('SELECT name FROM users WHERE id = ?').bind(payload.sub).first() : null;
+          name = (row && row.name) || '';
+          const usageRows = env.DB ? await env.DB.prepare('SELECT category, COUNT(*) AS n FROM usage WHERE user_id = ? GROUP BY category').bind(payload.sub).all() : null;
+          if (usageRows && usageRows.results) {
+            usageRows.results.forEach(function (r) {
+              const cat = String(r.category || '').toUpperCase();
+              const n = Number(r.n) || 0;
+              if (cat.indexOf('IMAGE') > -1) usage.image_generations += n;
+              else if (cat.indexOf('VOICE') > -1) usage.voice_generations += n;
+              else usage.ai_requests += n;
+            });
+          }
+        } catch (e) { console.error('[AICS] me usage failed', String(e)); }
+        return json({ email: payload.email, name, plan, user_id: payload.sub, is_admin: isAdmin, usage, settings, preferences, studio_settings }, 200, cors);
+      }
+
+      // ===== Phase 12 — Personal Profile Name ပြောင်းခြင်း (Server-side Whitelist) =====
+      if (path === '/api/users/me/profile' && request.method === 'PUT') {
+        const token = bearer(request);
+        if (!token) return json({ error: 'unauthorized' }, 401, cors);
+        const payload = await verifyTokenSafe(env, token);
+        if (!payload) return json({ error: 'invalid_token' }, 401, cors);
+        const body = await readBody(request).catch(() => null);
+        const name = String((body && body.name) || '').trim().slice(0, 60);
+        if (!name) return json({ error: 'missing_name', detail: 'Name မထည့်နိုင်ပါ။' }, 400, cors);
+        if (!env.DB) return json({ error: 'db_missing' }, 500, cors);
+        await env.DB.prepare('UPDATE users SET name = ?, updated_at = datetime(\'now\') WHERE id = ?').bind(name, payload.sub).run();
+        return json({ ok: true, name }, 200, cors);
       }
 
       // ===== Personal Settings — Profile/Preferences သိမ်းခြင်း (Phase 3) =====
