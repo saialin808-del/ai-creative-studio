@@ -40,12 +40,14 @@ function appShellSidebar(activeId) {
     '<button class="hamburger" onclick="toggleSidebar()">☰</button>\n' +
     '<div class="backdrop" id="backdrop" onclick="toggleSidebar()"></div>\n' +
     '<nav class="sidebar" id="sidebar">\n' +
+    '  <div class="sidebar-nav">\n' +
     '  <div class="brand"><div class="brand-title">🎨 AI Creative Studio</div></div>\n' +
     '  <a class="nav-item' + homeActive + '" href="/app"><span class="nav-icon-circle">🏠</span> ပင်မ</a>\n' +
     '  <div class="nav-label">STUDIOS</div>\n' +
     '  ' + studioLinks(activeId) + '\n' +
     '  <div class="nav-label">MY WORK</div>\n' +
     '  ' + myWorkLinks(creationsActive) + '\n' +
+    '  </div>\n' +
     '  <div class="sidebar-bottom">\n' +
     '    <div class="license-badge" id="licenseBadge">Checking plan...</div>\n' +
     '    <div class="side-email" id="sideEmail" style="font-size:11.5px;color:var(--text3);margin-bottom:8px;word-break:break-all;">—</div>\n' +
@@ -66,11 +68,13 @@ function studioPageSidebar(activeId) {
   const creationsActive = activeId === 'creations' ? ' active' : '';
   return (
     '<div class="sidebar" id="sidebar" style="display:flex;flex-direction:column;">\n' +
+    '  <div class="sidebar-nav">\n' +
     '  <a class="nav-item' + homeActive + '" href="/app"><span class="nav-icon-circle">🏠</span> ပင်မ</a>\n' +
     '  <div class="nav-label">STUDIOS</div>\n' +
     '  ' + studioLinks(activeId) + '\n' +
     '  <div class="nav-label">MY WORK</div>\n' +
     '  ' + myWorkLinks(creationsActive) + '\n' +
+    '  </div>\n' +
     '  <div class="sidebar-bottom">\n' +
     '  <div class="license-badge" id="sidePlan">—</div>\n' +
     '  <div class="side-email" id="sideEmail">—</div>\n' +
@@ -97,10 +101,19 @@ export function renderSidebar(activeId, opts) {
 // စာမျက်နှာတိုင်း ဤ Style ကို ရရှိသောကြောင့် Responsive ကို နေရာတစ်ခုတည်းမှ ထိန်းချုပ်သည်
 function responsiveStyles() {
   return '<style>\n' +
-    '/* ===== AI Creative Studio — Shared Responsive (Phase 6 — Rule 7) ===== */\n' +
-    '/* Desktop ≥1200px — မူလ Layout (ပြောင်းစရာမလို) */\n' +
-    '/* iPad / Tablet 769–1199px — Compact Sidebar */\n' +
+    '/* ===== AI Creative Studio — Shared Responsive (Phase 6 + 8 — Rule 7) ===== */\n' +
+    '/* Sidebar ကို Flex Column ဖြစ်စေပြီး Nav အလယ်တွင် Scroll လုပ်နိုင်၊ အောက်ခလုတ်များ အမြဲမြင်ရအောင် (Phase 8) */\n' +
+    '.sidebar{display:flex;flex-direction:column;}\n' +
+    '.sidebar-nav{flex:1 1 auto;overflow-y:auto;min-height:0;}\n' +
+    '.sidebar > .brand{flex-shrink:0;}\n' +
+    '.sidebar-bottom{flex-shrink:0;margin-top:auto;}\n' +
+    '/* Desktop ≥1200px — Sticky Sidebar (နေရာလွတ်ကြီးနှင့် ခလုတ်ပျောက်ခြင်း မဖြစ်ရအောင်) */\n' +
+    '@media (min-width:1200px){\n' +
+    '  .layout > .sidebar{position:sticky;top:71px;height:calc(100vh - 85px);}\n' +
+    '}\n' +
+    '/* iPad / Tablet 769–1199px — Compact + Sticky Sidebar */\n' +
     '@media (min-width:769px) and (max-width:1199px){\n' +
+    '  .layout > .sidebar{position:sticky;top:71px;height:calc(100vh - 85px);}\n' +
     '  .sidebar{width:200px;padding:18px 12px;}\n' +
     '  .main-content{margin-left:240px;padding:20px;}\n' +
     '  .layout > .sidebar{width:190px;padding:12px 10px;margin:12px 10px;}\n' +
@@ -116,7 +129,10 @@ function responsiveStyles() {
     '  .sidebar{width:220px;}\n' +
     '  /* Voice/Shop မူလ CSS တွင် Sidebar ကို ဖျောက်ထားသော Bug ကို ပြင် → Drawer ပြုလုပ်သည် */\n' +
     '  .layout > .sidebar{display:flex !important;}\n' +
-    '  .layout > .sidebar{position:fixed;left:-280px;top:57px;bottom:0;z-index:99;width:256px;max-width:82vw;margin:0;border-radius:0 16px 16px 0;padding:16px 14px;overflow-y:auto;transition:left .3s;box-shadow:4px 0 20px rgba(0,0,0,.5);}\n' +
+    '  .layout > .sidebar{position:fixed;left:-280px;top:57px;bottom:0;z-index:99;width:256px;max-width:82vw;margin:0;border-radius:0 16px 16px 0;padding:16px 14px;transition:left .3s;box-shadow:4px 0 20px rgba(0,0,0,.5);}\n' +
+    '  /* Drawer ထဲတွင် Nav သာ Scroll ဖြစ်ပြီး အောက်ခလုတ် (API Key/Logout စသည်) အမြဲမြင်ရမည် */\n' +
+    '  .layout > .sidebar .sidebar-nav{flex:1 1 auto;overflow-y:auto;min-height:0;}\n' +
+    '  .layout > .sidebar .sidebar-bottom{flex-shrink:0;margin-top:auto;padding-top:12px;}\n' +
     '  .layout > .sidebar.open{left:0;}\n' +
     '  .layout > .main,.layout > main.main{padding:14px;}\n' +
     '  .main-content{margin-left:0;padding:64px 14px 20px;}\n' +
