@@ -174,6 +174,15 @@ export function sidebarScript() {
     '  }\n' +
     '})();\n' +
     'var SB_TOKEN = localStorage.getItem(\'aics_token\') || \'\';\n' +
+    '// Phase 12-fix — Remember Session: localStorage မရှိသော်လည်း Cookie ရှိလျှင် Token ပြန်ရယူသည် (Rule 14)\n' +
+    'if (!SB_TOKEN) {\n' +
+    '  fetch(\'/api/auth/session\').then(function (r) { return r.json(); }).then(function (d) {\n' +
+    '    if (d && d.token) {\n' +
+    '      try { localStorage.setItem(\'aics_token\', d.token); } catch (e) {}\n' +
+    '      location.reload();\n' +
+    '    }\n' +
+    '  }).catch(function () {});\n' +
+    '}\n' +
     'function __sbToast(msg, isError) {\n' +
     '  try { if (typeof showToast === \'function\') { showToast(msg, isError ? \'error\' : \'success\'); return; } } catch (e) {}\n' +
     '  try {\n' +
@@ -213,7 +222,7 @@ export function sidebarScript() {
     '    .then(function (r) { return r.json(); })\n' +
     '    .then(function (d) {\n' +
     '      if (!d) return;\n' +
-    '      if (d.error) { localStorage.removeItem(\'aics_token\'); location.reload(); return; }\n' +
+    '      if (d.error) { localStorage.removeItem(\'aics_token\'); location.href = \'/api/auth/logout\'; return; }\n' +
     '      var badge = document.getElementById(\'licenseBadge\') || document.getElementById(\'sidePlan\');\n' +
     '      if (badge) {\n' +
     '        if (d.plan === \'PRO\') { badge.innerText = \'⭐ PRO Plan\'; badge.classList.add(\'pro\'); }\n' +
