@@ -21,6 +21,16 @@ function studioLinks(activeId) {
     .join('\n  ');
 }
 
+// ---- MY WORK / SETTINGS လင့်ခ်များ (Phase 3 — Favorites + Settings) ----
+function myWorkLinks(creationsActive) {
+  return (
+    '<a class="nav-item' + creationsActive + '" href="/app/creations"><span class="nav-icon-circle">📁</span> ဖန်တီးမှုများ</a>\n' +
+    '  <a class="nav-item" href="/app/creations?fav=1"><span class="nav-icon-circle">⭐</span> အနှစ်သက်ဆုံး</a>\n' +
+    '  <div class="nav-label">SETTINGS</div>\n' +
+    '  <a class="nav-item" href="/app/settings"><span class="nav-icon-circle">🛠️</span> ဆက်တင်များ</a>'
+  );
+}
+
 // ---- App Shell Sidebar (Home / Creations ပုံစံ — Hamburger + Backdrop + Brand) ----
 function appShellSidebar(activeId) {
   const homeActive = activeId === 'home' ? ' active' : '';
@@ -34,7 +44,7 @@ function appShellSidebar(activeId) {
     '  <div class="nav-label">STUDIOS</div>\n' +
     '  ' + studioLinks(activeId) + '\n' +
     '  <div class="nav-label">MY WORK</div>\n' +
-    '  <a class="nav-item' + creationsActive + '" href="/app/creations"><span class="nav-icon-circle">📁</span> ဖန်တီးမှုများ</a>\n' +
+    '  ' + myWorkLinks(creationsActive) + '\n' +
     '  <div class="sidebar-bottom">\n' +
     '    <div class="license-badge" id="licenseBadge">Checking plan...</div>\n' +
     '    <div class="side-email" id="sideEmail" style="font-size:11.5px;color:var(--text3);margin-bottom:8px;word-break:break-all;">—</div>\n' +
@@ -59,7 +69,7 @@ function studioPageSidebar(activeId) {
     '  <div class="nav-label">STUDIOS</div>\n' +
     '  ' + studioLinks(activeId) + '\n' +
     '  <div class="nav-label">MY WORK</div>\n' +
-    '  <a class="nav-item' + creationsActive + '" href="/app/creations"><span class="nav-icon-circle">📁</span> ဖန်တီးမှုများ</a>\n' +
+    '  ' + myWorkLinks(creationsActive) + '\n' +
     '  <div class="sidebar-bottom">\n' +
     '  <div class="license-badge" id="sidePlan">—</div>\n' +
     '  <div class="side-email" id="sideEmail">—</div>\n' +
