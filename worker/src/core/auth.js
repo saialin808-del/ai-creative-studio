@@ -50,4 +50,48 @@ async function verifyToken(env, token) {
   return data;
 }
 
-export { signToken, verifyToken };
+// ============================================================
+// Phase 12 — Email/Password (Rule 11: Plain Text ဖြင့် မသိမ်းပါ)
+// PBKDF2-SHA256 + Per-User Random Salt + Timing-safe Compare
+// Iterations 30k — Cloudflare Workers CPU Budget နှင့် ညှိထားသည်
+// Google OAuth က Primary Authentication အဖြစ် ဆက်ထားသည်
+// ============================================================
+const PBKDF2_ITERATIONS = 30000;
+
+async function hashPassword(password) {
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const keyMaterial = await crypto.subtle.importKey('raw', enc.encode(String(password || '')), 'PBKDF2', false, ['deriveBits']);
+  const bits = await crypto.subtle.deriveBits(
+    { name: 'PBKDF2', salt, iterations: PBKDF2_ITERATIONS, hash: 'SHA-256' },
+    keyMaterial,
+    256
+  );
+  return 'pbkdf2$' + PBKDF2_ITERATIONS + '$' + b64url(salt) + '$' + b64url(new Uint8Array(bits));
+}
+
+async function verifyPassword(password, stored) {
+  try {
+    const parts = String(stored || '').split('$');
+    if (parts.length !== 4 || parts[0] !== 'pbkdf2') return false;
+    const iterations = parseInt(parts[1], 10);
+    if (!(iterations > 0 && iterations <= 600000)) return false;
+    const salt = b64urlDecode(parts[2]);
+    const expect = b64urlDecode(parts[3]);
+    if (!expect.length) return false;
+    const keyMaterial = await crypto.subtle.importKey('raw', enc.encode(String(password || '')), 'PBKDF2', false, ['deriveBits']);
+    const bits = await crypto.subtle.deriveBits(
+      { name: 'PBKDF2', salt, iterations, hash: 'SHA-256' },
+      keyMaterial,
+      expect.length * 8
+    );
+    const got = new Uint8Array(bits);
+    if (got.length !== expect.length) return false;
+    let diff = 0;
+    for (let i = 0; i < got.length; i++) diff |= got[i] ^ expect[i];
+    return diff === 0;
+  } catch (e) {
+    return false;
+  }
+}
+
+export { signToken, verifyToken, hashPassword, verifyPassword };
