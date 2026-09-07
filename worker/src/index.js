@@ -14,6 +14,7 @@ import { getUserSettings, updateUserSettings, getUserPreferences, updateUserPref
 import { createProject, listProjects, deleteProject } from './core/projects';
 import { trackUsage } from './core/usage';
 import { getStudioSettings, isStudioEnabled, setStudioEnabled } from './core/studioSettings';
+import { checkFeature } from './core/featureSettings';
 import { getStudio } from './config/studios';
 import { getUserApiKey, saveUserApiKey } from './core/utilities';
 import { APP_HTML } from './frontend';
@@ -64,6 +65,17 @@ async function resolvePlan(env, payload) {
 // Usage Tracking — Track လုပ်ရာတွင် မှားယွင်းမှု ရှိလျှင်ပင် အဓိက API မထိခိုက်စေရန် Safe Wrapper (Phase 3)
 async function trackUsageSafe(env, userId, category) {
   try { await trackUsage(env, userId, category); } catch (e) {}
+}
+
+// Phase 5 — Feature Check (Rule 15): Free/Pro ကို Admin Config (feature_settings) ဖြင့် ထိန်းချုပ်သည်
+// မသင့်လျော်ပါက json 403 Response ကို ပြန်ပေးသည် (မှန်လျှင် null)
+async function requireFeature(env, featureId, plan, reqType) {
+  const r = await checkFeature(env, featureId, plan, reqType);
+  if (r.ok) return null;
+  const msg = r.reason === 'pro_type'
+    ? 'ဒီ feature က PRO အတွက်ပါ။ Type 1 ကို သုံးပါ၊ သို့မဟုတ် upgrade လုပ်ပါ။'
+    : (r.reason === 'disabled' ? 'ဒီ feature ကို ယခု ပိတ်ထားပါသည်။' : 'ဒီ feature က PRO အတွက်ပါ။');
+  return json({ error: r.reason === 'disabled' ? 'feature_disabled' : 'pro_only', detail: msg }, 403, cors);
 }
 
 // Studio Disabled ဖြစ်ပါက ပြမည့် Friendly စာမျက်နှာ (Phase 4 — Rule 14)
@@ -386,9 +398,7 @@ export default {
         if (!body || !body.studio || !body.idea) return json({ error: 'missing_studio_or_idea' }, 400, cors);
         const plan = await resolvePlan(env, payload);
         const reqType = String(body.type || '1');
-        if (plan === 'FREE' && reqType !== '1') {
-          return json({ error: 'pro_only', detail: 'ဒီ feature က PRO အတွက်ပါ။ Type 1 ကို သုံးပါ၊ သို့မဟုတ် upgrade လုပ်ပါ။' }, 403, cors);
-        }
+        { const denied = await requireFeature(env, 'generate', plan, reqType); if (denied) return denied; }
         try {
           // BYOK: Request ထဲ Key မပါလျှင် User သိမ်းထားသော Key ကို အလိုအလျောက် ရှာသည်
           let apiKey = body.apiKey;
@@ -435,9 +445,7 @@ export default {
         if (!body || !body.idea) return json({ error: 'missing_idea' }, 400, cors);
         const plan = await resolvePlan(env, payload);
         const reqType = String(body.type || '1');
-        if (plan === 'FREE' && reqType !== '1') {
-          return json({ error: 'pro_only', detail: 'ဒီ feature က PRO အတွက်ပါ။ Type 1 ကို သုံးပါ၊ သို့မဟုတ် upgrade လုပ်ပါ။' }, 403, cors);
-        }
+        { const denied = await requireFeature(env, 'content.generate', plan, reqType); if (denied) return denied; }
         try {
           let apiKey = body.apiKey;
           if (!apiKey) apiKey = await getUserApiKey(env, payload.sub);
@@ -459,9 +467,7 @@ export default {
         if (!body || !body.feedback) return json({ error: 'missing_feedback' }, 400, cors);
         const plan = await resolvePlan(env, payload);
         const reqType = String(body.type || '1');
-        if (plan === 'FREE' && reqType !== '1') {
-          return json({ error: 'pro_only', detail: 'ဒီ feature က PRO အတွက်ပါ။' }, 403, cors);
-        }
+        { const denied = await requireFeature(env, 'content.revise', plan, reqType); if (denied) return denied; }
         try {
           let apiKey = body.apiKey;
           if (!apiKey) apiKey = await getUserApiKey(env, payload.sub);
@@ -511,9 +517,7 @@ export default {
         if (!body || !body.idea) return json({ error: 'missing_idea' }, 400, cors);
         const plan = await resolvePlan(env, payload);
         const reqType = String(body.type || '1');
-        if (plan === 'FREE' && reqType !== '1') {
-          return json({ error: 'pro_only', detail: 'ဒီ feature က PRO အတွက်ပါ။' }, 403, cors);
-        }
+        { const denied = await requireFeature(env, 'content.video', plan, reqType); if (denied) return denied; }
         try {
           let apiKey = body.apiKey;
           if (!apiKey) apiKey = await getUserApiKey(env, payload.sub);
@@ -597,9 +601,7 @@ export default {
         if (!body || !body.idea) return json({ error: 'missing_idea' }, 400, cors);
         const plan = await resolvePlan(env, payload);
         const reqType = String(body.type || '1');
-        if (plan === 'FREE' && reqType !== '1') {
-          return json({ error: 'pro_only', detail: 'ဒီ feature က PRO အတွက်ပါ။ Type 1 ကို သုံးပါ၊ သို့မဟုတ် upgrade လုပ်ပါ။' }, 403, cors);
-        }
+        { const denied = await requireFeature(env, 'story.generate', plan, reqType); if (denied) return denied; }
         try {
           let apiKey = body.apiKey;
           if (!apiKey) apiKey = await getUserApiKey(env, payload.sub);
@@ -622,9 +624,7 @@ export default {
         if (!body.currentStory) return json({ error: 'missing_current_story' }, 400, cors);
         const plan = await resolvePlan(env, payload);
         const reqType = String(body.type || '1');
-        if (plan === 'FREE' && reqType !== '1') {
-          return json({ error: 'pro_only', detail: 'ဒီ feature က PRO အတွက်ပါ။' }, 403, cors);
-        }
+        { const denied = await requireFeature(env, 'story.revise', plan, reqType); if (denied) return denied; }
         try {
           let apiKey = body.apiKey;
           if (!apiKey) apiKey = await getUserApiKey(env, payload.sub);
@@ -651,9 +651,7 @@ export default {
         if (!body || !body.idea) return json({ error: 'missing_idea' }, 400, cors);
         const plan = await resolvePlan(env, payload);
         const reqType = String(body.type || '1');
-        if (plan === 'FREE' && reqType !== '1') {
-          return json({ error: 'pro_only', detail: 'ဒီ feature က PRO အတွက်ပါ။' }, 403, cors);
-        }
+        { const denied = await requireFeature(env, 'story.video', plan, reqType); if (denied) return denied; }
         try {
           let apiKey = body.apiKey;
           if (!apiKey) apiKey = await getUserApiKey(env, payload.sub);
@@ -693,9 +691,7 @@ export default {
         if (!body || !body.idea) return json({ error: 'missing_idea' }, 400, cors);
         const plan = await resolvePlan(env, payload);
         const reqType = String(body.type || '1');
-        if (plan === 'FREE' && reqType !== '1') {
-          return json({ error: 'pro_only', detail: 'ဒီ feature က PRO အတွက်ပါ။ Type 1 ကို သုံးပါ၊ သို့မဟုတ် upgrade လုပ်ပါ။' }, 403, cors);
-        }
+        { const denied = await requireFeature(env, 'short.generate', plan, reqType); if (denied) return denied; }
         try {
           let apiKey = body.apiKey;
           if (!apiKey) apiKey = await getUserApiKey(env, payload.sub);
@@ -718,9 +714,7 @@ export default {
         if (!body.currentShort) return json({ error: 'missing_current_short' }, 400, cors);
         const plan = await resolvePlan(env, payload);
         const reqType = String(body.type || '1');
-        if (plan === 'FREE' && reqType !== '1') {
-          return json({ error: 'pro_only', detail: 'ဒီ feature က PRO အတွက်ပါ။' }, 403, cors);
-        }
+        { const denied = await requireFeature(env, 'short.revise', plan, reqType); if (denied) return denied; }
         try {
           let apiKey = body.apiKey;
           if (!apiKey) apiKey = await getUserApiKey(env, payload.sub);
@@ -744,9 +738,7 @@ export default {
         if (!body || !body.idea) return json({ error: 'missing_idea' }, 400, cors);
         const plan = await resolvePlan(env, payload);
         const reqType = String(body.type || '1');
-        if (plan === 'FREE' && reqType !== '1') {
-          return json({ error: 'pro_only', detail: 'ဒီ feature က PRO အတွက်ပါ။' }, 403, cors);
-        }
+        { const denied = await requireFeature(env, 'short.video', plan, reqType); if (denied) return denied; }
         try {
           let apiKey = body.apiKey;
           if (!apiKey) apiKey = await getUserApiKey(env, payload.sub);
@@ -789,9 +781,7 @@ export default {
         if (!body || !body.idea) return json({ error: 'missing_idea' }, 400, cors);
         const plan = await resolvePlan(env, payload);
         const reqType = String(body.type || '1');
-        if (plan === 'FREE' && reqType !== '1') {
-          return json({ error: 'pro_only', detail: 'ဒီ feature က PRO အတွက်ပါ။ Type 1 ကို သုံးပါ၊ သို့မဟုတ် upgrade လုပ်ပါ။' }, 403, cors);
-        }
+        { const denied = await requireFeature(env, 'image.prompt', plan, reqType); if (denied) return denied; }
         try {
           let apiKey = body.apiKey;
           if (!apiKey) apiKey = await getUserApiKey(env, payload.sub);
@@ -815,9 +805,7 @@ export default {
         if (!body || !body.idea) return json({ error: 'missing_idea' }, 400, cors);
         const plan = await resolvePlan(env, payload);
         const reqType = String(body.type || '1');
-        if (plan === 'FREE' && reqType !== '1') {
-          return json({ error: 'pro_only', detail: 'ဒီ feature က PRO အတွက်ပါ။' }, 403, cors);
-        }
+        { const denied = await requireFeature(env, 'image.ad_prompt', plan, reqType); if (denied) return denied; }
         try {
           let apiKey = body.apiKey;
           if (!apiKey) apiKey = await getUserApiKey(env, payload.sub);
@@ -883,9 +871,7 @@ export default {
         if (!body || !body.audioBase64) return json({ error: 'missing_audio' }, 400, cors);
         const plan = await resolvePlan(env, payload);
         const reqType = String(body.type || '1');
-        if (plan === 'FREE' && reqType !== '1') {
-          return json({ error: 'pro_only', detail: 'ဒီ feature က PRO အတွက်ပါ။' }, 403, cors);
-        }
+        { const denied = await requireFeature(env, 'voice.transcribe', plan, reqType); if (denied) return denied; }
         try {
           let apiKey = body.apiKey;
           if (!apiKey) apiKey = await getUserApiKey(env, payload.sub);
@@ -910,9 +896,7 @@ export default {
         const body = await request.json().catch(() => null);
         if (!body || !body.audioBase64) return json({ error: 'missing_audio' }, 400, cors);
         const plan = await resolvePlan(env, payload);
-        if (plan !== 'PRO') {
-          return json({ error: 'pro_only', detail: 'ဒီ feature က PRO အတွက်ပါ။' }, 403, cors);
-        }
+        { const denied = await requireFeature(env, 'voice.srt', plan, String(body.type || '2')); if (denied) return denied; }
         try {
           let apiKey = body.apiKey;
           if (!apiKey) apiKey = await getUserApiKey(env, payload.sub);
@@ -936,9 +920,7 @@ export default {
         const body = await request.json().catch(() => null);
         if (!body || !body.srtText) return json({ error: 'missing_srt' }, 400, cors);
         const plan = await resolvePlan(env, payload);
-        if (plan !== 'PRO') {
-          return json({ error: 'pro_only', detail: 'ဒီ feature က PRO အတွက်ပါ။' }, 403, cors);
-        }
+        { const denied = await requireFeature(env, 'voice.translate_srt', plan, String(body.type || '2')); if (denied) return denied; }
         try {
           let apiKey = body.apiKey;
           if (!apiKey) apiKey = await getUserApiKey(env, payload.sub);
@@ -963,9 +945,7 @@ export default {
         if (!body || !body.idea) return json({ error: 'missing_idea' }, 400, cors);
         const plan = await resolvePlan(env, payload);
         const reqType = String(body.type || '1');
-        if (plan === 'FREE' && reqType !== '1') {
-          return json({ error: 'pro_only', detail: 'ဒီ feature က PRO အတွက်ပါ။' }, 403, cors);
-        }
+        { const denied = await requireFeature(env, 'shop.content_generate', plan, reqType); if (denied) return denied; }
         try {
           let apiKey = body.apiKey;
           if (!apiKey) apiKey = await getUserApiKey(env, payload.sub);
@@ -988,9 +968,7 @@ export default {
         if (!body.currentContent) return json({ error: 'missing_current_content' }, 400, cors);
         const plan = await resolvePlan(env, payload);
         const reqType = String(body.type || '1');
-        if (plan === 'FREE' && reqType !== '1') {
-          return json({ error: 'pro_only', detail: 'ဒီ feature က PRO အတွက်ပါ။' }, 403, cors);
-        }
+        { const denied = await requireFeature(env, 'shop.content_revise', plan, reqType); if (denied) return denied; }
         try {
           let apiKey = body.apiKey;
           if (!apiKey) apiKey = await getUserApiKey(env, payload.sub);
@@ -1014,9 +992,7 @@ export default {
         if (!body || !body.idea) return json({ error: 'missing_idea' }, 400, cors);
         const plan = await resolvePlan(env, payload);
         const reqType = String(body.type || '1');
-        if (plan === 'FREE' && reqType !== '1') {
-          return json({ error: 'pro_only', detail: 'ဒီ feature က PRO အတွက်ပါ။' }, 403, cors);
-        }
+        { const denied = await requireFeature(env, 'shop.video_generate', plan, reqType); if (denied) return denied; }
         try {
           let apiKey = body.apiKey;
           if (!apiKey) apiKey = await getUserApiKey(env, payload.sub);

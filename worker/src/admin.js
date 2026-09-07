@@ -1,9 +1,13 @@
-// Phase 5 — AI Creative Studio CMS Manager + Users Manager (Admin)
+// Phase 5 — AI Creative Studio Admin Panel (Dashboard / CMS / Users / Studios / Features / Usage / Logs)
 // Phase 4 — Studio Control (ON/OFF) ထည့်သည် (Rule 14 — Admin က Code မပြင်ဘဲ ထိန်းချုပ်နိုင်)
-// Served at /admin. CMS CRUD via /api/cms. Users via /api/admin/users. Studios via /api/admin/studios. Admin-only.
+// Phase 5 — Free/Pro Feature ထိန်းချုပ် + Usage Statistics + Admin Logs (Rules 12/15/16/18)
+// Served at /admin. Admin-only — Server-side တွင် အမြဲ စစ်ဆေးသည် (Rule 13).
 
 import { setStudioEnabled, getStudioSettings } from './core/studioSettings.js';
 import { STUDIO_REGISTRY } from './config/studios.js';
+import { FEATURE_REGISTRY } from './config/features.js';
+import { getFeatureSettings, setFeatureSetting } from './core/featureSettings.js';
+import { logAdminAction, listAdminLogs } from './core/adminLogs.js';
 
 export const ADMIN_HTML = `<!DOCTYPE html>
 <html lang="my">
@@ -52,11 +56,22 @@ label{display:block;font-size:12px;font-weight:600;margin:10px 0 3px}
 </header>
 <main>
   <div class="card row" style="gap:4px;">
-    <button class="btn active" id="tabCms" onclick="switchTab('cms')">📋 CMS</button>
+    <button class="btn active" id="tabDashboard" onclick="switchTab('dashboard')">📊 Dashboard</button>
+    <button class="btn inactive" id="tabCms" onclick="switchTab('cms')">📋 CMS</button>
     <button class="btn inactive" id="tabUsers" onclick="switchTab('users')">👥 Users</button>
     <button class="btn inactive" id="tabStudios" onclick="switchTab('studios')">🎛️ Studios</button>
+    <button class="btn inactive" id="tabFeatures" onclick="switchTab('features')">⚙️ Features</button>
+    <button class="btn inactive" id="tabUsage" onclick="switchTab('usage')">📈 Usage</button>
+    <button class="btn inactive" id="tabLogs" onclick="switchTab('logs')">🧾 Logs</button>
   </div>
-  <div id="cmsView">
+  <div id="dashboardView">
+    <div class="card row" style="gap:8px;">
+      <button class="btn" onclick="loadDashboard()">⟳ Refresh</button>
+    </div>
+    <div class="card row" id="statCards" style="gap:8px;"></div>
+    <div class="card"><b>🆕 နောက်ဆုံး User များ</b><div id="recentUsers"></div></div>
+  </div>
+  <div id="cmsView" class="hidden">
     <div class="card row">
       <select id="fStudio"></select>
       <select id="fPlan">
@@ -83,6 +98,28 @@ label{display:block;font-size:12px;font-weight:600;margin:10px 0 3px}
       <span style="font-size:12px;color:#6B7280;">Studio ကို ON/OFF ပြုလုပ်ပါက User App ၏ Sidebar နှင့် Access ချက်ချင်း ပြောင်းပါမည်</span>
     </div>
     <div id="studiosList"></div>
+  </div>
+  <div id="featuresView" class="hidden">
+    <div class="card row">
+      <button class="btn" onclick="loadFeatures()">⟳ Refresh</button>
+      <span style="font-size:12px;color:#6B7280;">Free/Pro Feature ကို Code မပြင်ဘဲ ဤနေရာမှ ထိန်းချုပ်နိုင်သည် (Rule 15)</span>
+    </div>
+    <div id="featuresList"></div>
+  </div>
+  <div id="usageView" class="hidden">
+    <div class="card row">
+      <button class="btn" onclick="loadUsage()">⟳ Refresh</button>
+      <span style="font-size:12px;color:#6B7280;">သုံးစွဲမှု Statistics — Daily + Top Users</span>
+    </div>
+    <div class="card"><b>📅 နေ့အလိုက် သုံးစွဲမှု</b><div id="usageDaily"></div></div>
+    <div class="card"><b>🏆 Top Users</b><div id="usageTop"></div></div>
+  </div>
+  <div id="logsView" class="hidden">
+    <div class="card row">
+      <button class="btn" onclick="loadLogs()">⟳ Refresh</button>
+      <span style="font-size:12px;color:#6B7280;">Admin လုပ်ဆောင်ချက် မှတ်တမ်း (Audit)</span>
+    </div>
+    <div id="logsList"></div>
   </div>
 </main>
 <div id="formWrap" class="hidden">
@@ -152,14 +189,116 @@ function fillStudios(){
 
 function switchTab(tab){
   currentTab=tab;
-  $('cmsView').classList.toggle('hidden',tab!=='cms');
-  $('usersView').classList.toggle('hidden',tab!=='users');
-  $('studiosView').classList.toggle('hidden',tab!=='studios');
-  $('tabCms').className='btn '+(tab==='cms'?'active':'inactive');
-  $('tabUsers').className='btn '+(tab==='users'?'active':'inactive');
-  $('tabStudios').className='btn '+(tab==='studios'?'active':'inactive');
+  ['dashboard','cms','users','studios','features','usage','logs'].forEach(function(t){
+    $('tab'+t.charAt(0).toUpperCase()+t.slice(1)).className='btn '+(tab===t?'active':'inactive');
+    $(t+'View').classList.toggle('hidden',tab!==t);
+  });
   if(tab==='users') loadUsers();
   if(tab==='studios') loadStudios();
+  if(tab==='features') loadFeatures();
+  if(tab==='usage') loadUsage();
+  if(tab==='logs') loadLogs();
+  if(tab==='dashboard') loadDashboard();
+}
+
+// ===== Phase 5 — Dashboard (Statistics) =====
+function loadDashboard(){
+  api('/api/admin/dashboard').then(function(d){
+    if(d.error==='forbidden'){location.href='/app';return;}
+    if(d.error){$('statCards').innerHTML='<span class="err">'+(d.detail||d.error)+'</span>';return;}
+    var st=d.stats||{};
+    var cards=[
+      ['👥 Users',st.users||0],
+      ['⭐ PRO',st.pro||0],
+      ['📁 Creations',st.creations||0],
+      ['🗂️ Projects',st.projects||0],
+      ['🤖 AI (ယနေ့)',st.ai_today||0],
+      ['🎙️ Voice (ယနေ့)',st.voice_today||0],
+      ['🖼️ Image (ယနေ့)',st.image_today||0]
+    ];
+    var html='';
+    cards.forEach(function(c){html+='<div style="flex:1 1 120px;min-width:0;background:#f4f6fb;border:1px solid #E4E3DD;border-radius:10px;padding:10px;text-align:center;"><div style="font-size:11px;color:#6B7280;">'+c[0]+'</div><div style="font-size:20px;font-weight:700;color:#1b6d96;">'+esc(c[1])+'</div></div>';});
+    $('statCards').innerHTML=html;
+    var ru=$('recentUsers');ru.innerHTML='';
+    (d.recent||[]).forEach(function(u){
+      ru.innerHTML+='<div class="user-meta" style="margin-top:6px;">• '+esc(u.email||'')+' <span class="badge '+(u.plan==='PRO'?'pro':'free')+'">'+esc(u.plan||'FREE')+'</span> · '+esc(u.created_at||'')+'</div>';
+    });
+  }).catch(function(e){
+    $('statCards').innerHTML='<span class="err">Network error: '+esc(String(e&&e.message||e))+'</span>';
+  });
+}
+
+// ===== Phase 5 — Features (Free/Pro Config — Rule 15) =====
+function loadFeatures(){
+  api('/api/admin/features').then(function(d){
+    if(d.error==='forbidden'){location.href='/app';return;}
+    if(d.error){$('featuresList').innerHTML='<div class="card"><span class="err">'+(d.detail||d.error)+'</span></div>';return;}
+    var list=$('featuresList');list.innerHTML='';
+    (d.items||[]).forEach(function(f){
+      var c=document.createElement('div');
+      c.className='card';
+      c.innerHTML='<div class="user-row"><div><b>'+esc(f.nameMy)+'</b> <span style="font-size:11px;color:#6B7280;">('+esc(f.id)+')</span>'+
+        '<div class="user-meta">'+esc(f.desc||'')+' · '+(f.enabled?'<span class="badge pro">ON</span>':'<span class="badge free">OFF</span>')+'</div></div>'+
+        '<div class="row" style="gap:6px;">'+
+        '<select id="acc-'+esc(f.id)+'"><option value="FREE"'+(f.access!=='PRO'?' selected':'')+'>FREE</option><option value="PRO"'+(f.access==='PRO'?' selected':'')+'>PRO</option></select>'+
+        '<input id="lim-'+esc(f.id)+'" type="number" min="0" value="'+esc(f.limit_value||0)+'" title="Limit" style="width:70px;">'+
+        '<button class="btn sm '+(f.enabled?'red':'green')+'" data-on="'+(f.enabled?'1':'0')+'" onclick="toggleFeature(\\''+esc(f.id)+'\\',this)">'+(f.enabled?'⏻ ပိတ်မည်':'⏻ ဖွင့်မည်')+'</button>'+
+        '<button class="btn sm" onclick="saveFeature(\\''+esc(f.id)+'\\')">💾 Save</button>'+
+        '</div></div>';
+      list.appendChild(c);
+    });
+  }).catch(function(e){
+    $('featuresList').innerHTML='<div class="card"><span class="err">Network error: '+esc(String(e&&e.message||e))+'</span></div>';
+  });
+}
+function saveFeature(id){
+  var access=$('acc-'+id).value;
+  var limit=$('lim-'+id).value;
+  api('/api/admin/features/'+id,'PUT',{access:access,limit_value:limit}).then(function(d){
+    if(d.ok){loadFeatures();}else{alert('ERROR: '+(d.detail||d.error||'unknown'));}
+  }).catch(function(e){alert('Network error: '+(e&&e.message||e));});
+}
+function toggleFeature(id,btn){
+  var next=!(btn.getAttribute('data-on')==='1');
+  api('/api/admin/features/'+id,'PUT',{enabled:next}).then(function(d){
+    if(d.ok){loadFeatures();}else{alert('ERROR: '+(d.detail||d.error||'unknown'));}
+  }).catch(function(e){alert('Network error: '+(e&&e.message||e));});
+}
+
+// ===== Phase 5 — Usage Statistics =====
+function loadUsage(){
+  api('/api/admin/usage').then(function(d){
+    if(d.error==='forbidden'){location.href='/app';return;}
+    if(d.error){$('usageDaily').innerHTML='<span class="err">'+(d.detail||d.error)+'</span>';return;}
+    var h='';
+    (d.daily||[]).forEach(function(r){h+='<div class="user-meta" style="margin-top:5px;">'+esc(r.day||'')+' — '+esc(r.category||'')+': <b>'+esc(r.total)+'</b></div>';});
+    $('usageDaily').innerHTML=h||'(no data yet)';
+    var t='';
+    (d.byUser||[]).forEach(function(r){t+='<div class="user-meta" style="margin-top:5px;">'+esc(r.email||'')+' — calls: <b>'+esc(r.calls)+'</b> · total: <b>'+esc(r.total)+'</b></div>';});
+    $('usageTop').innerHTML=t||'(no data yet)';
+  }).catch(function(e){
+    $('usageDaily').innerHTML='<span class="err">Network error: '+esc(String(e&&e.message||e))+'</span>';
+  });
+}
+
+// ===== Phase 5 — Admin Logs (Audit) =====
+function loadLogs(){
+  api('/api/admin/logs').then(function(d){
+    if(d.error==='forbidden'){location.href='/app';return;}
+    if(d.error){$('logsList').innerHTML='<div class="card"><span class="err">'+(d.detail||d.error)+'</span></div>';return;}
+    var list=$('logsList');list.innerHTML='';
+    var rows=d.items||[];
+    if(rows.length===0){list.innerHTML='<div class="card">(no logs yet)</div>';return;}
+    rows.forEach(function(r){
+      var c=document.createElement('div');
+      c.className='card';
+      c.innerHTML='<div class="user-meta"><b>'+esc(r.created_at||'')+'</b> · '+esc(r.admin_email||'')+' · <b>'+esc(r.action||'')+'</b></div>'+
+        '<div style="font-size:12px;color:#333;margin-top:4px;">'+esc(r.detail||'')+'</div>';
+      list.appendChild(c);
+    });
+  }).catch(function(e){
+    $('logsList').innerHTML='<div class="card"><span class="err">Network error: '+esc(String(e&&e.message||e))+'</span></div>';
+  });
 }
 
 function load(){
@@ -340,7 +479,7 @@ function init(){
       $('userBox').textContent=d.email+' · '+d.plan;
       fillStudios();
       showApp();
-      load();
+      switchTab('dashboard');
     }).catch(function(e){
       showError('Login failed: '+String(e&&e.message||e));
     });
@@ -357,7 +496,11 @@ export async function adminApi(request, path, env, verifyToken) {
   const isCms = (path === '/api/cms' || path.indexOf('/api/cms/') === 0);
   const isUsers = (path === '/api/admin/users' || path.indexOf('/api/admin/users/') === 0);
   const isStudios = (path === '/api/admin/studios' || path.indexOf('/api/admin/studios/') === 0);
-  if (!isCms && !isUsers && !isStudios) return null;
+  const isFeatures = (path === '/api/admin/features' || path.indexOf('/api/admin/features/') === 0);
+  const isDashboard = (path === '/api/admin/dashboard');
+  const isUsage = (path === '/api/admin/usage');
+  const isLogs = (path === '/api/admin/logs');
+  if (!isCms && !isUsers && !isStudios && !isFeatures && !isDashboard && !isUsage && !isLogs) return null;
 
   const method = request.method;
   const authHeader = request.headers.get('Authorization') || '';
@@ -385,6 +528,7 @@ export async function adminApi(request, path, env, verifyToken) {
     vals[1] = vals[1].toUpperCase();
     try {
       await env.DB.prepare('INSERT OR REPLACE INTO cms_prompts (studio,plan,type,core,memory,knowledge,workflow,template,prompt,quality_check,final_output,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,datetime(\'now\'))').bind(...vals).run();
+      await logAdminAction(env, user.email, 'cms_create', vals[0] + '/' + vals[1] + '/' + vals[2]);
       return json({ ok: true });
     } catch (e) { return json({ error: 'db_error', detail: String(e && e.message || e) }, 500); }
   }
@@ -399,11 +543,13 @@ export async function adminApi(request, path, env, verifyToken) {
       vals[1] = vals[1].toUpperCase();
       try {
         await env.DB.prepare('UPDATE cms_prompts SET ' + sets + ', updated_at=datetime(\'now\') WHERE id=?').bind(...vals, id).run();
+        await logAdminAction(env, user.email, 'cms_update', 'id=' + id + ' ' + vals[0] + '/' + vals[1] + '/' + vals[2]);
         return json({ ok: true });
       } catch (e) { return json({ error: 'db_error', detail: String(e && e.message || e) }, 500); }
     }
     if (method === 'DELETE') {
       await env.DB.prepare('DELETE FROM cms_prompts WHERE id=?').bind(id).run();
+      await logAdminAction(env, user.email, 'cms_delete', 'id=' + id);
       return json({ ok: true });
     }
   }
@@ -420,6 +566,7 @@ export async function adminApi(request, path, env, verifyToken) {
     const expiry = (body && body.expiry) ? String(body.expiry) : null;
     try {
       await env.DB.prepare('UPDATE users SET plan=?, expiry=?, updated_at=datetime(\'now\') WHERE id=?').bind(plan, expiry, id).run();
+      await logAdminAction(env, user.email, 'user_plan', 'user_id=' + id + ' → ' + plan);
       return json({ ok: true });
     } catch (e) { return json({ error: 'db_error', detail: String(e && e.message || e) }, 500); }
   }
@@ -443,7 +590,79 @@ export async function adminApi(request, path, env, verifyToken) {
     const body = await readBody(request);
     try {
       const r = await setStudioEnabled(env, id, !!(body && body.enabled));
+      await logAdminAction(env, user.email, 'studio_toggle', r.id + ' → ' + (r.enabled ? 'ON' : 'OFF'));
       return json({ ok: true, id: r.id, enabled: r.enabled });
+    } catch (e) { return json({ error: 'db_error', detail: String(e && e.message || e) }, 500); }
+  }
+
+  // ===== Phase 5 — Features (Free/Pro Config — Rule 15) =====
+  if (path === '/api/admin/features' && method === 'GET') {
+    try {
+      const settings = await getFeatureSettings(env);
+      const items = Object.keys(FEATURE_REGISTRY).map((id) => ({
+        id,
+        name: FEATURE_REGISTRY[id].name,
+        nameMy: FEATURE_REGISTRY[id].nameMy,
+        desc: FEATURE_REGISTRY[id].desc || '',
+        enabled: settings[id].enabled,
+        access: settings[id].access,
+        limit_value: settings[id].limit_value,
+      }));
+      return json({ ok: true, items });
+    } catch (e) { return json({ error: 'db_error', detail: String(e && e.message || e) }, 500); }
+  }
+
+  if (path.indexOf('/api/admin/features/') === 0 && method === 'PUT') {
+    const id = decodeURIComponent(path.slice('/api/admin/features/'.length));
+    const body = await readBody(request);
+    try {
+      const r = await setFeatureSetting(env, id, body || {});
+      await logAdminAction(env, user.email, 'feature_update', r.id + ' → enabled=' + r.enabled + ', access=' + r.access + ', limit=' + r.limit_value);
+      return json({ ok: true, id: r.id, enabled: r.enabled, access: r.access, limit_value: r.limit_value });
+    } catch (e) { return json({ error: 'unknown_feature', detail: String(e && e.message || e) }, 400); }
+  }
+
+  // ===== Phase 5 — Dashboard Statistics =====
+  if (path === '/api/admin/dashboard' && method === 'GET') {
+    try {
+      const users = await env.DB.prepare('SELECT COUNT(*) AS c FROM users').first();
+      const pro = await env.DB.prepare("SELECT COUNT(*) AS c FROM users WHERE plan='PRO'").first();
+      const creations = await env.DB.prepare('SELECT COUNT(*) AS c FROM creations').first();
+      const projects = await env.DB.prepare('SELECT COUNT(*) AS c FROM projects').first();
+      const aiToday = await env.DB.prepare("SELECT COALESCE(SUM(amount),0) AS s FROM usage WHERE category='ai' AND date(created_at)=date('now')").first();
+      const voiceToday = await env.DB.prepare("SELECT COALESCE(SUM(amount),0) AS s FROM usage WHERE category='voice' AND date(created_at)=date('now')").first();
+      const imageToday = await env.DB.prepare("SELECT COALESCE(SUM(amount),0) AS s FROM usage WHERE category='image' AND date(created_at)=date('now')").first();
+      const recent = await env.DB.prepare('SELECT email, plan, created_at FROM users ORDER BY created_at DESC LIMIT 5').all();
+      return json({
+        ok: true,
+        stats: {
+          users: (users && users.c) || 0,
+          pro: (pro && pro.c) || 0,
+          creations: (creations && creations.c) || 0,
+          projects: (projects && projects.c) || 0,
+          ai_today: (aiToday && aiToday.s) || 0,
+          voice_today: (voiceToday && voiceToday.s) || 0,
+          image_today: (imageToday && imageToday.s) || 0,
+        },
+        recent: (recent && recent.results) || [],
+      });
+    } catch (e) { return json({ error: 'db_error', detail: String(e && e.message || e) }, 500); }
+  }
+
+  // ===== Phase 5 — Usage Statistics =====
+  if (path === '/api/admin/usage' && method === 'GET') {
+    try {
+      const daily = await env.DB.prepare("SELECT date(created_at) AS day, category, SUM(amount) AS total FROM usage GROUP BY day, category ORDER BY day DESC LIMIT 28").all();
+      const byUser = await env.DB.prepare("SELECT u.email, COUNT(*) AS calls, SUM(us.amount) AS total FROM usage us JOIN users u ON u.id=us.user_id GROUP BY us.user_id ORDER BY total DESC LIMIT 10").all();
+      return json({ ok: true, daily: (daily && daily.results) || [], byUser: (byUser && byUser.results) || [] });
+    } catch (e) { return json({ error: 'db_error', detail: String(e && e.message || e) }, 500); }
+  }
+
+  // ===== Phase 5 — Admin Logs (Audit) =====
+  if (path === '/api/admin/logs' && method === 'GET') {
+    try {
+      const items = await listAdminLogs(env, 100);
+      return json({ ok: true, items });
     } catch (e) { return json({ error: 'db_error', detail: String(e && e.message || e) }, 500); }
   }
 
