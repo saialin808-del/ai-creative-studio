@@ -210,7 +210,6 @@ function loadDashboard(){
     var cards=[
       ['👥 Users',st.users||0],
       ['⭐ PRO',st.pro||0],
-      ['📁 Creations',st.creations||0],
       ['🗂️ Projects',st.projects||0],
       ['🤖 AI (ယနေ့)',st.ai_today||0],
       ['🎙️ Voice (ယနေ့)',st.voice_today||0],
@@ -633,7 +632,7 @@ export async function adminApi(request, path, env, verifyToken) {
     try {
       const users = await env.DB.prepare('SELECT COUNT(*) AS c FROM users').first();
       const pro = await env.DB.prepare("SELECT COUNT(*) AS c FROM users WHERE plan='PRO'").first();
-      const creations = await env.DB.prepare('SELECT COUNT(*) AS c FROM creations').first();
+      // Phase 13 (Option 2): Creations ကို Browser IndexedDB တွင်သာ သိမ်းသည် — Dashboard တွင် မရေတွက်တော့ပါ
       const projects = await env.DB.prepare('SELECT COUNT(*) AS c FROM projects').first();
       const aiToday = await env.DB.prepare("SELECT COALESCE(SUM(amount),0) AS s FROM usage WHERE category='ai' AND date(created_at)=date('now')").first();
       const voiceToday = await env.DB.prepare("SELECT COALESCE(SUM(amount),0) AS s FROM usage WHERE category='voice' AND date(created_at)=date('now')").first();
@@ -644,7 +643,6 @@ export async function adminApi(request, path, env, verifyToken) {
         stats: {
           users: (users && users.c) || 0,
           pro: (pro && pro.c) || 0,
-          creations: (creations && creations.c) || 0,
           projects: (projects && projects.c) || 0,
           ai_today: (aiToday && aiToday.s) || 0,
           voice_today: (voiceToday && voiceToday.s) || 0,

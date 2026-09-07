@@ -9,7 +9,6 @@ import { generateShort, reviseShort, generateShortVideoPlan, generateShortVideoI
 import { generateImagePrompt, generateAdImagePrompt, generateImageFromPrompt } from './studios/image.js';
 import { generateVoiceAudio, transcribeAudio, generateVoiceSrt, translateVoiceSrt } from './studios/voice.js';
 import { generateShopContent, reviseShopContent, generateShopVideo, generateShopVideoImage } from './studios/shop.js';
-import { saveCreation, listCreations, deleteCreation, toggleFavorite } from './core/creations.js';
 import { getUserSettings, updateUserSettings, getUserPreferences, updateUserPreferences } from './core/settings.js';
 import { createProject, listProjects, deleteProject } from './core/projects.js';
 import { trackUsage } from './core/usage.js';
@@ -231,23 +230,14 @@ function studioTestPage() {
 }
 
 function creationsTestPage() {
-  return '<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Creations Test</title></head>' +
+  // Phase 13 — Option 2: Creations ကို Server/D1 တွင် မသိမ်းတော့ပါ (Browser IndexedDB သာ)
+  return '<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Creations — Client-side</title></head>' +
     '<body style="font-family:sans-serif;max-width:640px;margin:24px auto;padding:0 16px;background:#F4F3EE;color:#1A1B1C">' +
-    '<h2 style="color:#1b6d96">💾 Creations Test</h2>' +
-    '<label style="font-size:13px;font-weight:600">Session Token</label><br>' +
-    '<textarea id="tok" rows="3" style="width:100%;font-family:monospace;font-size:12px;box-sizing:border-box"></textarea>' +
-    '<br><button onclick="load()" style="margin-top:8px;padding:10px 22px;font-size:14px">📋 Load My Creations</button>' +
-    '<div id="out" style="margin-top:10px;padding:12px;background:#fff;border-radius:8px;border:1px solid #E4E3DD;font-size:13px;white-space:pre-wrap;min-height:80px">Result will show here.</div>' +
-    '<script>' +
-    'function load(){var o=document.getElementById("out");o.textContent="Loading...";' +
-    'fetch("/api/creations",{headers:{"Authorization":"Bearer "+document.getElementById("tok").value}})' +
-    '.then(function(r){return r.json();}).then(function(d){' +
-    'if(d.error){o.textContent="ERROR: "+d.error+" "+(d.detail||"");return;}' +
-    'if(!d.items||d.items.length===0){o.textContent="(no creations yet)";return;}' +
-    'var s="TOTAL: "+d.items.length+"\\n\\n";d.items.forEach(function(it,i){s+=(i+1)+". ["+it.studio+"/"+it.type+"] "+it.title+" — "+it.created_at+"\\n";});' +
-    'o.textContent=s;})' +
-    '.catch(function(e){o.textContent="Network error: "+e;});}' +
-    '<\/script></body></html>';
+    '<h2 style="color:#1b6d96">💾 My Creations</h2>' +
+    '<p style="font-size:14px;line-height:1.6">Phase 13 (Option 2) မှစ၍ User ဖန်တီးမှုအားလုံးကို <b>Browser (IndexedDB)</b> တွင်သာ သိမ်းပါသည်။<br>' +
+    'Server/D1 တွင် User Content မသိမ်းတော့ပါ — <code>/api/creations</code> endpoint များကို ဖယ်ရှားပြီးပါပြီ။</p>' +
+    '<p style="font-size:14px">My Creations စာမျက်နှာ: <a href="/app/creations">/app/creations</a> (Login ဝင်ပြီးမှ ကြည့်ရှုနိုင်ပါသည်)</p>' +
+    '</body></html>';
 }
 
 export default {
@@ -600,13 +590,6 @@ export default {
             model: body.model,
           });
           await trackUsageSafe(env, payload.sub, 'ai');
-          try {
-            if (out.output) await saveCreation(env, {
-              user_id: payload.sub, studio: out.studio, type: out.type,
-              original_prompt: String(body.idea), ai_output: out.output,
-              title: String(body.idea).slice(0, 60),
-            });
-          } catch (e) {}
           return json(out, 200, cors);
         } catch (e) {
           return json({ error: 'studio_error', detail: friendlyError(e) }, 500, cors);
@@ -1255,69 +1238,9 @@ export default {
         }
       }
 
-      // ===== Creations — Favorite Toggle (Phase 3 — User ကိုယ်ပိုင် Creation သာ) =====
-      if (path.startsWith('/api/creations/') && path.endsWith('/favorite') && request.method === 'POST') {
-        const token = bearer(request);
-        if (!token) return json({ error: 'unauthorized' }, 401, cors);
-        const payload = await verifyTokenSafe(env, token);
-        if (!payload) return json({ error: 'invalid_token' }, 401, cors);
-        const id = path.split('/')[3];
-        if (!id) return json({ error: 'missing_id' }, 400, cors);
-        try {
-          const r = await toggleFavorite(env, payload.sub, id);
-          return json({ ok: true, favorite: r.favorite }, 200, cors);
-        } catch (e) {
-          return json({ error: 'favorite_error', detail: friendlyError(e) }, 500, cors);
-        }
-      }
-
-      // ===== Creations — Save (Studio UIs က Save ခလုတ်တွေက ဒီ endpoint ကို သုံးသည်) =====
-      if (path === '/api/creations' && request.method === 'POST') {
-        const token = bearer(request);
-        if (!token) return json({ error: 'unauthorized' }, 401, cors);
-        const payload = await verifyTokenSafe(env, token);
-        if (!payload) return json({ error: 'invalid_token' }, 401, cors);
-        const body = await request.json().catch(() => null);
-        if (!body || !body.ai_output) return json({ error: 'missing_output' }, 400, cors);
-        try {
-          await saveCreation(env, {
-            user_id: payload.sub,
-            studio: body.studio || 'UNKNOWN',
-            type: body.type || '1',
-            original_prompt: body.original_prompt || '',
-            ai_output: body.ai_output,
-            title: body.title || 'Untitled',
-          });
-          return json({ ok: true }, 200, cors);
-        } catch (e) {
-          return json({ error: 'save_error', detail: friendlyError(e) }, 500, cors);
-        }
-      }
-
-      if (path === '/api/creations' && request.method === 'GET') {
-        const token = bearer(request);
-        if (!token) return json({ error: 'unauthorized' }, 401, cors);
-        const payload = await verifyTokenSafe(env, token);
-        if (!payload) return json({ error: 'invalid_token' }, 401, cors);
-        const items = await listCreations(env, payload.sub);
-        return json({ items }, 200, cors);
-      }
-
-      // ===== Creations — Delete (User ကိုယ်ပိုင် Creation သာ ဖျက်နိုင်သည်) =====
-      if (path.startsWith('/api/creations/') && request.method === 'DELETE') {
-        const token = bearer(request);
-        if (!token) return json({ error: 'unauthorized' }, 401, cors);
-        const payload = await verifyTokenSafe(env, token);
-        if (!payload) return json({ error: 'invalid_token' }, 401, cors);
-        const id = path.split('/').pop();
-        if (!id) return json({ error: 'missing_id' }, 400, cors);
-        try {
-          await deleteCreation(env, payload.sub, id);
-          return json({ ok: true }, 200, cors);
-        } catch (e) {
-          return json({ error: 'delete_error', detail: friendlyError(e) }, 500, cors);
-        }
-      }
+      // ===== Creations (Phase 13 — Option 2) =====
+      // User ဖန်တီးမှုအားလုံးကို Browser IndexedDB တွင်သာ သိမ်းသည်။
+      // Server-side /api/creations endpoints များကို ဖယ်ရှားပြီးပြီ — D1 တွင် User Content မသိမ်းတော့ပါ။
 
       return json({ error: 'not_found', path }, 404, cors);
     } catch (e) {

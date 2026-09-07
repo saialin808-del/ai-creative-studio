@@ -226,22 +226,28 @@ function showToast(msg,type){var t=document.getElementById('toast');t.textConten
 if(!TOKEN){
   document.querySelector('.main-content').innerHTML='<div style="padding:40px;text-align:center;"><h2>🔒 Login လိုအပ်ပါသည်</h2><p style="margin:16px 0;"><a href="/login" style="color:var(--cyan);text-decoration:underline;">Login / Sign Up စာမျက်နှာသို့ သွားရန်</a></p></div>';
 }else{
-  api('/api/creations').then(function(d){
+  // Phase 13 — Option 2: Recent များကို Browser IndexedDB မှ ဖတ်သည်
+  AICS_CREATIONS.list().then(function(items){
     var area=document.getElementById('recentProjectsArea');
-    if(d.error||!d.items||d.items.length===0){
-      area.innerHTML='<div class="empty-projects">📭 Project မရှိသေးပါ — Studio တစ်ခုခုမှာ Generate လုပ်ပြီး Save လုပ်ကြည့်ပါ</div>';
+    if(!items||items.length===0){
+      area.innerHTML='<div class="empty-projects">📭 Save ထားသော Creation မရှိသေးပါ — Studio တစ်ခုခုမှာ Generate လုပ်ပြီး Save လုပ်ကြည့်ပါ</div>';
       return;
     }
-    var top3=d.items.slice(0,3);
+    var top3=items.slice(0,3);
     var html='<div class="recent-grid">';
     top3.forEach(function(c){
       var icon=STUDIO_ICONS[c.studio]||'📄';
-      var dateStr=c.created_at?new Date(c.created_at).toLocaleDateString():'';
+      var dateStr=c.created_at?fmtHomeDate(c.created_at):'';
       html+='<div class="project-card"><div class="p-icon">'+icon+'</div><div class="p-title">'+escapeHtml(c.title||'(Untitled)')+'</div><div class="p-date">'+dateStr+'</div><button class="project-open-btn" onclick="location.href=\\'/app/creations\\'">ဖွင့်ရန်</button></div>';
     });
     html+='</div>';
     area.innerHTML=html;
-  }).catch(function(){document.getElementById('recentProjectsArea').innerHTML='<div class="empty-projects">Project များ Load မလုပ်နိုင်ပါ</div>';});
+  }).catch(function(){document.getElementById('recentProjectsArea').innerHTML='<div class="empty-projects">Browser Storage ဖွင့်မရပါ</div>';});
+}
+function fmtHomeDate(s){
+  var d=new Date(s);
+  if(isNaN(d.getTime())) d=new Date(String(s).replace(' ','T')+'Z');
+  return isNaN(d.getTime())?'':d.toLocaleDateString();
 }
 function escapeHtml(text){var div=document.createElement('div');div.innerText=text;return div.innerHTML;}
 </script>
