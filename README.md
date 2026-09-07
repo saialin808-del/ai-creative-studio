@@ -47,7 +47,7 @@ ai-creative-studio-main/
 ├── README.md / ARCHITECTURE.md / DATABASE.md / STUDIOS.md / ADMIN.md / SECURITY.md
 ├── worker/
 │   ├── wrangler.toml              # environments + D1 binding
-│   ├── migrations/                # 001–008 D1 schema (see DATABASE.md)
+│   ├── migrations/                # 001–009 D1 schema (see DATABASE.md)
 │   └── src/
 │       ├── index.js               # entry: routing, auth, plan/feature gates, pages
 │       ├── admin.js               # Admin panel HTML + admin API

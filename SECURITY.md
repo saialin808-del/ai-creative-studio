@@ -55,5 +55,13 @@
 
 - [ ] Replace `SITE_LINKS` placeholders.
 - [ ] Set `ADMIN_EMAIL` + all secrets in production.
-- [ ] Apply all 8 migrations to prod D1.
+- [ ] Apply all 9 migrations to prod D1.
 - [ ] Re-test with a second account: User A cannot see User B data; a non-admin cannot open `/admin`; a disabled studio returns 403.
+
+## 11. Password policy (Phase 12)
+
+- Passwords are stored **only** as `pbkdf2$iterations$salt$hash` (PBKDF2-SHA256, per-user random 16-byte salt, 30,000 iterations — balanced for the Cloudflare Workers CPU budget).
+- Verification uses a **timing-safe** constant-time compare; malformed hashes are rejected without crashing.
+- Google OAuth remains the primary authentication path; email/password is an optional convenience. `password_hash` is **never** returned by any API.
+- Session is unchanged: stateless JWT (7-day expiry) in `localStorage` + HttpOnly cookie fallback for browser navigation (`/admin`, `/login` redirects). Logout clears both.
+- Sign in / sign up error messages do not reveal whether an email exists.

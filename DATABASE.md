@@ -74,3 +74,14 @@ Key-value extensible preferences: `(user_id, pref_key)` PK, `pref_value`, `updat
 ## Adding a new migration
 
 Create `worker/migrations/009_xxx.sql` (additive `CREATE TABLE` / `ALTER TABLE ... ADD COLUMN`), apply it, and update this file. Do **not** drop or rename existing tables/columns without a documented plan.
+
+### users — Phase 12 additions (009)
+`name` TEXT NOT NULL DEFAULT '' (personal display name, set from Google profile or Sign Up), `password_hash` TEXT NOT NULL DEFAULT '' (PBKDF2-SHA256 hash of optional email/password login — **never** plaintext). Existing Google-only accounts keep `name=''` / `password_hash=''`; the app falls back to the email prefix for display.
+
+### Auth routes (Phase 12)
+- `GET /login` — professional personal login UI (Google primary + email/password sign in + sign up).
+- `POST /api/auth/signup` — `{name, email, password}` → creates user (FREE plan), returns JWT. Duplicate email → 409.
+- `POST /api/auth/signin` — `{email, password}` → verifies PBKDF2 hash, returns JWT. Wrong creds → 401 (same message for unknown email / wrong password).
+- `PUT /api/users/me/profile` — `{name}` (whitelist, ≤60 chars) updates display name.
+- `GET /api/users/me` now also returns `name` + `usage {ai_requests, image_generations, voice_generations}`.
+- Google callback default destination changed from `/auth/result` to `/app` (legacy `/auth/result` still served).
