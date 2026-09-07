@@ -23,19 +23,22 @@ function studioLinks(activeId) {
 }
 
 // ---- MY WORK / SETTINGS လင့်ခ်များ (Phase 3 — Favorites + Settings) ----
-function myWorkLinks(creationsActive) {
+// activeId: 'creations' | 'favorites' | 'settings' — ရောက်နေသော နေရာကို Active ပြသည် (Phase 9 fix)
+function myWorkLinks(activeId) {
+  const creActive = activeId === 'creations' ? ' active' : '';
+  const favActive = activeId === 'favorites' ? ' active' : '';
+  const setActive = activeId === 'settings' ? ' active' : '';
   return (
-    '<a class="nav-item' + creationsActive + '" href="/app/creations"><span class="nav-icon-circle">📁</span> ဖန်တီးမှုများ</a>\n' +
-    '  <a class="nav-item" href="/app/creations?fav=1"><span class="nav-icon-circle">⭐</span> အနှစ်သက်ဆုံး</a>\n' +
+    '<a class="nav-item' + creActive + '" href="/app/creations"><span class="nav-icon-circle">📁</span> ဖန်တီးမှုများ</a>\n' +
+    '  <a class="nav-item' + favActive + '" href="/app/creations?fav=1"><span class="nav-icon-circle">⭐</span> အနှစ်သက်ဆုံး</a>\n' +
     '  <div class="nav-label">SETTINGS</div>\n' +
-    '  <a class="nav-item" href="/app/settings"><span class="nav-icon-circle">🛠️</span> ဆက်တင်များ</a>'
+    '  <a class="nav-item' + setActive + '" href="/app/settings"><span class="nav-icon-circle">🛠️</span> ဆက်တင်များ</a>'
   );
 }
 
 // ---- App Shell Sidebar (Home / Creations ပုံစံ — Hamburger + Backdrop + Brand) ----
 function appShellSidebar(activeId) {
   const homeActive = activeId === 'home' ? ' active' : '';
-  const creationsActive = activeId === 'creations' ? ' active' : '';
   return (
     '<button class="hamburger" onclick="toggleSidebar()">☰</button>\n' +
     '<div class="backdrop" id="backdrop" onclick="toggleSidebar()"></div>\n' +
@@ -46,7 +49,7 @@ function appShellSidebar(activeId) {
     '  <div class="nav-label">STUDIOS</div>\n' +
     '  ' + studioLinks(activeId) + '\n' +
     '  <div class="nav-label">MY WORK</div>\n' +
-    '  ' + myWorkLinks(creationsActive) + '\n' +
+    '  ' + myWorkLinks(activeId) + '\n' +
     '  </div>\n' +
     '  <div class="sidebar-bottom">\n' +
     '    <div class="license-badge" id="licenseBadge">Checking plan...</div>\n' +
@@ -65,15 +68,15 @@ function appShellSidebar(activeId) {
 // (Phase 4 တွင် Studio ၆ ခု၏ UI Shell ကို ဤပုံစံဖြင့် တစ်ညီတည်း ဖြစ်အောင် ပြုလုပ်ပါမည်)
 function studioPageSidebar(activeId) {
   const homeActive = activeId === 'home' ? ' active' : '';
-  const creationsActive = activeId === 'creations' ? ' active' : '';
   return (
+    '<div class="backdrop" id="backdrop" onclick="toggleSidebar()"></div>\n' +
     '<div class="sidebar" id="sidebar" style="display:flex;flex-direction:column;">\n' +
     '  <div class="sidebar-nav">\n' +
     '  <a class="nav-item' + homeActive + '" href="/app"><span class="nav-icon-circle">🏠</span> ပင်မ</a>\n' +
     '  <div class="nav-label">STUDIOS</div>\n' +
     '  ' + studioLinks(activeId) + '\n' +
     '  <div class="nav-label">MY WORK</div>\n' +
-    '  ' + myWorkLinks(creationsActive) + '\n' +
+    '  ' + myWorkLinks(activeId) + '\n' +
     '  </div>\n' +
     '  <div class="sidebar-bottom">\n' +
     '  <div class="license-badge" id="sidePlan">—</div>\n' +
@@ -89,7 +92,7 @@ function studioPageSidebar(activeId) {
 }
 
 // ---- Sidebar HTML Renderer ----
-// activeId: 'home' | 'creations' | studioId (ဥပမာ 'story')
+// activeId: 'home' | 'creations' | 'favorites' | 'settings' | studioId (ဥပမာ 'story')
 // opts.variant: 'app' (Home/Creations) | 'studio' (Studio မျက်နှာများ)
 export function renderSidebar(activeId, opts) {
   opts = opts || {};
@@ -107,6 +110,9 @@ function responsiveStyles() {
     '.sidebar-nav{flex:1 1 auto;overflow-y:auto;min-height:0;}\n' +
     '.sidebar > .brand{flex-shrink:0;}\n' +
     '.sidebar-bottom{flex-shrink:0;margin-top:auto;}\n' +
+    '/* Studio Drawer Backdrop — ပြင်ပ Screen ကို ထိလျှင် Sidebar ပိတ်စေရန် (Phase 9 fix) */\n' +
+    '.layout > .backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:98;}\n' +
+    '.layout > .backdrop.show{display:block;}\n' +
     '/* Desktop ≥1200px — Sticky Sidebar (နေရာလွတ်ကြီးနှင့် ခလုတ်ပျောက်ခြင်း မဖြစ်ရအောင်) */\n' +
     '@media (min-width:1200px){\n' +
     '  .layout > .sidebar{position:sticky;top:71px;height:calc(100vh - 85px);}\n' +
@@ -216,6 +222,16 @@ export function sidebarScript() {
     '      }\n' +
     '      localStorage.setItem(\'aics_email\', d.email || \'\'); localStorage.setItem(\'aics_plan\', d.plan || \'\');\n' +
     '    }).catch(function () {});\n' +
+    '})();\n' +
+    '// Favorites စာမျက်နှာ (fav=1) — Sidebar ထဲက "အနှစ်သက်ဆုံး" လင့်ခ်ကို Active ပြသည် (Phase 9 fix)\n' +
+    '(function () {\n' +
+    '  if (location.search.indexOf(\'fav=1\') === -1) return;\n' +
+    '  var sbL = document.querySelectorAll(\'.sidebar .nav-item\');\n' +
+    '  for (var j = 0; j < sbL.length; j++) {\n' +
+    '    var h = sbL[j].getAttribute(\'href\') || \'\';\n' +
+    '    if (h.indexOf(\'fav=1\') > -1) sbL[j].classList.add(\'active\');\n' +
+    '    else if (h === \'/app/creations\') sbL[j].classList.remove(\'active\');\n' +
+    '  }\n' +
     '})();\n' +
     '</script>';
 }
