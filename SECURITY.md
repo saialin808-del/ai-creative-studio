@@ -15,7 +15,7 @@
 
 ## 3. Personal data isolation (Rule 3)
 
-- Every `core/` query (`creations`, `projects`, `settings`, `usage`, `user_keys`) is scoped by `user_id` from the verified JWT.
+- Every `core/` query (`projects`, `settings`, `usage`, `user_keys`) is scoped by `user_id` from the verified JWT. Creations moved to browser-only storage in Phase 13, so no user content ever reaches D1.
 - User A cannot read or write User B's rows.
 - Frontend never receives another user's data.
 

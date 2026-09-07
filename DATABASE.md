@@ -30,6 +30,8 @@ Cloudflare **D1** (SQLite). Schema is applied by migrations in `worker/migration
 Studio prompt templates — `UNIQUE(studio, plan, type)`; columns `core`, `memory`, `knowledge`, `workflow`, `template`, `prompt`, `quality_check`, `final_output`, `updated_at`.
 
 ### creations (003)
+> **Phase 13 (Option 2):** this table is **deprecated/unused** — user creations are stored **only in the browser** (IndexedDB `aics_creations_v1`, keyed by JWT `sub`). No new rows are written; old rows remain until cleared manually (`DELETE FROM creations;`). D1 stores **no user content** going forward.
+
 | Column | Type | Notes |
 |---|---|---|
 | id | TEXT PK | |
@@ -69,7 +71,7 @@ Key-value extensible preferences: `(user_id, pref_key)` PK, `pref_value`, `updat
 
 ## Ownership rule
 
-**Every** query in `core/` (`creations`, `projects`, `settings`, `usage`, `user_keys`) filters by `user_id` taken from the **verified JWT** (`payload.sub`), never from client-supplied values. This guarantees User A cannot access User B's data.
+**Every** query in `core/` (`projects`, `settings`, `usage`, `user_keys`) filters by `user_id` taken from the **verified JWT** (`payload.sub`), never from client-supplied values. This guarantees User A cannot access User B's data. (Creations are no longer server-side — Phase 13, see the `creations` table note above.)
 
 ## Adding a new migration
 

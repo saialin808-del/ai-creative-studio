@@ -8,7 +8,7 @@ This is the fully re-architected version produced under the **Master Development
 ## ✨ Features
 
 - **6 Studios** — Story, Content, Short, Image, Voice, Shop (Studio Registry — new studios plug in without touching core).
-- **Personal User System** — every user sees only their own Profile, Settings, Preferences, Projects, Creations, API Keys, Usage. Ownership is enforced **server-side**.
+- **Personal User System** — every user sees only their own Profile, Settings, Preferences, Projects, Creations, API Keys, Usage. Accounts/config are enforced **server-side**; creations are stored **in the user's own browser** (IndexedDB, Phase 13 — D1 stores no user content).
 - **Global Shared Sidebar** — one component, responsive across Desktop / iPad / Phone.
 - **Free / Pro** — controlled by configuration (feature registry), not hard-coded.
 - **Usage Tracking** — AI requests, images, voice, projects per user, viewable in Admin.
@@ -53,8 +53,8 @@ ai-creative-studio-main/
 │       ├── admin.js               # Admin panel HTML + admin API
 │       ├── studio.js              # legacy generic generator (Story/Content)
 │       ├── config/                # STUDIO_REGISTRY, FEATURE_REGISTRY
-│       ├── core/                  # auth, ai, cms, creations, projects, settings,
-│       │                          #   usage, studioSettings, featureSettings, adminLogs, utilities
+│       ├── core/                  # auth, ai, cms, projects, settings, usage,
+│       │                          #   studioSettings, featureSettings, adminLogs, utilities
 │       ├── studios/               # story, content, short, image, voice, shop (business logic)
 │       └── frontend/              # per-page UI (all use shared.js sidebar + responsive)
 ```

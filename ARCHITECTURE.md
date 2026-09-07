@@ -32,7 +32,6 @@ AI CREATIVE STUDIO
 │   ├── Authentication (auth.js)
 │   ├── User / Settings (settings.js)
 │   ├── AI Service (ai.js)
-│   ├── Creation Service (creations.js)
 │   ├── Project Service (projects.js)
 │   ├── Usage Service (usage.js)
 │   ├── Studio Settings (studioSettings.js)
@@ -42,6 +41,8 @@ AI CREATIVE STUDIO
     ├── Dashboard · Users · Studios · Features · Usage · Logs · CMS · …
 ```
 
+> **Phase 13 (Option 2) — Client-side Creations:** `core/creations.js` and all `/api/creations*` server endpoints were **removed**. User creations are stored **only in the browser** via an IndexedDB store (`aics_creations_v1`) shipped inside `sidebarScript()` as `window.AICS_CREATIONS` (save / list / remove / toggleFav, keyed by JWT `sub`). D1 stores **no user content** — only accounts, config, projects and usage counters.
+
 ## 3. Frontend pages & shared shell
 
 Every page is rendered server-side by `index.js` from a JS template module in `worker/src/frontend/`:
@@ -50,7 +51,7 @@ Every page is rendered server-side by `index.js` from a JS template module in `w
 |---|---|---|
 | `/` | `frontend.js` | Home — greeting, hero banner, 6 Studio cards, recent projects, API-key pill |
 | `/app/story` `/app/content` `/app/short` `/app/image` `/app/voice` `/app/shop` | `frontend/{story,content,short,image,voice,shop}.js` | Studio UIs |
-| `/app/creations` | `frontend/creations.js` | My Creations (filter/sort/search/favorite) |
+| `/app/creations` | `frontend/creations.js` | My Creations (filter/sort/search/favorite) — reads/writes **IndexedDB only** (Phase 13) |
 | `/app/settings` | `frontend/settings.js` | Profile / Preferences / API Key tabs |
 | `/app/projects` | `frontend/projects.js` | Projects |
 | `/admin` | `admin.js` | Admin panel (light theme, separate) |
@@ -64,7 +65,7 @@ Every page is rendered server-side by `index.js` from a JS template module in `w
 3. **Role check** — Admin routes (`/admin`, `/api/admin/*`) verify server-side role (`USER` / `ADMIN` / `SUPER_ADMIN`), never trusting frontend flags.
 4. **Studio gate** — Studio page/API checks `isStudioEnabled(env, id)`; a disabled studio is rejected **server-side** (403), not just hidden. Studio **page** routes match only under `/app/*` (Phase 7 fix: an admin API path like `/api/admin/studios/shop` is never intercepted as a studio page).
 5. **Feature gate** — `requireFeature` / `checkFeature` resolve Free vs Pro from `FEATURE_REGISTRY` + DB overrides.
-6. **Ownership** — every query scopes by `user_id` from the verified JWT (`projects.js`, `creations.js`, `settings.js`, `usage.js`). User A can never read/write User B's rows.
+6. **Ownership** — every query scopes by `user_id` from the verified JWT (`projects.js`, `settings.js`, `usage.js`). User A can never read/write User B's rows. (Creations moved client-side in Phase 13 — see note above.)
 7. **BYOK** — user API keys are stored encrypted in `user_keys` and used only server-side; they are **never returned** to the browser.
 
 ## 5. Config
