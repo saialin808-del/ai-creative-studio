@@ -1,0 +1,58 @@
+# SECURITY.md
+
+## 1. Authentication
+
+- **Google OAuth** login → signed JWT (7-day validity).
+- Every protected API reads the Bearer token, verifies it, and derives the user id from `payload.sub`.
+- **Never trust a client-supplied user id.**
+
+## 2. Authorization & roles (Rule 13)
+
+- Roles: `USER` / `ADMIN` / `SUPER_ADMIN`.
+- Admin access (`/admin`, `/api/admin/*`) is enforced **server-side** via the verified token + `ADMIN_EMAIL` check.
+- Hiding a button in the UI is never considered security.
+
+## 3. Personal data isolation (Rule 3)
+
+- Every `core/` query (`creations`, `projects`, `settings`, `usage`, `user_keys`) is scoped by `user_id` from the verified JWT.
+- User A cannot read or write User B's rows.
+- Frontend never receives another user's data.
+
+## 4. Disabled-studio enforcement (Rule 14)
+
+- Studio disabled → `/app/<id>` shows a disabled page **and** `/api/studio/<id>/…` returns **403 `studio_disabled`**.
+- UI hiding is only a convenience; the API is the real gate.
+
+## 5. Free/Pro gating (Rule 15)
+
+- Feature access resolved server-side from `FEATURE_REGISTRY` + DB overrides (`feature_settings`).
+- Logic: `access='PRO'` + non-PRO plan → `pro_only`; `access='FREE'` + FREE plan + non-default type → `pro_type`.
+- No feature gate is implemented purely in the client.
+
+## 6. API keys / BYOK (Rule 17)
+
+- User Gemini keys are stored in `user_keys` and used **only server-side**.
+- Keys are **never** returned to the frontend; the browser only ever sends its own key when the user explicitly pastes it (which the server uses for that single request).
+
+## 7. Output encoding / XSS (Phase 7 fix)
+
+- AI and user-generated text rendered into the page is **HTML-escaped** before `innerHTML` injection (`escapeHtml` in frontend pages, e.g. `shop.js`).
+- URLs are validated (`safeUrl`) to allow only `http(s)` / data-image / relative paths.
+
+## 8. Error handling (Rule 22)
+
+- API errors return a **user-friendly message** (`Something went wrong. Please try again.`).
+- The real error detail/stack is written to **server logs** (`console.error('[AICS]', ...)`), never returned to the client (`friendlyError` in `index.js`).
+
+## 9. Secrets & env
+
+- `ADMIN_EMAIL`, `GOOGLE_CLIENT_ID/SECRET`, built-in Gemini key, JWT secret → store in Cloudflare secrets / `wrangler secret put`, not in the repo.
+- `wrangler.toml` and `.gitignore` must never commit real secrets.
+- `SITE_LINKS` placeholders in `config/studios.js` must be replaced with real Telegram/Facebook URLs.
+
+## 10. Recommended deployment checklist
+
+- [ ] Replace `SITE_LINKS` placeholders.
+- [ ] Set `ADMIN_EMAIL` + all secrets in production.
+- [ ] Apply all 8 migrations to prod D1.
+- [ ] Re-test with a second account: User A cannot see User B data; a non-admin cannot open `/admin`; a disabled studio returns 403.
