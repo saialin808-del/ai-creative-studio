@@ -2,8 +2,8 @@
 // Studio Isolation: ဤ File သည် Story Studio နှင့်သာ သက်ဆိုင်သည်။
 // အခြား Studio (Content/Short/Image/Voice/Shop) ကို မထိခိုက်စေရ။
 
-import { getCMSData, buildSystemPrompt } from '../core/cms';
-import { callGeminiText, callGeminiImage } from '../core/ai';
+import { getCMSData, buildSystemPrompt } from '../core/cms.js';
+import { callGeminiText, callGeminiImage } from '../core/ai.js';
 
 const CMS_STUDIO = 'STORY';
 const CMS_VIDEO = 'STORYVIDEO';

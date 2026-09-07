@@ -2,8 +2,8 @@
 // Studio Isolation: ဤ File သည် Image Studio နှင့်သာ သက်ဆိုင်သည်။
 // အခြား Studio ကို မထိခိုက်စေရ။
 
-import { getCMSData, buildSystemPrompt } from '../core/cms';
-import { callGeminiText, callGeminiImage, callGeminiMultimodal } from '../core/ai';
+import { getCMSData, buildSystemPrompt } from '../core/cms.js';
+import { callGeminiText, callGeminiImage, callGeminiMultimodal } from '../core/ai.js';
 
 const CMS_IMAGE = 'IMAGE';
 const CMS_IMAGEAD = 'IMAGEAD';

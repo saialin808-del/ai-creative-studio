@@ -3,9 +3,9 @@
 // အခြား Studio (Content/Story/Short/Image/Shop) ကို မထိခိုက်စေရ။
 // Shared Logic (AI Call, CMS, WAV) ကို core/ မှ ခေါ်သုံးသည်။
 
-import { getCMSData, buildSystemPrompt } from '../core/cms';
-import { callGeminiText, callGeminiMultimodal, callGeminiTTS } from '../core/ai';
-import { pcmToWavBase64 } from '../core/utilities';
+import { getCMSData, buildSystemPrompt } from '../core/cms.js';
+import { callGeminiText, callGeminiMultimodal, callGeminiTTS } from '../core/ai.js';
+import { pcmToWavBase64 } from '../core/utilities.js';
 
 const CMS_STUDIO = 'VOICE';
 const TEXT_MODEL = 'gemini-3.6-flash';

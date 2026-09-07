@@ -3,8 +3,8 @@
 // အခြား Studio (Story/Content/Image/Voice/Shop) ကို မထိခိုက်စေရ။
 // Short Studio ၏ ထူးခြားချက် — Tab 2 တွင် Reference Image Upload (အများဆုံး ၅ ပုံ) ပါဝင်သည်။
 
-import { getCMSData, buildSystemPrompt } from '../core/cms';
-import { callGeminiText, callGeminiImage, callGeminiMultimodal } from '../core/ai';
+import { getCMSData, buildSystemPrompt } from '../core/cms.js';
+import { callGeminiText, callGeminiImage, callGeminiMultimodal } from '../core/ai.js';
 
 const CMS_STUDIO = 'SHORT';
 const CMS_VIDEO = 'SHORTVIDEO';

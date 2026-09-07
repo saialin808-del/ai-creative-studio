@@ -3,9 +3,9 @@
 // အခြား Studio (Story/Short/Image/Voice/Shop) ကို မထိခိုက်စေရ။
 // Shared Logic (Parser, AI Call, CMS) ကို core/ မှ ခေါ်သုံးသည်။
 
-import { getCMSData, buildSystemPrompt } from '../core/cms';
-import { callGeminiText, callGeminiImage, callGeminiMultimodal, callGeminiTTS } from '../core/ai';
-import { parseContentResponse, parseVideoPlan, pcmToWavBase64 } from '../core/utilities';
+import { getCMSData, buildSystemPrompt } from '../core/cms.js';
+import { callGeminiText, callGeminiImage, callGeminiMultimodal, callGeminiTTS } from '../core/ai.js';
+import { parseContentResponse, parseVideoPlan, pcmToWavBase64 } from '../core/utilities.js';
 
 const CMS_STUDIO = 'CONTENT';
 const CMS_VIDEO = 'CONTENTVIDEO';
