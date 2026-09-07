@@ -75,3 +75,8 @@ Every page is rendered server-side by `index.js` from a JS template module in `w
 ## 6. Legacy note
 
 `/api/studio/generate` (`studio.js`) is the original generic generator kept for backward compatibility; it still auto-saves a creation on success. The per-studio endpoints (`/api/studio/<id>/…`) are the current path and save explicitly on user action. See `STUDIOS.md`.
+
+### Unified Menu Button (Phase 12 fix)
+- All pages share ONE hamburger style defined in `frontend/shared.js` (`responsiveStyles`): `position:fixed; top:14px; left:14px; z-index:300; background:#151b2b; border:1px solid #2a3350; white icon; 44×44px; radius 10px`.
+- App pages use `.hamburger`, studio pages use `.menu-btn` — both render identically (same position, color, size) on every page.
+- On phones, studio headers get `padding-left:64px` so the logo never collides with the fixed button.
