@@ -460,7 +460,7 @@ function sendRevision(){
   var current=document.getElementById('resultContent').value;
   if(!current){showToast('Content အရင် Generate လုပ်ပါ','error');return;}
   var log=document.getElementById('chatLog');
-  log.innerHTML+='<div class="chat-bubble chat-user">'+instr+'</div>';
+  log.innerHTML+='<div class="chat-bubble chat-user">'+escapeHtml(instr)+'</div>';
   document.getElementById('chatInput').value='';
   document.getElementById('loadingChat').classList.add('show');
   api('/api/studio/shop/content/revise',{method:'POST',body:{idea:collectContentIdea(),type:contentType,currentContent:current,instruction:instr}})
@@ -547,8 +547,8 @@ function renderVideoResult(){
   // Product
   var pa=document.getElementById('productArea');
   if(videoResult.product){
-    pa.innerHTML='<div class="detail-card"><div class="card-head"><span>'+(videoResult.product.name||'Product')+'</span></div>'+
-      '<div class="card-lbl">Product Prompt</div><div class="card-txt">'+(videoResult.product.prompt||'-')+'</div>'+
+    pa.innerHTML='<div class="detail-card"><div class="card-head"><span>'+escapeHtml(videoResult.product.name||'Product')+'</span></div>'+
+      '<div class="card-lbl">Product Prompt</div><div class="card-txt">'+escapeHtml(videoResult.product.prompt||'-')+'</div>'+
       '<button class="btn btn-orange btn-sm" style="margin-top:10px;" onclick="genImage(this,\\''+escapeJs(videoResult.product.prompt||'')+'\\',\\'product\\')">🖼️ Generate Image</button>'+
       '<div class="image-area"></div></div>';
   } else { pa.innerHTML='<div class="empty-note">Product Prompt မရှိပါ</div>'; }
@@ -556,9 +556,9 @@ function renderVideoResult(){
   var ca=document.getElementById('characterArea');
   if(videoResult.characters.length>0){
     ca.innerHTML=videoResult.characters.map(function(ch,i){
-      return '<div class="detail-card"><div class="card-head"><span>'+(ch.name||'Character '+(i+1))+'</span></div>'+
-        '<div class="card-sub">'+(ch.role||'')+'</div>'+
-        '<div class="card-lbl">Character Prompt</div><div class="card-txt">'+(ch.prompt||'-')+'</div>'+
+      return '<div class="detail-card"><div class="card-head"><span>'+escapeHtml(ch.name||'Character '+(i+1))+'</span></div>'+
+        '<div class="card-sub">'+escapeHtml(ch.role||'')+'</div>'+
+        '<div class="card-lbl">Character Prompt</div><div class="card-txt">'+escapeHtml(ch.prompt||'-')+'</div>'+
         '<button class="btn btn-orange btn-sm" style="margin-top:10px;" onclick="genImage(this,\\''+escapeJs(ch.prompt||'')+'\\',\\'char'+i+'\\')">🖼️ Generate Image</button>'+
         '<div class="image-area"></div></div>';
     }).join('');
@@ -567,11 +567,11 @@ function renderVideoResult(){
   var sa=document.getElementById('sceneArea');
   if(videoResult.scenes.length>0){
     sa.innerHTML=videoResult.scenes.map(function(sc,i){
-      return '<div class="scene-group"><div class="scene-group-title">Scene '+(sc.number||i+1)+'</div>'+
-        '<div class="detail-card"><div class="card-lbl">🌍 Environment Prompt</div><div class="card-txt">'+(sc.environmentPrompt||'-')+'</div>'+
+      return '<div class="scene-group"><div class="scene-group-title">Scene '+escapeHtml(sc.number||i+1)+'</div>'+
+        '<div class="detail-card"><div class="card-lbl">🌍 Environment Prompt</div><div class="card-txt">'+escapeHtml(sc.environmentPrompt||'-')+'</div>'+
         '<button class="btn btn-orange btn-sm" style="margin-top:10px;" onclick="genImage(this,\\''+escapeJs(sc.environmentPrompt||'')+'\\',\\'env'+i+'\\')">🖼️ Generate Env Image</button>'+
         '<div class="image-area"></div></div>'+
-        '<div class="detail-card"><div class="card-lbl">🎬 Video Prompt</div><div class="card-txt">'+(sc.videoPrompt||'-')+'</div>'+
+        '<div class="detail-card"><div class="card-lbl">🎬 Video Prompt</div><div class="card-txt">'+escapeHtml(sc.videoPrompt||'-')+'</div>'+
         '<button class="btn btn-orange btn-sm" style="margin-top:10px;" onclick="genImage(this,\\''+escapeJs(sc.videoPrompt||'')+'\\',\\'vid'+i+'\\')">🖼️ Generate Video Image</button>'+
         '<div class="image-area"></div></div></div>';
     }).join('');
@@ -579,6 +579,9 @@ function renderVideoResult(){
 }
 
 function escapeJs(s){return String(s||'').replace(/\\\\/g,'\\\\\\\\').replace(/'/g,"\\\\'").replace(/\\n/g,'\\\\n');}
+// Phase 7 — XSS Fix (Rule 22): AI Output / User Input ကို HTML အဖြစ် မသွင်းမီ Escape လုပ်သည်
+function escapeHtml(s){var d=document.createElement('div');d.textContent=(s==null?'':String(s));return d.innerHTML;}
+function safeUrl(u){u=String(u||'').trim();return /^(https?:|data:image\/|\/)/.test(u)?u:'';}
 
 function genImage(btn, prompt, key){
   if(!prompt){showToast('Prompt မရှိပါ','error');return;}
