@@ -1,33 +1,33 @@
 // AI Creative Studio — Cloudflare Worker (Phase 3e+ — hardened errors + Phase 2 core modular)
-import { signToken, verifyToken } from './core/auth';
-import { callGeminiText } from './core/ai';
-import { getCMSData, buildSystemPrompt } from './core/cms';
-import { generateStudio } from './studio';
-import { generateContent, reviseContent, generateContentVoice, generateContentVideo, generateContentVideoImage, generateContentSrt, translateContentSrt } from './studios/content';
-import { generateStory, reviseStory, generateStoryVideoPlan, generateStoryVideoImage } from './studios/story';
-import { generateShort, reviseShort, generateShortVideoPlan, generateShortVideoImage } from './studios/short';
-import { generateImagePrompt, generateAdImagePrompt, generateImageFromPrompt } from './studios/image';
-import { generateVoiceAudio, transcribeAudio, generateVoiceSrt, translateVoiceSrt } from './studios/voice';
-import { generateShopContent, reviseShopContent, generateShopVideo, generateShopVideoImage } from './studios/shop';
-import { saveCreation, listCreations, deleteCreation, toggleFavorite } from './core/creations';
-import { getUserSettings, updateUserSettings, getUserPreferences, updateUserPreferences } from './core/settings';
-import { createProject, listProjects, deleteProject } from './core/projects';
-import { trackUsage } from './core/usage';
-import { getStudioSettings, isStudioEnabled, setStudioEnabled } from './core/studioSettings';
-import { checkFeature } from './core/featureSettings';
-import { getStudio } from './config/studios';
-import { getUserApiKey, saveUserApiKey } from './core/utilities';
-import { APP_HTML } from './frontend';
-import { CONTENT_HTML } from './frontend/content';
-import { STORY_HTML } from './frontend/story';
-import { SHORT_HTML } from './frontend/short';
-import { IMAGE_HTML } from './frontend/image';
-import { VOICE_HTML } from './frontend/voice';
-import { SHOP_HTML } from './frontend/shop';
-import { CREATIONS_HTML } from './frontend/creations';
-import { SETTINGS_HTML } from './frontend/settings';
-import { PROJECTS_HTML } from './frontend/projects';
-import { ADMIN_HTML, adminApi } from './admin';
+import { signToken, verifyToken } from './core/auth.js';
+import { callGeminiText } from './core/ai.js';
+import { getCMSData, buildSystemPrompt } from './core/cms.js';
+import { generateStudio } from './studio.js';
+import { generateContent, reviseContent, generateContentVoice, generateContentVideo, generateContentVideoImage, generateContentSrt, translateContentSrt } from './studios/content.js';
+import { generateStory, reviseStory, generateStoryVideoPlan, generateStoryVideoImage } from './studios/story.js';
+import { generateShort, reviseShort, generateShortVideoPlan, generateShortVideoImage } from './studios/short.js';
+import { generateImagePrompt, generateAdImagePrompt, generateImageFromPrompt } from './studios/image.js';
+import { generateVoiceAudio, transcribeAudio, generateVoiceSrt, translateVoiceSrt } from './studios/voice.js';
+import { generateShopContent, reviseShopContent, generateShopVideo, generateShopVideoImage } from './studios/shop.js';
+import { saveCreation, listCreations, deleteCreation, toggleFavorite } from './core/creations.js';
+import { getUserSettings, updateUserSettings, getUserPreferences, updateUserPreferences } from './core/settings.js';
+import { createProject, listProjects, deleteProject } from './core/projects.js';
+import { trackUsage } from './core/usage.js';
+import { getStudioSettings, isStudioEnabled, setStudioEnabled } from './core/studioSettings.js';
+import { checkFeature } from './core/featureSettings.js';
+import { getStudio } from './config/studios.js';
+import { getUserApiKey, saveUserApiKey } from './core/utilities.js';
+import { APP_HTML } from './frontend.js';
+import { CONTENT_HTML } from './frontend/content.js';
+import { STORY_HTML } from './frontend/story.js';
+import { SHORT_HTML } from './frontend/short.js';
+import { IMAGE_HTML } from './frontend/image.js';
+import { VOICE_HTML } from './frontend/voice.js';
+import { SHOP_HTML } from './frontend/shop.js';
+import { CREATIONS_HTML } from './frontend/creations.js';
+import { SETTINGS_HTML } from './frontend/settings.js';
+import { PROJECTS_HTML } from './frontend/projects.js';
+import { ADMIN_HTML, adminApi } from './admin.js';
 
 const cors = {
   'Access-Control-Allow-Origin': '*',
@@ -37,6 +37,13 @@ const cors = {
 
 function json(data, status, c) {
   return new Response(JSON.stringify(data), { status: status || 200, headers: { 'Content-Type': 'application/json', ...c } });
+}
+
+// Rule 22 — Error Handling: User ကို Technical Error အပြည့်မပြပါ။
+// အသေးစိတ် Error ကို Server Log ထဲတွင် သိမ်းပြီး User ကို ဖော်ရွေသော Message သာ ပြသည်
+function friendlyError(e) {
+  try { console.error('[AICS]', (e && e.stack) || e); } catch (_) {}
+  return 'Something went wrong. Please try again.';
 }
 
 function htmlPage(html) {
@@ -242,13 +249,17 @@ export default {
           });
           const tokenData = await res.json().catch(() => ({}));
           if (!tokenData.access_token) {
-            return json({ error: 'auth_failed', detail: JSON.stringify(tokenData).slice(0, 300) }, 400, cors);
+            try { console.error('[AICS] oauth token failed', JSON.stringify(tokenData).slice(0, 300)); } catch (_) {}
+            return json({ error: 'auth_failed', detail: 'Login could not be completed. Please try again.' }, 400, cors);
           }
           const ures = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
             headers: { Authorization: 'Bearer ' + tokenData.access_token },
           });
           const user = await ures.json().catch(() => ({}));
-          if (!user.id || !user.email) return json({ error: 'userinfo_failed', detail: JSON.stringify(user).slice(0, 300) }, 400, cors);
+          if (!user.id || !user.email) {
+            try { console.error('[AICS] oauth userinfo failed', JSON.stringify(user).slice(0, 300)); } catch (_) {}
+            return json({ error: 'userinfo_failed', detail: 'Login could not be completed. Please try again.' }, 400, cors);
+          }
 
           const existing = env.DB ? await env.DB.prepare('SELECT id FROM users WHERE email = ?').bind(user.email).first() : null;
           let userId;
@@ -264,7 +275,7 @@ export default {
           const state = url.searchParams.get('state') || (origin + '/auth/result');
           return Response.redirect(state + '#token=' + encodeURIComponent(token), 302);
         } catch (e) {
-          return json({ error: 'auth_error', detail: String((e && e.message) || e) }, 500, cors);
+          return json({ error: 'auth_error', detail: friendlyError(e) }, 500, cors);
         }
       }
 
@@ -272,9 +283,10 @@ export default {
       if (path === '/app' || path === '/app/') return htmlPage(APP_HTML);
       // ===== Studio Pages (Phase 4 — Registry + Admin ON/OFF နှင့် ချိတ်သည်) =====
       // Studio Disabled ဖြစ်ပါက Friendly Message ပြပြီး Access ပိတ်သည် (Rule 14 — Server-side)
+      // Phase 7 — /app/ မဟုတ်သော Path (ဥပမာ /api/admin/studios/shop) ကို Studio Page နှင့် မရောမှတ်ရန် ပြင်သည်
       {
         const STUDIO_PAGES = { content: CONTENT_HTML, story: STORY_HTML, short: SHORT_HTML, image: IMAGE_HTML, voice: VOICE_HTML, shop: SHOP_HTML };
-        const studioSlug = path.replace(/\/+$/, '').split('/').pop();
+        const studioSlug = path.startsWith('/app/') ? path.replace(/\/+$/, '').split('/').pop() : '';
         if (STUDIO_PAGES[studioSlug]) {
           const enabled = await isStudioEnabled(env, studioSlug);
           if (!enabled) return htmlPage(studioDisabledPage(studioSlug));
@@ -332,7 +344,7 @@ export default {
           const preferences = await updateUserPreferences(env, payload.sub, body.preferences || {});
           return json({ ok: true, settings, preferences }, 200, cors);
         } catch (e) {
-          return json({ error: 'settings_error', detail: String((e && e.message) || e) }, 500, cors);
+          return json({ error: 'settings_error', detail: friendlyError(e) }, 500, cors);
         }
       }
 
@@ -348,7 +360,7 @@ export default {
           await saveUserApiKey(env, payload.sub, String(body.key).trim());
           return json({ ok: true }, 200, cors);
         } catch (e) {
-          return json({ error: 'db_error', detail: String((e && e.message) || e) }, 500, cors);
+          return json({ error: 'db_error', detail: friendlyError(e) }, 500, cors);
         }
       }
 
@@ -372,7 +384,7 @@ export default {
           });
           return json({ output: out }, 200, cors);
         } catch (e) {
-          return json({ error: 'ai_error', detail: String((e && e.message) || e) }, 500, cors);
+          return json({ error: 'ai_error', detail: friendlyError(e) }, 500, cors);
         }
       }
 
@@ -421,7 +433,7 @@ export default {
           } catch (e) {}
           return json(out, 200, cors);
         } catch (e) {
-          return json({ error: 'studio_error', detail: String((e && e.message) || e) }, 500, cors);
+          return json({ error: 'studio_error', detail: friendlyError(e) }, 500, cors);
         }
       }
 
@@ -453,7 +465,7 @@ export default {
           await trackUsageSafe(env, payload.sub, 'ai');
           return json({ ok: true, ...out }, 200, cors);
         } catch (e) {
-          return json({ error: 'content_error', detail: String((e && e.message) || e) }, 500, cors);
+          return json({ error: 'content_error', detail: friendlyError(e) }, 500, cors);
         }
       }
 
@@ -480,7 +492,7 @@ export default {
           });
           return json({ ok: true, ...out }, 200, cors);
         } catch (e) {
-          return json({ error: 'revise_error', detail: String((e && e.message) || e) }, 500, cors);
+          return json({ error: 'revise_error', detail: friendlyError(e) }, 500, cors);
         }
       }
 
@@ -503,7 +515,7 @@ export default {
           await trackUsageSafe(env, payload.sub, 'voice');
           return json({ ok: true, data: out.data, mimeType: out.mimeType }, 200, cors);
         } catch (e) {
-          return json({ error: 'tts_error', detail: String((e && e.message) || e) }, 500, cors);
+          return json({ error: 'tts_error', detail: friendlyError(e) }, 500, cors);
         }
       }
 
@@ -525,7 +537,7 @@ export default {
           await trackUsageSafe(env, payload.sub, 'ai');
           return json({ ok: true, ...out }, 200, cors);
         } catch (e) {
-          return json({ error: 'video_error', detail: String((e && e.message) || e) }, 500, cors);
+          return json({ error: 'video_error', detail: friendlyError(e) }, 500, cors);
         }
       }
 
@@ -543,7 +555,7 @@ export default {
           const out = await generateContentVideoImage(env, { prompt: body.prompt, apiKey });
           return json({ ok: true, data: out.data, mimeType: out.mimeType }, 200, cors);
         } catch (e) {
-          return json({ error: 'image_error', detail: String((e && e.message) || e) }, 500, cors);
+          return json({ error: 'image_error', detail: friendlyError(e) }, 500, cors);
         }
       }
 
@@ -565,7 +577,7 @@ export default {
           });
           return json({ ok: true, srt: out.srt }, 200, cors);
         } catch (e) {
-          return json({ error: 'srt_error', detail: String((e && e.message) || e) }, 500, cors);
+          return json({ error: 'srt_error', detail: friendlyError(e) }, 500, cors);
         }
       }
 
@@ -587,7 +599,7 @@ export default {
           });
           return json({ ok: true, srt: out.srt }, 200, cors);
         } catch (e) {
-          return json({ error: 'translate_error', detail: String((e && e.message) || e) }, 500, cors);
+          return json({ error: 'translate_error', detail: friendlyError(e) }, 500, cors);
         }
       }
 
@@ -609,7 +621,7 @@ export default {
           await trackUsageSafe(env, payload.sub, 'ai');
           return json({ ok: true, ...out }, 200, cors);
         } catch (e) {
-          return json({ error: 'story_error', detail: String((e && e.message) || e) }, 500, cors);
+          return json({ error: 'story_error', detail: friendlyError(e) }, 500, cors);
         }
       }
 
@@ -637,7 +649,7 @@ export default {
           });
           return json({ ok: true, ...out }, 200, cors);
         } catch (e) {
-          return json({ error: 'revise_error', detail: String((e && e.message) || e) }, 500, cors);
+          return json({ error: 'revise_error', detail: friendlyError(e) }, 500, cors);
         }
       }
 
@@ -659,7 +671,7 @@ export default {
           await trackUsageSafe(env, payload.sub, 'ai');
           return json({ ok: true, ...out }, 200, cors);
         } catch (e) {
-          return json({ error: 'video_error', detail: String((e && e.message) || e) }, 500, cors);
+          return json({ error: 'video_error', detail: friendlyError(e) }, 500, cors);
         }
       }
 
@@ -677,7 +689,7 @@ export default {
           const out = await generateStoryVideoImage(env, { prompt: body.prompt, apiKey });
           return json({ ok: true, data: out.data, mimeType: out.mimeType }, 200, cors);
         } catch (e) {
-          return json({ error: 'image_error', detail: String((e && e.message) || e) }, 500, cors);
+          return json({ error: 'image_error', detail: friendlyError(e) }, 500, cors);
         }
       }
 
@@ -699,7 +711,7 @@ export default {
           await trackUsageSafe(env, payload.sub, 'ai');
           return json({ ok: true, ...out }, 200, cors);
         } catch (e) {
-          return json({ error: 'short_error', detail: String((e && e.message) || e) }, 500, cors);
+          return json({ error: 'short_error', detail: friendlyError(e) }, 500, cors);
         }
       }
 
@@ -724,7 +736,7 @@ export default {
           });
           return json({ ok: true, ...out }, 200, cors);
         } catch (e) {
-          return json({ error: 'revise_error', detail: String((e && e.message) || e) }, 500, cors);
+          return json({ error: 'revise_error', detail: friendlyError(e) }, 500, cors);
         }
       }
 
@@ -749,7 +761,7 @@ export default {
           await trackUsageSafe(env, payload.sub, 'ai');
           return json({ ok: true, ...out }, 200, cors);
         } catch (e) {
-          return json({ error: 'video_error', detail: String((e && e.message) || e) }, 500, cors);
+          return json({ error: 'video_error', detail: friendlyError(e) }, 500, cors);
         }
       }
 
@@ -767,7 +779,7 @@ export default {
           const out = await generateShortVideoImage(env, { prompt: body.prompt, apiKey });
           return json({ ok: true, data: out.data, mimeType: out.mimeType }, 200, cors);
         } catch (e) {
-          return json({ error: 'image_error', detail: String((e && e.message) || e) }, 500, cors);
+          return json({ error: 'image_error', detail: friendlyError(e) }, 500, cors);
         }
       }
 
@@ -791,7 +803,7 @@ export default {
           });
           return json({ ok: true, ...out }, 200, cors);
         } catch (e) {
-          return json({ error: 'image_prompt_error', detail: String((e && e.message) || e) }, 500, cors);
+          return json({ error: 'image_prompt_error', detail: friendlyError(e) }, 500, cors);
         }
       }
 
@@ -815,7 +827,7 @@ export default {
           });
           return json({ ok: true, ...out }, 200, cors);
         } catch (e) {
-          return json({ error: 'ad_prompt_error', detail: String((e && e.message) || e) }, 500, cors);
+          return json({ error: 'ad_prompt_error', detail: friendlyError(e) }, 500, cors);
         }
       }
 
@@ -834,7 +846,7 @@ export default {
           await trackUsageSafe(env, payload.sub, 'image');
           return json({ ok: true, data: out.data, mimeType: out.mimeType }, 200, cors);
         } catch (e) {
-          return json({ error: 'image_generate_error', detail: String((e && e.message) || e) }, 500, cors);
+          return json({ error: 'image_generate_error', detail: friendlyError(e) }, 500, cors);
         }
       }
 
@@ -857,7 +869,7 @@ export default {
           await trackUsageSafe(env, payload.sub, 'voice');
           return json({ ok: true, data: out.data, mimeType: out.mimeType }, 200, cors);
         } catch (e) {
-          return json({ error: 'tts_error', detail: String((e && e.message) || e) }, 500, cors);
+          return json({ error: 'tts_error', detail: friendlyError(e) }, 500, cors);
         }
       }
 
@@ -883,7 +895,7 @@ export default {
           await trackUsageSafe(env, payload.sub, 'ai');
           return json({ ok: true, ...out }, 200, cors);
         } catch (e) {
-          return json({ error: 'transcribe_error', detail: String((e && e.message) || e) }, 500, cors);
+          return json({ error: 'transcribe_error', detail: friendlyError(e) }, 500, cors);
         }
       }
 
@@ -907,7 +919,7 @@ export default {
           });
           return json({ ok: true, ...out }, 200, cors);
         } catch (e) {
-          return json({ error: 'srt_error', detail: String((e && e.message) || e) }, 500, cors);
+          return json({ error: 'srt_error', detail: friendlyError(e) }, 500, cors);
         }
       }
 
@@ -931,7 +943,7 @@ export default {
           });
           return json({ ok: true, ...out }, 200, cors);
         } catch (e) {
-          return json({ error: 'translate_error', detail: String((e && e.message) || e) }, 500, cors);
+          return json({ error: 'translate_error', detail: friendlyError(e) }, 500, cors);
         }
       }
 
@@ -953,7 +965,7 @@ export default {
           await trackUsageSafe(env, payload.sub, 'ai');
           return json({ ok: true, ...out }, 200, cors);
         } catch (e) {
-          return json({ error: 'shop_content_error', detail: String((e && e.message) || e) }, 500, cors);
+          return json({ error: 'shop_content_error', detail: friendlyError(e) }, 500, cors);
         }
       }
 
@@ -978,7 +990,7 @@ export default {
           });
           return json({ ok: true, ...out }, 200, cors);
         } catch (e) {
-          return json({ error: 'revise_error', detail: String((e && e.message) || e) }, 500, cors);
+          return json({ error: 'revise_error', detail: friendlyError(e) }, 500, cors);
         }
       }
 
@@ -1000,7 +1012,7 @@ export default {
           await trackUsageSafe(env, payload.sub, 'ai');
           return json({ ok: true, ...out }, 200, cors);
         } catch (e) {
-          return json({ error: 'video_error', detail: String((e && e.message) || e) }, 500, cors);
+          return json({ error: 'video_error', detail: friendlyError(e) }, 500, cors);
         }
       }
 
@@ -1018,7 +1030,7 @@ export default {
           const out = await generateShopVideoImage(env, { prompt: body.prompt, apiKey });
           return json({ ok: true, data: out.data, mimeType: out.mimeType }, 200, cors);
         } catch (e) {
-          return json({ error: 'image_error', detail: String((e && e.message) || e) }, 500, cors);
+          return json({ error: 'image_error', detail: friendlyError(e) }, 500, cors);
         }
       }
 
@@ -1035,7 +1047,7 @@ export default {
           const p = await createProject(env, payload.sub, String(body.title), body.description || '');
           return json({ ok: true, project: p }, 200, cors);
         } catch (e) {
-          return json({ error: 'project_error', detail: String((e && e.message) || e) }, 500, cors);
+          return json({ error: 'project_error', detail: friendlyError(e) }, 500, cors);
         }
       }
 
@@ -1048,7 +1060,7 @@ export default {
           const items = await listProjects(env, payload.sub);
           return json({ items }, 200, cors);
         } catch (e) {
-          return json({ error: 'project_error', detail: String((e && e.message) || e) }, 500, cors);
+          return json({ error: 'project_error', detail: friendlyError(e) }, 500, cors);
         }
       }
 
@@ -1063,7 +1075,7 @@ export default {
           await deleteProject(env, payload.sub, id);
           return json({ ok: true }, 200, cors);
         } catch (e) {
-          return json({ error: 'delete_error', detail: String((e && e.message) || e) }, 500, cors);
+          return json({ error: 'delete_error', detail: friendlyError(e) }, 500, cors);
         }
       }
 
@@ -1079,7 +1091,7 @@ export default {
           const r = await toggleFavorite(env, payload.sub, id);
           return json({ ok: true, favorite: r.favorite }, 200, cors);
         } catch (e) {
-          return json({ error: 'favorite_error', detail: String((e && e.message) || e) }, 500, cors);
+          return json({ error: 'favorite_error', detail: friendlyError(e) }, 500, cors);
         }
       }
 
@@ -1102,7 +1114,7 @@ export default {
           });
           return json({ ok: true }, 200, cors);
         } catch (e) {
-          return json({ error: 'save_error', detail: String((e && e.message) || e) }, 500, cors);
+          return json({ error: 'save_error', detail: friendlyError(e) }, 500, cors);
         }
       }
 
@@ -1127,13 +1139,13 @@ export default {
           await deleteCreation(env, payload.sub, id);
           return json({ ok: true }, 200, cors);
         } catch (e) {
-          return json({ error: 'delete_error', detail: String((e && e.message) || e) }, 500, cors);
+          return json({ error: 'delete_error', detail: friendlyError(e) }, 500, cors);
         }
       }
 
       return json({ error: 'not_found', path }, 404, cors);
     } catch (e) {
-      return json({ error: 'internal', detail: String((e && e.message) || e) }, 500, cors);
+      return json({ error: 'internal', detail: friendlyError(e) }, 500, cors);
     }
   },
 };

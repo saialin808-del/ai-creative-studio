@@ -1,6 +1,6 @@
 // AI Creative Studio — Studio Service 
-import { getCMSData, buildSystemPrompt } from './core/cms';
-import { callGeminiText, callGeminiImage } from './core/ai';
+import { getCMSData, buildSystemPrompt } from './core/cms.js';
+import { callGeminiText, callGeminiImage } from './core/ai.js';
 
 const IMAGE_STUDIOS = ['IMAGE'];
 
