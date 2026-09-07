@@ -111,7 +111,7 @@ function showToast(msg,type){var t=document.getElementById('toast');t.textConten
 function escapeHtml(text){var div=document.createElement('div');div.innerText=text;return div.innerHTML;}
 var allItems=[];
 if(!TOKEN){
-  document.querySelector('.main-content').innerHTML='<div style="padding:40px;text-align:center;"><h2>🔒 Login လိုအပ်ပါသည်</h2><p style="margin:16px 0;"><a href="/api/auth/login?next='+encodeURIComponent(location.pathname+location.search)+'">Google နဲ့ Login လုပ်ပါ</a></p></div>';
+  document.querySelector('.main-content').innerHTML='<div style="padding:40px;text-align:center;"><h2>🔒 Login လိုအပ်ပါသည်</h2><p style="margin:16px 0;"><a href="/login" style="text-decoration:underline;">Login / Sign Up သို့ သွားရန်</a></p></div>';
 }else{
   loadCreations();
 }

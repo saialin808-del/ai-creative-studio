@@ -329,7 +329,7 @@ function base64ToBlob(b64,mime){var bin=atob(b64);var arr=new Uint8Array(bin.len
 
 // Init
 if (!TOKEN) {
-  document.body.innerHTML='<div style="padding:40px;text-align:center;"><h2>🔒 Login လိုအပ်ပါသည်</h2><p><a href="/api/auth/login?next='+encodeURIComponent(location.pathname)+'">Google နဲ့ Login လုပ်ပါ</a></p></div>';
+  document.body.innerHTML='<div style="padding:40px;text-align:center;"><h2>🔒 Login လိုအပ်ပါသည်</h2><p><a href="/login" style="text-decoration:underline;">Login / Sign Up သို့ သွားရန်</a></p></div>';
 } else {
   api('/api/users/me').then(function(d){
     if(d.error){localStorage.removeItem('aics_token');location.reload();return;}

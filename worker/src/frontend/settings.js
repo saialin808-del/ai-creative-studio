@@ -137,7 +137,7 @@ function api(path,opts){opts=opts||{};var h=opts.headers||{};h['Content-Type']='
 function showToast(msg,type){var t=document.getElementById('toast');t.textContent=msg;t.className='toast show'+(type?' '+type:'');setTimeout(function(){t.className='toast';},2500);}
 function escapeHtml(text){var div=document.createElement('div');div.innerText=text;return div.innerHTML;}
 if(!TOKEN){
-  document.querySelector('.main-content').innerHTML='<div style="padding:40px;text-align:center;"><h2>🔒 Login လိုအပ်ပါသည်</h2><p style="margin:16px 0;"><a href="/api/auth/login?next='+encodeURIComponent(location.pathname)+'">Google နဲ့ Login လုပ်ပါ</a></p></div>';
+  document.querySelector('.main-content').innerHTML='<div style="padding:40px;text-align:center;"><h2>🔒 Login လိုအပ်ပါသည်</h2><p style="margin:16px 0;"><a href="/login" style="text-decoration:underline;">Login / Sign Up သို့ သွားရန်</a></p></div>';
 }else{
   loadSettings();
 }
@@ -153,11 +153,14 @@ function loadSettings(){
   api('/api/users/me').then(function(d){
     if(d.error){document.getElementById('tab-profile').innerHTML='<div class="empty-state">Data ရယူ၍ မရပါ — '+(d.error||'error')+'</div>';return;}
     var s=d.settings||{};
+    var u=d.usage||{};
     document.getElementById('tab-profile').innerHTML=
+      '<div class="profile-row"><span class="profile-label">👤 နာမည်</span><span class="profile-value"><input id="profileName" maxlength="60" value="'+escapeHtml(d.name||'')+'" style="width:200px;max-width:100%;min-height:40px;padding:0 10px;border-radius:8px;border:1px solid #223052;background:#0b1120;color:#e8ecf4;font-size:14px"> <button class="btn btn-secondary" style="padding:8px 14px;min-height:40px" onclick="saveName()">သိမ်းပါ</button></span></div>'+
       '<div class="profile-row"><span class="profile-label">📧 အီးမေးလ်</span><span class="profile-value">'+escapeHtml(d.email||'')+'</span></div>'+
       '<div class="profile-row"><span class="profile-label">Plan</span><span class="profile-value"><span class="plan-badge'+(d.plan==='PRO'?' pro':'')+'">'+(d.plan==='PRO'?'PRO ⭐':'FREE')+'</span></span></div>'+
       '<div class="profile-row"><span class="profile-label">User ID</span><span class="profile-value">'+escapeHtml(String(d.user_id||''))+'</span></div>'+
-      '<div class="profile-row"><span class="profile-label">အခွင့်အရေး</span><span class="profile-value">'+(d.is_admin?'Admin ⚙️':'User')+'</span></div>';
+      '<div class="profile-row"><span class="profile-label">အခွင့်အရေး</span><span class="profile-value">'+(d.is_admin?'Admin ⚙️':'User')+'</span></div>'+
+      '<div class="profile-row"><span class="profile-label">📊 အသုံးပြုမှု</span><span class="profile-value">AI: '+(u.ai_requests||0)+' · ပုံ: '+(u.image_generations||0)+' · အသံ: '+(u.voice_generations||0)+'</span></div>';
     document.getElementById('pref_studio').value=s.default_studio||'story';
     document.getElementById('pref_voice').value=s.default_voice||'Kore';
     document.getElementById('pref_model').value=s.default_model||'gemini-3.6-flash';
@@ -165,6 +168,16 @@ function loadSettings(){
     document.getElementById('pref_theme').value=s.theme||'dark';
     loadKeyStatus();
   }).catch(function(){document.getElementById('tab-profile').innerHTML='<div class="empty-state">Network problem</div>';});
+}
+function saveName(){
+  var name=document.getElementById('profileName').value.trim();
+  if(!name){showToast('နာမည် ထည့်ပါ','error');return;}
+  api('/api/users/me/profile',{method:'PUT',body:{name:name}}).then(function(d){
+    if(d.error){showToast('သိမ်း၍ မရပါ','error');return;}
+    showToast('✓ နာမည် သိမ်းပြီးပါပြီ','success');
+    var sn=document.getElementById('sideName');if(sn)sn.textContent=name;
+    var av=document.getElementById('sideAvatar');if(av)av.textContent=name.charAt(0).toUpperCase();
+  }).catch(function(){showToast('Network error','error');});
 }
 function savePrefs(ev){
   ev.preventDefault();

@@ -52,6 +52,7 @@ function appShellSidebar(activeId) {
     '  ' + myWorkLinks(activeId) + '\n' +
     '  </div>\n' +
     '  <div class="sidebar-bottom">\n' +
+    '    <div class="side-user"><div class="avatar" id="sideAvatar">👤</div><div class="side-name" id="sideName">—</div></div>\n' +
     '    <div class="license-badge" id="licenseBadge">Checking plan...</div>\n' +
     '    <div class="side-email" id="sideEmail" style="font-size:11.5px;color:var(--text3);margin-bottom:8px;word-break:break-all;">—</div>\n' +
     '    <button class="side-btn" onclick="setApiKey()">🔑 API Key Setting</button>\n' +
@@ -79,6 +80,7 @@ function studioPageSidebar(activeId) {
     '  ' + myWorkLinks(activeId) + '\n' +
     '  </div>\n' +
     '  <div class="sidebar-bottom">\n' +
+    '  <div class="side-user"><div class="avatar" id="sideAvatar">👤</div><div class="side-name" id="sideName">—</div></div>\n' +
     '  <div class="license-badge" id="sidePlan">—</div>\n' +
     '  <div class="side-email" id="sideEmail">—</div>\n' +
     '  <a class="side-btn" onclick="setApiKey()">🔑 API Key Setting</a>\n' +
@@ -110,6 +112,10 @@ function responsiveStyles() {
     '.sidebar-nav{flex:1 1 auto;overflow-y:auto;min-height:0;}\n' +
     '.sidebar > .brand{flex-shrink:0;}\n' +
     '.sidebar-bottom{flex-shrink:0;margin-top:auto;}\n' +
+    '/* Phase 12 — Personal Profile (Name + Avatar) */\n' +
+    '.side-user{display:flex;align-items:center;gap:10px;margin-bottom:10px;}\n' +
+    '.side-user .avatar{width:36px;height:36px;flex-shrink:0;border-radius:50%;background:linear-gradient(135deg,#7b5cff,#00e5ff);color:#041018;font-weight:700;font-size:16px;display:flex;align-items:center;justify-content:center;}\n' +
+    '.side-user .side-name{font-size:13.5px;font-weight:600;color:#e8ecf4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}\n' +
     '/* Studio Drawer Backdrop — ပြင်ပ Screen ကို ထိလျှင် Sidebar ပိတ်စေရန် (Phase 9 fix) */\n' +
     '.layout > .backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:98;}\n' +
     '.layout > .backdrop.show{display:block;}\n' +
@@ -158,6 +164,15 @@ function responsiveStyles() {
 export function sidebarScript() {
   return '<script>\n' +
     '// ===== AI Creative Studio — Shared Sidebar Script (Phase 2 — App Shell) =====\n' +
+    '// Phase 12 — Google Login ပြီးနောက် #token ကို ကမ္ဘာလုံးဆိုင်ရာ သိမ်းသည် (App စာမျက်နှာအားလုံးအတွက်)\n' +
+    '(function () {\n' +
+    '  var h = location.hash || \'\';\n' +
+    '  if (h.indexOf(\'#token=\') === 0) {\n' +
+    '    try { localStorage.setItem(\'aics_token\', decodeURIComponent(h.slice(7))); } catch (e) {}\n' +
+    '    try { history.replaceState(null, \'\', location.pathname); } catch (e) {}\n' +
+    '    location.reload();\n' +
+    '  }\n' +
+    '})();\n' +
     'var SB_TOKEN = localStorage.getItem(\'aics_token\') || \'\';\n' +
     'function __sbToast(msg, isError) {\n' +
     '  try { if (typeof showToast === \'function\') { showToast(msg, isError ? \'error\' : \'success\'); return; } } catch (e) {}\n' +
@@ -206,6 +221,13 @@ export function sidebarScript() {
     '      }\n' +
     '      var se = document.getElementById(\'sideEmail\');\n' +
     '      if (se) se.textContent = d.email || \'—\';\n' +
+    '      var sn = document.getElementById(\'sideName\');\n' +
+    '      if (sn) {\n' +
+    '        var disp = d.name || (d.email || \'\').split(\'@\')[0] || \'User\';\n' +
+    '        sn.textContent = disp;\n' +
+    '        var av = document.getElementById(\'sideAvatar\');\n' +
+    '        if (av) av.textContent = disp.charAt(0).toUpperCase();\n' +
+    '      }\n' +
     '      var ue = document.getElementById(\'userEmail\');\n' +
     '      if (ue) ue.textContent = d.email || \'\';\n' +
     '      var pb = document.getElementById(\'planBadge\');\n' +
