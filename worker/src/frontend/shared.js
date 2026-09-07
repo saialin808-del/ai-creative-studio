@@ -112,6 +112,16 @@ function responsiveStyles() {
     '.sidebar-nav{flex:1 1 auto;overflow-y:auto;min-height:0;}\n' +
     '.sidebar > .brand{flex-shrink:0;}\n' +
     '.sidebar-bottom{flex-shrink:0;margin-top:auto;}\n' +
+    '/* ===== Phase 12-fix — Unified Menu Button (စာမျက်နှာအားလုံး တစ်ပုံစံတည်း) ===== */\n' +
+    '/* App Pages (.hamburger) + Studio Pages (.menu-btn) — နေရာ/အရောင်/အရွယ် တူညီအောင် ပေါင်းထားသည် */\n' +
+    '.hamburger,.menu-btn{\n' +
+    '  display:none;\n' +
+    '  position:fixed;top:14px;left:14px;z-index:300;\n' +
+    '  background:#151b2b;border:1px solid #2a3350;color:#fff;\n' +
+    '  font-size:20px;width:44px;height:44px;border-radius:10px;\n' +
+    '  cursor:pointer;align-items:center;justify-content:center;\n' +
+    '  box-shadow:0 2px 12px rgba(0,0,0,.45);padding:0;line-height:1;\n' +
+    '}\n' +
     '/* Phase 12 — Personal Profile (Name + Avatar) */\n' +
     '.side-user{display:flex;align-items:center;gap:10px;margin-bottom:10px;}\n' +
     '.side-user .avatar{width:36px;height:36px;flex-shrink:0;border-radius:50%;background:linear-gradient(135deg,#7b5cff,#00e5ff);color:#041018;font-weight:700;font-size:16px;display:flex;align-items:center;justify-content:center;}\n' +
@@ -148,8 +158,9 @@ function responsiveStyles() {
     '  .layout > .sidebar.open{left:0;}\n' +
     '  .layout > .main,.layout > main.main{padding:14px;}\n' +
     '  .main-content{margin-left:0;padding:64px 14px 20px;}\n' +
-    '  .menu-btn{min-width:44px;min-height:44px;font-size:20px;}\n' +
-    '  .hamburger{width:44px;height:44px;}\n' +
+    '  .hamburger,.menu-btn{display:flex;}\n' +
+    '  /* Studio Header Logo ကို Fixed Menu Button နှင့် မထိအောင် ဘယ်ဘက် ချန်ပေးသည် (Phone) */\n' +
+    '  .header{padding-left:64px;}\n' +
     '  .nav-item,.side-btn{min-height:46px;}\n' +
     '  .btn,button,select,input,textarea{min-height:44px;}\n' +
     '  .card{padding:14px;}\n' +
