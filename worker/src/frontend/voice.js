@@ -652,13 +652,13 @@ function saveText01() {
   if (!text || !text.trim()) { showToast('Save လုပ်ဖို့ Text မရှိသေးပါ', 'error'); return; }
   var title = prompt('Creation အမည် ပေးပါ:', text.substring(0, 40));
   if (title === null) return;
-  api('/api/creations', { method: 'POST', body: {
+  AICS_CREATIONS.save({
     studio: 'VOICE', type: '1', title: title || 'Voice Text',
     original_prompt: text, ai_output: text,
-  }}).then(function(d) {
-    if (d.error) { showToast('Save မအောင်မြင်: ' + d.error, 'error'); return; }
+    media_type: lastAudioBase64_01 ? 'audio' : '', media_mime: lastAudioMime_01 || 'audio/wav', media_data: lastAudioBase64_01 || ''
+  }).then(function() {
     showToast('💾 Save ပြီးပါပြီ', 'success');
-  }).catch(function() { showToast('Network error', 'error'); });
+  }).catch(function() { showToast('Browser Storage မအောင်မြင်', 'error'); });
 }
 
 function generateSrt01() {
@@ -750,13 +750,13 @@ function saveSrt01(kind) {
   if (!srt) { showToast('Save လုပ်ဖို့ SRT မရှိပါ', 'error'); return; }
   var title = prompt('Creation အမည် ပေးပါ:', kind === 'translated' ? 'Voice Translated SRT' : 'Voice Original SRT');
   if (title === null) return;
-  api('/api/creations', { method: 'POST', body: {
+  AICS_CREATIONS.save({
     studio: 'VOICE', type: '2', title: title || 'Voice SRT',
     original_prompt: document.getElementById('srtOriginal01').value, ai_output: srt,
-  }}).then(function(d) {
-    if (d.error) { showToast('Save မအောင်မြင်: ' + d.error, 'error'); return; }
+    media_type: lastAudioBase64_01 ? 'audio' : '', media_mime: lastAudioMime_01 || 'audio/wav', media_data: lastAudioBase64_01 || ''
+  }).then(function() {
     showToast('💾 Save ပြီးပါပြီ', 'success');
-  }).catch(function() { showToast('Network error', 'error'); });
+  }).catch(function() { showToast('Browser Storage မအောင်မြင်', 'error'); });
 }
 
 // ================================================= //
@@ -811,13 +811,13 @@ function saveTranscript02() {
   if (!text) { showToast('Save လုပ်ဖို့ Result မရှိပါ', 'error'); return; }
   var title = prompt('Creation အမည် ပေးပါ:', 'Voice Transcript');
   if (title === null) return;
-  api('/api/creations', { method: 'POST', body: {
+  AICS_CREATIONS.save({
     studio: 'VOICETRANSCRIBE', type: '1', title: title || 'Voice Transcript',
     original_prompt: '(Audio transcription)', ai_output: text,
-  }}).then(function(d) {
-    if (d.error) { showToast('Save မအောင်မြင်: ' + d.error, 'error'); return; }
+    media_type: lastAudioBase64_02 ? 'audio' : '', media_mime: lastAudioMime_02 || 'audio/mpeg', media_data: lastAudioBase64_02 || ''
+  }).then(function() {
     showToast('💾 Save ပြီးပါပြီ', 'success');
-  }).catch(function() { showToast('Network error', 'error'); });
+  }).catch(function() { showToast('Browser Storage မအောင်မြင်', 'error'); });
 }
 
 function generateSrt02() {
@@ -909,13 +909,13 @@ function saveSrt02(kind) {
   if (!srt) { showToast('Save လုပ်ဖို့ SRT မရှိပါ', 'error'); return; }
   var title = prompt('Creation အမည် ပေးပါ:', kind === 'translated' ? 'Voice Translated SRT' : 'Voice Original SRT');
   if (title === null) return;
-  api('/api/creations', { method: 'POST', body: {
+  AICS_CREATIONS.save({
     studio: 'VOICETRANSCRIBE', type: '2', title: title || 'Voice SRT',
     original_prompt: document.getElementById('srtOriginal02').value, ai_output: srt,
-  }}).then(function(d) {
-    if (d.error) { showToast('Save မအောင်မြင်: ' + d.error, 'error'); return; }
+    media_type: lastAudioBase64_02 ? 'audio' : '', media_mime: lastAudioMime_02 || 'audio/mpeg', media_data: lastAudioBase64_02 || ''
+  }).then(function() {
     showToast('💾 Save ပြီးပါပြီ', 'success');
-  }).catch(function() { showToast('Network error', 'error'); });
+  }).catch(function() { showToast('Browser Storage မအောင်မြင်', 'error'); });
 }
 // ===== Unified Sidebar helpers (Phase 4 — Shared Sidebar Script သို့ ရွှေ့ပြီးပါပြီ) =====
 </script>

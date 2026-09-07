@@ -884,7 +884,7 @@ function saveToCreations() {
   var defaultTitle = topic.substring(0, 40) + (topic.length > 40 ? '...' : '');
   var title = prompt('Creation အမည် ပေးပါ:', defaultTitle);
   if (title === null) return;
-  apiCall('/api/creations', {
+  AICS_CREATIONS.save({
     studio: 'SHORT',
     type: selectedType1,
     original_prompt: currentShortIdea,
@@ -892,7 +892,7 @@ function saveToCreations() {
     title: title || defaultTitle
   })
     .then(function() { showToast('💾 My Creations ထဲ Save ပြီးပါပြီ'); })
-    .catch(function(err) { showToast('Save မအောင်မြင်ပါ: ' + err.message, true); });
+    .catch(function(err) { showToast('Save မအောင်မြင်ပါ: ' + ((err && err.message) || 'Error'), true); });
 }
 
 function transferToVideo() {
@@ -1178,7 +1178,7 @@ function saveAllToCreations() {
   var defaultTitle = currentVideoIdea.substring(0, 40) + (currentVideoIdea.length > 40 ? '...' : '');
   var title = prompt('Creation အမည် ပေးပါ:', defaultTitle);
   if (title === null) return;
-  apiCall('/api/creations', {
+  AICS_CREATIONS.save({
     studio: 'SHORTVIDEO',
     type: selectedType2,
     original_prompt: currentVideoIdea,
@@ -1186,7 +1186,7 @@ function saveAllToCreations() {
     title: title || defaultTitle
   })
     .then(function() { showToast('💾 My Creations ထဲ Save ပြီးပါပြီ'); })
-    .catch(function(err) { showToast('Save မအောင်မြင်ပါ: ' + err.message, true); });
+    .catch(function(err) { showToast('Save မအောင်မြင်ပါ: ' + ((err && err.message) || 'Error'), true); });
 }
 
 // ===== Utilities =====

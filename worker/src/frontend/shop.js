@@ -452,7 +452,7 @@ function generateContent(){
   }).catch(function(e){document.getElementById('loadingContent').classList.remove('show');btn.disabled=false;showToast('Network error','error');});
 }
 function copyResult(){var t=document.getElementById('resultContent').value;if(!t){showToast('Copy လုပ်ဖို့ မရှိပါ','error');return;}navigator.clipboard.writeText(t);showToast('✓ Copy ပြီးပါပြီ','success');}
-function saveContent(){var t=document.getElementById('resultContent').value;if(!t){showToast('Save လုပ်ဖို့ မရှိပါ','error');return;}var title=prompt('Creation အမည်:',t.substring(0,40));if(title===null)return;api('/api/creations',{method:'POST',body:{studio:'SHOPCONTENT',type:contentType,title:title||'Shop Content',original_prompt:collectContentIdea(),ai_output:t}}).then(function(d){if(d.error){showToast('Save မအောင်မြင်','error');return;}showToast('💾 Save ပြီးပါပြီ','success');}).catch(function(){showToast('Network error','error');});}
+function saveContent(){var t=document.getElementById('resultContent').value;if(!t){showToast('Save လုပ်ဖို့ မရှိပါ','error');return;}var title=prompt('Creation အမည်:',t.substring(0,40));if(title===null)return;AICS_CREATIONS.save({studio:'SHOPCONTENT',type:contentType,title:title||'Shop Content',original_prompt:collectContentIdea(),ai_output:t}).then(function(){showToast('💾 Save ပြီးပါပြီ','success');}).catch(function(){showToast('Browser Storage မအောင်မြင်','error');});}
 function toggleChat(){document.getElementById('chatSection').style.display=document.getElementById('chatSection').style.display==='block'?'none':'block';}
 function sendRevision(){
   var instr=document.getElementById('chatInput').value.trim();
@@ -611,8 +611,8 @@ function saveAllVideo(){
   videoResult.characters.forEach(function(ch,i){t+='=== CHARACTER '+(i+1)+' ===\\n'+(ch.name||'')+' ('+(ch.role||'')+')\\n'+(ch.prompt||'')+'\\n\\n';});
   videoResult.scenes.forEach(function(sc,i){t+='=== SCENE '+(sc.number||i+1)+' ===\\nENV: '+(sc.environmentPrompt||'')+'\\nVIDEO: '+(sc.videoPrompt||'')+'\\n\\n';});
   var title=prompt('Creation အမည်:',videoIdeaText.substring(0,40));if(title===null)return;
-  api('/api/creations',{method:'POST',body:{studio:'SHOPVIDEO',type:videoType,title:title||'Shop Video',original_prompt:videoIdeaText,ai_output:t}})
-  .then(function(d){if(d.error){showToast('Save မအောင်မြင်','error');return;}showToast('💾 Save ပြီးပါပြီ','success');}).catch(function(){showToast('Network error','error');});
+  AICS_CREATIONS.save({studio:'SHOPVIDEO',type:videoType,title:title||'Shop Video',original_prompt:videoIdeaText,ai_output:t})
+  .then(function(){showToast('💾 Save ပြီးပါပြီ','success');}).catch(function(){showToast('Browser Storage မအောင်မြင်','error');});
 }
 // ===== Unified Sidebar helpers (Phase 4 — Shared Sidebar Script သို့ ရွှေ့ပြီးပါပြီ) =====
 </script>

@@ -363,9 +363,9 @@ function saveStory(){
   var defaultTitle=topic.substring(0,40)+(topic.length>40?'...':'');
   var title=prompt('Creation အမည် ပေးပါ:',defaultTitle);
   if(title===null)return;
-  apiCall('/api/creations',{studio:'STORY',type:selectedStoryType,title:title||defaultTitle,original_prompt:currentStoryIdea,ai_output:text})
+  AICS_CREATIONS.save({studio:'STORY',type:selectedStoryType,title:title||defaultTitle,original_prompt:currentStoryIdea,ai_output:text})
     .then(function(){showToastMsg('&#128190; My Creations ထဲ Save ပြီးပါပြီ');})
-    .catch(function(err){showToastMsg('Save မအောင်မြင်ပါ: '+err.message);});
+    .catch(function(err){showToastMsg('Save မအောင်မြင်ပါ: '+(err&&err.message||'Error'));});
 }
 
 function transferToVideo(){
@@ -511,9 +511,9 @@ function saveAllVideo(){
   var defaultTitle=currentVideoIdea.substring(0,40)+(currentVideoIdea.length>40?'...':'');
   var title=prompt('Creation အမည် ပေးပါ:',defaultTitle);
   if(title===null)return;
-  apiCall('/api/creations',{studio:'STORYVIDEO',type:selectedVideoType,title:title||defaultTitle,original_prompt:currentVideoIdea,ai_output:combined})
+  AICS_CREATIONS.save({studio:'STORYVIDEO',type:selectedVideoType,title:title||defaultTitle,original_prompt:currentVideoIdea,ai_output:combined})
     .then(function(){showToastMsg('&#128190; My Creations ထဲ Save ပြီးပါပြီ');})
-    .catch(function(err){showToastMsg('Save မအောင်မြင်ပါ: '+err.message);});
+    .catch(function(err){showToastMsg('Save မအောင်မြင်ပါ: '+(err&&err.message||'Error'));});
 }
 
 function setLoading(id,show){var el=document.getElementById(id);if(show)el.classList.add('show');else el.classList.remove('show');}

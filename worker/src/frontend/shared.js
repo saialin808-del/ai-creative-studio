@@ -174,6 +174,107 @@ function responsiveStyles() {
 // ကိုယ်ပိုင် Token ဖတ်သောကြောင့် Page Script နှင့် အစဉ်လိုက် မမှီခိုပါ။
 export function sidebarScript() {
   return '<script>\n' +
+    '// ===== AI Creative Studio — Client-side Creations Store (Phase 13 — Option 2) =====\n' +
+    '// User ဖန်တီးမှုအားလုံးကို Browser IndexedDB တွင် သိမ်းသည်။ Server/D1 သို့ မပို့ပါ။\n' +
+    'function __aicsDbOpen() {\n' +
+    '  return new Promise(function (resolve, reject) {\n' +
+    '    if (window.__aicsDb) return resolve(window.__aicsDb);\n' +
+    '    if (!window.indexedDB) { reject(new Error(\'no_indexeddb\')); return; }\n' +
+    '    var req = indexedDB.open(\'aics_creations_v1\', 1);\n' +
+    '    req.onupgradeneeded = function () {\n' +
+    '      var db = req.result;\n' +
+    '      if (!db.objectStoreNames.contains(\'creations\')) {\n' +
+    '        var s = db.createObjectStore(\'creations\', { keyPath: \'id\' });\n' +
+    '        s.createIndex(\'user_id\', \'user_id\', { unique: false });\n' +
+    '      }\n' +
+    '    };\n' +
+    '    req.onsuccess = function () { window.__aicsDb = req.result; resolve(req.result); };\n' +
+    '    req.onerror = function () { reject(req.error); };\n' +
+    '  });\n' +
+    '}\n' +
+    'function __aicsUserId() {\n' +
+    '  var t = \'\';\n' +
+    '  try { t = localStorage.getItem(\'aics_token\') || \'\'; } catch (e) {}\n' +
+    '  if (!t) return \'\';\n' +
+    '  try {\n' +
+    '    var part = t.split(\'.\')[1] || \'\';\n' +
+    '    part = part.replace(/-/g, \'+\').replace(/_/g, \'/\');\n' +
+    '    while (part.length % 4) part += \'=\';\n' +
+    '    var p = JSON.parse(atob(part));\n' +
+    '    return p.sub || p.user_id || \'\';\n' +
+    '  } catch (e) { return \'\'; }\n' +
+    '}\n' +
+    'function __aicsTx(mode, fn) {\n' +
+    '  return __aicsDbOpen().then(function (db) {\n' +
+    '    return new Promise(function (resolve, reject) {\n' +
+    '      var t = db.transaction(\'creations\', mode);\n' +
+    '      var s = t.objectStore(\'creations\');\n' +
+    '      var out = null;\n' +
+    '      try { out = fn(s); } catch (e) { reject(e); return; }\n' +
+    '      t.oncomplete = function () { resolve(out); };\n' +
+    '      t.onerror = function () { reject(t.error); };\n' +
+    '      t.onabort = function () { reject(t.error); };\n' +
+    '    });\n' +
+    '  });\n' +
+    '}\n' +
+    'function __aicsGenId() { return \'c\' + Date.now().toString(36) + Math.random().toString(36).slice(2, 9); }\n' +
+    'window.AICS_CREATIONS = {\n' +
+    '  save: function (rec) {\n' +
+    '    var now = new Date().toISOString();\n' +
+    '    var item = {\n' +
+    '      id: rec.id || __aicsGenId(),\n' +
+    '      user_id: __aicsUserId(),\n' +
+    '      studio: rec.studio || \'UNKNOWN\',\n' +
+    '      type: String(rec.type || \'1\'),\n' +
+    '      title: rec.title || \'Untitled\',\n' +
+    '      original_prompt: rec.original_prompt || \'\',\n' +
+    '      ai_output: rec.ai_output || \'\',\n' +
+    '      media_type: rec.media_type || \'\',\n' +
+    '      media_mime: rec.media_mime || \'\',\n' +
+    '      media_data: rec.media_data || \'\',\n' +
+    '      is_favorite: rec.is_favorite ? 1 : 0,\n' +
+    '      created_at: rec.created_at || now,\n' +
+    '      updated_at: now\n' +
+    '    };\n' +
+    '    return __aicsTx(\'readwrite\', function (s) { s.put(item); return item; });\n' +
+    '  },\n' +
+    '  list: function () {\n' +
+    '    var uid = __aicsUserId();\n' +
+    '    return __aicsDbOpen().then(function (db) {\n' +
+    '      return new Promise(function (resolve, reject) {\n' +
+    '        var t = db.transaction(\'creations\', \'readonly\');\n' +
+    '        var req = t.objectStore(\'creations\').getAll();\n' +
+    '        req.onsuccess = function () {\n' +
+    '          var items = (req.result || []).filter(function (c) { return !uid || (c.user_id || \'\') === uid; });\n' +
+    '          items.sort(function (a, b) { return ((b.created_at || \'\') > (a.created_at || \'\')) ? 1 : (((b.created_at || \'\') < (a.created_at || \'\')) ? -1 : 0); });\n' +
+    '          resolve(items);\n' +
+    '        };\n' +
+    '        req.onerror = function () { reject(req.error); };\n' +
+    '      });\n' +
+    '    });\n' +
+    '  },\n' +
+    '  remove: function (id) {\n' +
+    '    return __aicsTx(\'readwrite\', function (s) { s.delete(id); return true; });\n' +
+    '  },\n' +
+    '  toggleFav: function (id) {\n' +
+    '    return __aicsDbOpen().then(function (db) {\n' +
+    '      return new Promise(function (resolve, reject) {\n' +
+    '        var t = db.transaction(\'creations\', \'readwrite\');\n' +
+    '        var s = t.objectStore(\'creations\');\n' +
+    '        var g = s.get(id);\n' +
+    '        g.onsuccess = function () {\n' +
+    '          var c = g.result;\n' +
+    '          if (!c) { reject(new Error(\'not_found\')); return; }\n' +
+    '          c.is_favorite = c.is_favorite ? 0 : 1;\n' +
+    '          c.updated_at = new Date().toISOString();\n' +
+    '          s.put(c);\n' +
+    '          t.oncomplete = function () { resolve({ favorite: c.is_favorite === 1 }); };\n' +
+    '        };\n' +
+    '        g.onerror = function () { reject(g.error); };\n' +
+    '      });\n' +
+    '    });\n' +
+    '  }\n' +
+    '};\n' +
     '// ===== AI Creative Studio — Shared Sidebar Script (Phase 2 — App Shell) =====\n' +
     '// Phase 12 — Google Login ပြီးနောက် #token ကို ကမ္ဘာလုံးဆိုင်ရာ သိမ်းသည် (App စာမျက်နှာအားလုံးအတွက်)\n' +
     '(function () {\n' +

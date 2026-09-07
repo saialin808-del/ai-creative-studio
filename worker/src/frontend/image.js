@@ -489,6 +489,7 @@ var MAX_REF = 5;
 var selectedType = { 1: '1', 2: '1' };
 var currentIdea = { 1: '', 2: '' };
 var refImages = { 1: [], 2: [] };
+var lastImageData = { 1: null, 2: null };
 
 (function init() {
   if (!token) {
@@ -683,6 +684,7 @@ function generateImage(tab) {
   document.getElementById('imgArea' + tab).innerHTML = '';
   apiCall('/api/studio/image/generate', { prompt: promptText })
     .then(function(data) {
+      lastImageData[tab] = { data: data.data, mimeType: data.mimeType };
       var dataUri = 'data:' + data.mimeType + ';base64,' + data.data;
       var img = document.createElement('img');
       img.src = dataUri;
@@ -720,15 +722,19 @@ function saveToCreations(tab) {
   var defaultTitle = topic.substring(0, 40) + (topic.length > 40 ? '...' : '');
   var title = prompt('Creation အမည် ပေးပါ:', defaultTitle);
   if (title === null) return;
-  apiCall('/api/creations', {
+  var media = lastImageData[tab] || null;
+  AICS_CREATIONS.save({
     studio: tab === 1 ? 'IMAGE' : 'IMAGEAD',
     type: selectedType[tab],
     original_prompt: currentIdea[tab],
     ai_output: resultText,
-    title: title || defaultTitle
+    title: title || defaultTitle,
+    media_type: media ? 'image' : '',
+    media_mime: media ? media.mimeType : '',
+    media_data: media ? media.data : ''
   })
     .then(function() { showToast('💾 My Creations ထဲ Save ပြီးပါပြီ'); })
-    .catch(function(err) { showToast('Save မအောင်မြင်ပါ: ' + err.message, true); });
+    .catch(function(err) { showToast('Save မအောင်မြင်ပါ: ' + ((err && err.message) || 'Error'), true); });
 }
 
 function copyToClipboard(text) {

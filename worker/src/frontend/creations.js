@@ -46,6 +46,9 @@ a{color:var(--cyan);text-decoration:none;}
 .creation-title{font-weight:bold;font-size:16px;}
 .creation-meta{color:var(--text3);font-size:12px;margin-top:4px;}
 .creation-preview{margin-top:10px;color:#ccc;font-size:14px;line-height:1.5;max-height:60px;overflow:hidden;}
+.creation-media{margin-top:10px;}
+.creation-media img{max-width:100%;max-height:260px;border-radius:10px;border:1px solid var(--border);cursor:zoom-in;}
+.creation-media audio{width:100%;max-width:420px;}
 .creation-full{margin-top:10px;color:#ccc;font-size:14px;line-height:1.5;white-space:pre-wrap;display:none;background:var(--card2);padding:12px;border-radius:8px;max-height:400px;overflow-y:auto;}
 .btn-row{margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;}
 .btn{padding:8px 16px;border:none;border-radius:8px;cursor:pointer;font-weight:bold;font-size:13px;min-height:36px;transition:opacity 0.2s;}
@@ -73,7 +76,7 @@ a{color:var(--cyan);text-decoration:none;}
 ${renderSidebar('creations')}
 <main class="main-content">
   <h1 class="page-title">📁 My Creations</h1>
-  <p class="page-subtitle">သင် Save လုပ်ထားသော AI Result များ — ဒီ Data ကို သင့်အကောင့်ထဲမှာသာ သိမ်းထားပါသည်။</p>
+  <p class="page-subtitle">သင် Save လုပ်ထားသော AI Result များ — ဒီ Data ကို သင့်ဘရောက်ဆာထဲမှာသာ သိမ်းထားပါသည်။ Server ပေါ် မတင်ပါ။ (Phase 13 — Option 2)</p>
   <div id="loadingState" class="loading-state">Loading...</div>
   <div id="emptyState" class="empty-state" style="display:none;">
     📭 Save ထားသော Creation များ မရှိသေးပါ။<br>
@@ -105,7 +108,6 @@ ${sidebarScript()}
 <script>
 var TOKEN = localStorage.getItem('aics_token') || '';
 var STUDIO_ICONS={"STORY":"📖","STORYVIDEO":"🎬","CONTENT":"✍️","CONTENTVIDEO":"🎥","SHORT":"🎬","SHORTVIDEO":"🎬","IMAGE":"🎨","VOICE":"🎙","VOICETRANSCRIBE":"📝","SHOPCONTENT":"🛒","SHOPVIDEO":"🛒"};
-function api(path,opts){opts=opts||{};var h=opts.headers||{};h['Content-Type']='application/json';if(TOKEN)h['Authorization']='Bearer '+TOKEN;return fetch(path,{method:opts.method||'GET',headers:h,body:opts.body?JSON.stringify(opts.body):undefined}).then(function(r){return r.json();});}
 function showToast(msg,type){var t=document.getElementById('toast');t.textContent=msg;t.className='toast show'+(type?' '+type:'');setTimeout(function(){t.className='toast';},2500);}
 // (toggleSidebar / logout / setApiKey / TG-FB link များကို Shared Sidebar Script သို့ ရွှေ့ပြီးပါပြီ — Phase 2)
 function escapeHtml(text){var div=document.createElement('div');div.innerText=text;return div.innerHTML;}
@@ -116,13 +118,14 @@ if(!TOKEN){
   loadCreations();
 }
 function loadCreations(){
-  api('/api/creations').then(function(d){
+  // Phase 13 — Option 2: Browser IndexedDB မှ ဖတ်သည် (Server API မဟုတ်ပါ)
+  AICS_CREATIONS.list().then(function(items){
     document.getElementById('loadingState').style.display='none';
-    if(d.error||!d.items||d.items.length===0){
+    if(!items||items.length===0){
       document.getElementById('emptyState').style.display='block';
       return;
     }
-    allItems=d.items;
+    allItems=items;
     // Sidebar ရဲ့ "အနှစ်သက်ဆုံး" လင့်ခ်က fav=1 နှင့် လာပါက Favorite Filter ဖွင့်ပေးသည်
     var favParam=new URLSearchParams(location.search).get('fav');
     if(favParam==='1'){
@@ -131,7 +134,7 @@ function loadCreations(){
     document.getElementById('toolbar').style.display='flex';
     renderList();
   }).catch(function(){
-    document.getElementById('loadingState').innerHTML='Error: Network problem';
+    document.getElementById('loadingState').innerHTML='Browser Storage ဖွင့်မရပါ (IndexedDB)';
   });
 }
 function filteredItems(){
@@ -162,7 +165,15 @@ function renderList(){
   noMatch.style.display=(items.length===0)?'block':'none';
   items.forEach(function(c){
     var icon=STUDIO_ICONS[c.studio]||'📄';
-    var dateStr=c.created_at?new Date(c.created_at.replace(' ','T')+'Z').toLocaleDateString():'';
+    var dateStr=c.created_at?fmtDate(c.created_at):'';
+    var mediaHtml='';
+    if(c.media_type==='image'&&c.media_data){
+      var uri='data:'+(c.media_mime||'image/png')+';base64,'+c.media_data;
+      mediaHtml='<div class="creation-media"><img src="'+uri+'" alt="'+escapeHtml(c.title||'Image')+'" onclick="window.open(this.src)"></div>';
+    }else if(c.media_type==='audio'&&c.media_data){
+      var auri='data:'+(c.media_mime||'audio/wav')+';base64,'+c.media_data;
+      mediaHtml='<div class="creation-media"><audio controls preload="none" src="'+auri+'"></audio></div>';
+    }
     var card=document.createElement('div');
     card.className='creation-card';
     card.innerHTML=
@@ -170,6 +181,7 @@ function renderList(){
       '<div class="creation-title">'+icon+' '+escapeHtml(c.title||'(Untitled)')+'</div>'+
       '<div class="creation-meta">'+c.studio+' • Type '+(c.type||'1')+' • '+dateStr+'</div>'+
       '</div></div>'+
+      mediaHtml+
       '<div class="creation-preview" id="preview-'+c.id+'">'+escapeHtml((c.ai_output||'').substring(0,120))+((c.ai_output||'').length>120?'...':'')+'</div>'+
       '<div class="creation-full" id="full-'+c.id+'">'+escapeHtml(c.ai_output||'')+'</div>'+
       '<div class="btn-row">'+
@@ -181,15 +193,19 @@ function renderList(){
     container.appendChild(card);
   });
 }
+function fmtDate(s){
+  var d=new Date(s);
+  if(isNaN(d.getTime())) d=new Date(String(s).replace(' ','T')+'Z');
+  return isNaN(d.getTime())?'':d.toLocaleDateString();
+}
 function toggleFav(id,btn){
-  api('/api/creations/'+id+'/favorite',{method:'POST'}).then(function(d){
-    if(d.error){showToast('မပြောင်းနိုင်ပါ','error');return;}
+  AICS_CREATIONS.toggleFav(id).then(function(d){
     var item=null;
     allItems.forEach(function(c){if(c.id===id)item=c;});
     if(item)item.is_favorite=d.favorite?1:0;
     showToast(d.favorite?'⭐ အနှစ်သက်ဆုံး ထဲသို့ ထည့်ပြီးပါပြီ':'အနှစ်သက်ဆုံး မှ ဖယ်ပြီးပါပြီ');
     renderList();
-  }).catch(function(){showToast('Network error','error');});
+  }).catch(function(){showToast('မပြောင်းနိုင်ပါ','error');});
 }
 function toggleFull(id){
   var preview=document.getElementById('preview-'+id);
@@ -207,15 +223,13 @@ function copyCreation(id,btn){
 function removeCreation(id,btn){
   if(!confirm('ဒီ Creation ကို ဖျက်မှာ သေချာပါသလား?'))return;
   var orig=btn.textContent;btn.textContent='⏳ ဖျက်နေသည်…';btn.disabled=true;
-  fetch('/api/creations/'+id,{method:'DELETE',headers:{'Authorization':'Bearer '+TOKEN}})
-  .then(function(r){return r.json();})
-  .then(function(d){
-    if(d.error){showToast('ဖျက်မရပါ','error');btn.textContent=orig;btn.disabled=false;return;}
+  AICS_CREATIONS.remove(id)
+  .then(function(){
     allItems=allItems.filter(function(c){return c.id!==id;});
     renderList();
     showToast('✓ Creation ဖျက်ပြီးပါပြီ','success');
     if(allItems.length===0)document.getElementById('emptyState').style.display='block';
-  }).catch(function(){showToast('Network error','error');btn.textContent=orig;btn.disabled=false;});
+  }).catch(function(){showToast('ဖျက်မရပါ','error');btn.textContent=orig;btn.disabled=false;});
 }
 </script>
 </body>
