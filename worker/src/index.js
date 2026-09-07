@@ -76,6 +76,27 @@ async function verifyTokenSafe(env, token) {
   try { return await verifyToken(env, token); } catch (e) { return null; }
 }
 
+// Phase 12-fix — App Page တိုင်းအတွက် Server-side Session Guard:
+// Cookie (သို့) Authorization မရှိလျှင် → Professional Login Page (/login) သို့ ပို့သည်
+// (Login မဝင်ဘဲ Home/Studio စာမျက်နှာများ မမြင်ရအောင် — "Login လိုအပ်ပါသည်" ကို မပြဘဲ /login သို့ တန်းသွားသည်)
+async function appSessionGuard(request, env, origin) {
+  const c = cookieToken(request);
+  if (!c) return { redirect: origin + '/login' };
+  const p = await verifyTokenSafe(env, c);
+  if (!p) return { redirect: origin + '/login', clear: true };
+  return null;
+}
+
+// Phase 12-fix — /login သို့ ရောက်လာသူသည် Session ရှိပြီးသားဆိုလျှင်
+// Login Screen ကို မပြဘဲ Personal Workspace (/app) သို့ တိုက်ရိုက်ပို့သည် (Remember Session — Rule 14)
+async function loginGuardRedirect(request, env, origin) {
+  const c = cookieToken(request);
+  if (!c) return null;
+  const p = await verifyTokenSafe(env, c);
+  if (!p) return new Response(null, { status: 302, headers: { Location: origin + '/login', 'Set-Cookie': clearSessionCookie() } });
+  return new Response(null, { status: 302, headers: { Location: origin + '/app' } });
+}
+
 async function resolvePlan(env, payload) {
   if (!payload || !payload.sub || !env.DB) return 'FREE';
   try {
@@ -312,8 +333,18 @@ export default {
 
       if (path === '/auth/result' && request.method === 'GET') return htmlPage(loginResultPage());
       // Phase 12 — Professional Personal Login UI (/login)
-      if (path === '/login' || path === '/login/') return htmlPage(LOGIN_HTML);
-      if (path === '/app' || path === '/app/') return htmlPage(APP_HTML);
+      if (path === '/login' || path === '/login/') {
+        const loggedIn = await loginGuardRedirect(request, env, url.origin);
+        if (loggedIn) return loggedIn;
+        return htmlPage(LOGIN_HTML);
+      }
+      // Phase 12-fix — Login မဝင်ဘဲ App Page များကို မမြင်ရအောင် Session Guard
+      // (Sidebar + "Login လိုအပ်ပါသည်" ကို ပြမည့်အစား /login သို့ ပို့သည်)
+      if (path === '/app' || path === '/app/') {
+        const g = await appSessionGuard(request, env, url.origin);
+        if (g) return new Response(null, { status: 302, headers: { Location: g.redirect, ...(g.clear ? { 'Set-Cookie': clearSessionCookie() } : {}) } });
+        return htmlPage(APP_HTML);
+      }
       // ===== Studio Pages (Phase 4 — Registry + Admin ON/OFF နှင့် ချိတ်သည်) =====
       // Studio Disabled ဖြစ်ပါက Friendly Message ပြပြီး Access ပိတ်သည် (Rule 14 — Server-side)
       // Phase 7 — /app/ မဟုတ်သော Path (ဥပမာ /api/admin/studios/shop) ကို Studio Page နှင့် မရောမှတ်ရန် ပြင်သည်
@@ -321,14 +352,28 @@ export default {
         const STUDIO_PAGES = { content: CONTENT_HTML, story: STORY_HTML, short: SHORT_HTML, image: IMAGE_HTML, voice: VOICE_HTML, shop: SHOP_HTML };
         const studioSlug = path.startsWith('/app/') ? path.replace(/\/+$/, '').split('/').pop() : '';
         if (STUDIO_PAGES[studioSlug]) {
+          const g = await appSessionGuard(request, env, url.origin);
+          if (g) return new Response(null, { status: 302, headers: { Location: g.redirect, ...(g.clear ? { 'Set-Cookie': clearSessionCookie() } : {}) } });
           const enabled = await isStudioEnabled(env, studioSlug);
           if (!enabled) return htmlPage(studioDisabledPage(studioSlug));
           return htmlPage(STUDIO_PAGES[studioSlug]);
         }
       }
-      if (path === '/app/creations' || path === '/app/creations/') return htmlPage(CREATIONS_HTML);
-      if (path === '/app/settings' || path === '/app/settings/') return htmlPage(SETTINGS_HTML);
-      if (path === '/app/projects' || path === '/app/projects/') return htmlPage(PROJECTS_HTML);
+      if (path === '/app/creations' || path === '/app/creations/') {
+        const g = await appSessionGuard(request, env, url.origin);
+        if (g) return new Response(null, { status: 302, headers: { Location: g.redirect, ...(g.clear ? { 'Set-Cookie': clearSessionCookie() } : {}) } });
+        return htmlPage(CREATIONS_HTML);
+      }
+      if (path === '/app/settings' || path === '/app/settings/') {
+        const g = await appSessionGuard(request, env, url.origin);
+        if (g) return new Response(null, { status: 302, headers: { Location: g.redirect, ...(g.clear ? { 'Set-Cookie': clearSessionCookie() } : {}) } });
+        return htmlPage(SETTINGS_HTML);
+      }
+      if (path === '/app/projects' || path === '/app/projects/') {
+        const g = await appSessionGuard(request, env, url.origin);
+        if (g) return new Response(null, { status: 302, headers: { Location: g.redirect, ...(g.clear ? { 'Set-Cookie': clearSessionCookie() } : {}) } });
+        return htmlPage(PROJECTS_HTML);
+      }
       if (path === '/admin' || path === '/admin/') {
         // Admin Panel — admin မဟုတ်သူတွေ မမြင်ရအောင် Server-side Role Check (Rule 13)
         // Phase 11 — Browser မှ နှိပ်ဝင်သည့်အခါ Authorization Header မပါတတ်သောကြောင့်
@@ -360,6 +405,16 @@ export default {
         });
       }
 
+      // ===== Phase 12-fix — Remember Session: Cookie ရှိလျှင် Token ပြန်ပေးသည် =====
+      // (App ပြန်ဖွင့်လျှင် localStorage မရှိသော်လည်း Cookie ဖြင့် Session ပြန်ရသည် — Rule 14)
+      if (path === '/api/auth/session' && request.method === 'GET') {
+        const c = cookieToken(request);
+        if (!c) return json({ error: 'no_session' }, 401, cors);
+        const p = await verifyTokenSafe(env, c);
+        if (!p) return json({ error: 'invalid_session' }, 401, cors);
+        return json({ ok: true, token: c, email: p.email, plan: p.plan || 'FREE', user_id: p.sub }, 200, cors);
+      }
+
       // ===== Phase 12 — Email/Password Sign Up (PBKDF2 — Plain Text မသိမ်းပါ) =====
       if (path === '/api/auth/signup' && request.method === 'POST') {
         const body = await readBody(request).catch(() => null);
@@ -376,7 +431,9 @@ export default {
         const ins = await env.DB.prepare('INSERT INTO users (email, name, password_hash, plan, created_at, updated_at) VALUES (?, ?, ?, \'FREE\', datetime(\'now\'), datetime(\'now\'))').bind(email, name, hash).run();
         const userId = ins.meta.last_row_id;
         const token = await signToken(env, { sub: String(userId), email, plan: 'FREE' });
-        return json({ ok: true, token, email, name, plan: 'FREE', user_id: String(userId) }, 201, cors);
+        // Phase 12-fix — /app သို့ Browser Navigation မှာပါ Session ရှိစေရန် Cookie ကိုပါ ထည့်ပေးသည်
+        const sessionCookie = 'aics_token=' + encodeURIComponent(token) + '; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=604800';
+        return json({ ok: true, token, email, name, plan: 'FREE', user_id: String(userId) }, 201, { ...cors, 'Set-Cookie': sessionCookie });
       }
 
       // ===== Phase 12 — Email/Password Sign In =====
@@ -390,7 +447,9 @@ export default {
         const okPass = await verifyPassword(password, row.password_hash);
         if (!okPass) return json({ error: 'invalid_credentials', detail: 'Email သို့မဟုတ် Password မှားနေပါသည်။' }, 401, cors);
         const token = await signToken(env, { sub: String(row.id), email, plan: row.plan || 'FREE' });
-        return json({ ok: true, token, email, name: row.name || '', plan: row.plan || 'FREE', user_id: String(row.id) }, 200, cors);
+        // Phase 12-fix — Sign In ပြီးနောက် /app သို့ Browser Navigation အတွက် Cookie ပါ ထည့်ပေးသည်
+        const sessionCookie = 'aics_token=' + encodeURIComponent(token) + '; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=604800';
+        return json({ ok: true, token, email, name: row.name || '', plan: row.plan || 'FREE', user_id: String(row.id) }, 200, { ...cors, 'Set-Cookie': sessionCookie });
       }
 
       const adminResp = await adminApi(request, path, env, verifyToken);
