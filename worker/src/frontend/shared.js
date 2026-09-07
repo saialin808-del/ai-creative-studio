@@ -9,12 +9,13 @@
 import { listEnabledStudios, SITE_LINKS } from '../config/studios.js';
 
 // ---- Sidebar အတွင်း Studio Link များ (Registry မှ ထုတ်သည်) ----
+// data-studio attribute — Admin မှ Studio ပိတ်ထားပါက Script က ဤ Link ကို ဖျောက်သည် (Phase 4)
 function studioLinks(activeId) {
   return listEnabledStudios()
     .map(function (s) {
       const act = s.id === activeId ? ' active' : '';
       return (
-        '<a class="nav-item' + act + '" href="' + s.route + '">' +
+        '<a class="nav-item' + act + '" href="' + s.route + '" data-studio="' + s.id + '">' +
         '<span class="nav-icon-circle">' + s.icon + '</span> ' + s.nameMy + '</a>'
       );
     })
@@ -145,8 +146,20 @@ export function sidebarScript() {
     '      }\n' +
     '      var se = document.getElementById(\'sideEmail\');\n' +
     '      if (se) se.textContent = d.email || \'—\';\n' +
+    '      var ue = document.getElementById(\'userEmail\');\n' +
+    '      if (ue) ue.textContent = d.email || \'\';\n' +
+    '      var pb = document.getElementById(\'planBadge\');\n' +
+    '      if (pb) pb.textContent = d.plan || \'FREE\';\n' +
     '      var al = document.getElementById(\'adminLink\');\n' +
     '      if (al) al.style.display = d.is_admin ? \'\' : \'none\';\n' +
+    '      var ss = d.studio_settings || null;\n' +
+    '      if (ss) {\n' +
+    '        var links = document.querySelectorAll(\'[data-studio]\');\n' +
+    '        for (var i = 0; i < links.length; i++) {\n' +
+    '          var sid = links[i].getAttribute(\'data-studio\');\n' +
+    '          if (ss[sid] === false) links[i].style.display = \'none\';\n' +
+    '        }\n' +
+    '      }\n' +
     '      localStorage.setItem(\'aics_email\', d.email || \'\'); localStorage.setItem(\'aics_plan\', d.plan || \'\');\n' +
     '    }).catch(function () {});\n' +
     '})();\n' +

@@ -3,6 +3,9 @@
 // Tab 2: Video Plan (Characters + Scenes with Environment/Video Prompts + Images)
 // Dark Theme preserved from Source (Google Apps Script UI)
 // Studio Isolation: ဤ File သည် Story Studio UI နှင့်သာ သက်ဆိုင်သည်။
+// Phase 4 — Sidebar + Helper Script များကို Shared Component (frontend/shared.js) မှ ယူသည်
+
+import { renderSidebar, sidebarScript } from './shared.js';
 
 export const STORY_HTML = `<!DOCTYPE html>
 <html lang="my">
@@ -120,29 +123,9 @@ select option{background:var(--bg-card);color:var(--text)}
 <div class="header-right"><span class="user-email" id="userEmail">—</span><span class="plan-badge" id="planBadge">FREE</span></div>
 </div>
 <div class="layout">
-<div class="sidebar" id="sidebar" style="display:flex;flex-direction:column;">
-  <a class="nav-item" href="/app"><span class="nav-icon-circle">🏠</span> ပင်မ</a>
-  <div class="nav-label">STUDIOS</div>
-  <a class="nav-item active" href="/app/story"><span class="nav-icon-circle">📖</span> ဇာတ်လမ်း</a>
-  <a class="nav-item" href="/app/content"><span class="nav-icon-circle">✍️</span> ကွန်တင့်</a>
-  <a class="nav-item" href="/app/short"><span class="nav-icon-circle">🎬</span> ရှော့တ်</a>
-  <a class="nav-item" href="/app/image"><span class="nav-icon-circle">🖼️</span> ဓာတ်ပုံ</a>
-  <a class="nav-item" href="/app/voice"><span class="nav-icon-circle">🎙️</span> အသံ</a>
-  <a class="nav-item" href="/app/shop"><span class="nav-icon-circle">🛒</span> ဈေး</a>
-  <div class="nav-label">MY WORK</div>
-  <a class="nav-item" href="/app/creations"><span class="nav-icon-circle">📁</span> ဖန်တီးမှုများ</a>
-  <div class="sidebar-bottom">
-  <div class="license-badge" id="sidePlan">—</div>
-  <div class="side-email" id="sideEmail">—</div>
-  <a class="side-btn" onclick="setApiKey()">🔑 API Key Setting</a>
-  <a class="side-btn" id="tgLink" href="#" target="_blank">📨 Telegram</a>
-  <a class="side-btn" id="fbLink" href="#" target="_blank">📘 Facebook</a>
-  <a class="side-btn" id="adminLink" href="/admin" style="display:none;">⚙️ Admin Panel</a>
-  <a class="side-btn" onclick="logout()">🚪 Logout</a>
-  </div>
-</div>
+${renderSidebar('story', { variant: 'studio' })}
 <div class="main">
-<div id="loginView" class="login-prompt" style="display:none;"><h2>Login လုပ်ရန် လိုအပ်ပါသည်</h2><p>Story Studio ကို အသုံးပြုရန် Google နဲ့ Login ဝင်ပါ။</p><a href="/auth/google" class="btn btn-primary">Google နဲ့ Login</a></div>
+<div id="loginView" class="login-prompt" style="display:none;"><h2>Login လုပ်ရန် လိုအပ်ပါသည်</h2><p>Story Studio ကို အသုံးပြုရန် Google နဲ့ Login ဝင်ပါ။</p><a href="/api/auth/login?next=/app/story" class="btn btn-primary">Google နဲ့ Login</a></div>
 <div id="appView">
 <div class="tabs">
 <button class="tab active" onclick="switchTab(1)">Tab 1 — ဇာတ်လမ်းဖန်တီးရန်</button>
@@ -224,6 +207,7 @@ select option{background:var(--bg-card);color:var(--text)}
 </div>
 </div>
 <div class="toast" id="toast">&#9989; ကူးယူပြီးပါပြီ</div>
+${sidebarScript()}
 <script>
 var token=localStorage.getItem('aics_token')||'';
 var userEmail=localStorage.getItem('aics_email')||'';
@@ -270,7 +254,6 @@ var FIELD_CONFIG=[
   buildIdeaFields();
 })();
 
-function toggleSidebar(){document.getElementById('sidebar').classList.toggle('open');}
 function switchTab(n){var tabs=document.querySelectorAll('.tab'),contents=document.querySelectorAll('.tab-content');for(var i=0;i<tabs.length;i++)tabs[i].classList.remove('active');for(var i=0;i<contents.length;i++)contents[i].classList.remove('active');tabs[n-1].classList.add('active');document.getElementById('tab'+n).classList.add('active');document.getElementById('sidebar').classList.remove('open');}
 function apiCall(url,body){return fetch(url,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify(body)}).then(function(res){return res.json().then(function(data){if(!res.ok)throw new Error(data.detail||data.error||'Request failed');return data;});});}
 
@@ -538,32 +521,7 @@ function showError(id,msg){var el=document.getElementById(id);el.textContent=msg
 function hideError(id){document.getElementById(id).classList.remove('show');}
 function showToastMsg(msg){var t=document.getElementById('toast');t.textContent=msg||'&#9989; ကူးယူပြီးပါပြီ';t.classList.add('show');setTimeout(function(){t.classList.remove('show');},2000);}
 function escapeHtml(s){var d=document.createElement('div');d.textContent=s;return d.innerHTML;}
-// ===== Unified Sidebar helpers =====
-var TG_LINK='https://t.me/PASTE_YOUR_TELEGRAM_USERNAME_HERE';
-var FB_LINK='https://facebook.com/YOUR_PAGE_HERE';
-(function(){var tg=document.getElementById('tgLink'),fb=document.getElementById('fbLink');if(tg)tg.href=TG_LINK;if(fb)fb.href=FB_LINK;})();
-var sidePlanEl=document.getElementById('sidePlan'),sideEmailEl=document.getElementById('sideEmail');
-if(sidePlanEl)sidePlanEl.textContent=(userPlan==='PRO')?'⭐ PRO Plan':'FREE Plan';
-if(sideEmailEl)sideEmailEl.textContent=userEmail||'—';
-fetch('/api/users/me',{headers:{'Authorization':'Bearer '+token}}).then(function(r){return r.json();}).then(function(d){
-  if(!d||d.error)return;
-  localStorage.setItem('aics_email',d.email);localStorage.setItem('aics_plan',d.plan);
-  if(sideEmailEl)sideEmailEl.textContent=d.email||'—';
-  if(sidePlanEl)sidePlanEl.textContent=(d.plan==='PRO')?'⭐ PRO Plan':'FREE Plan';
-  var ue=document.getElementById('userEmail');if(ue)ue.textContent=d.email||'—';
-  var pb=document.getElementById('planBadge');if(pb)pb.textContent=d.plan||'FREE';
-  var al=document.getElementById('adminLink');if(al)al.style.display=d.is_admin?'flex':'none';
-}).catch(function(){});
-function sideToast(m,t){try{if(typeof showToast==='function')showToast(m,t==='error');else if(typeof showToastMsg==='function')showToastMsg(m);else alert(m);}catch(e){alert(m);}}
-function setApiKey(){
-  var key=prompt('မင်းရဲ့ Gemini API Key ကို ထည့်ပါ (aistudio.google.com ကနေ အခမဲ့ ရနိုင်ပါတယ်):');
-  if(!key)return;
-  apiCall('/api/user/apikey',{key:key}).then(function(d){
-    if(d.error){sideToast('Save မအောင်မြင်','error');return;}
-    sideToast('✓ API Key သိမ်းပြီးပါပြီ','success');
-  }).catch(function(){sideToast('Network error','error');});
-}
-function logout(){if(!confirm('Logout လုပ်မှာလား?'))return;localStorage.removeItem('aics_token');localStorage.removeItem('aics_email');localStorage.removeItem('aics_plan');location.href='/app';}
+// (Sidebar Helpers — TG-LINK / me Hydration / setApiKey / logout များကို Shared Sidebar Script သို့ ရွှေ့ပြီးပါပြီ — Phase 4)
 </script>
 </body>
 </html>`;

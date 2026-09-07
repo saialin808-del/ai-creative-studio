@@ -3,6 +3,9 @@
 // Tab 2: Video Maker (ref images + Product/Character/Scene + image generation)
 // Dark Theme preserved from Source (Google Apps Script UI)
 // Studio Isolation: ဤ File သည် Shop Studio UI နှင့်သာ သက်ဆိုင်သည်။
+// Phase 4 — Sidebar + Helper Script များကို Shared Component (frontend/shared.js) မှ ယူသည်
+
+import { renderSidebar, sidebarScript } from './shared.js';
 
 export const SHOP_HTML = `<!DOCTYPE html>
 <html lang="my">
@@ -143,27 +146,7 @@ audio { width:100%; margin-top:10px; }
   </div>
 </div>
 <div class="layout">
-  <nav class="sidebar" id="sidebar" style="display:flex;flex-direction:column;">
-  <a class="nav-item" href="/app"><span class="nav-icon-circle">🏠</span> ပင်မ</a>
-  <div class="nav-label">STUDIOS</div>
-  <a class="nav-item" href="/app/story"><span class="nav-icon-circle">📖</span> ဇာတ်လမ်း</a>
-  <a class="nav-item" href="/app/content"><span class="nav-icon-circle">✍️</span> ကွန်တင့်</a>
-  <a class="nav-item" href="/app/short"><span class="nav-icon-circle">🎬</span> ရှော့တ်</a>
-  <a class="nav-item" href="/app/image"><span class="nav-icon-circle">🖼️</span> ဓာတ်ပုံ</a>
-  <a class="nav-item" href="/app/voice"><span class="nav-icon-circle">🎙️</span> အသံ</a>
-  <a class="nav-item active" href="/app/shop"><span class="nav-icon-circle">🛒</span> ဈေး</a>
-  <div class="nav-label">MY WORK</div>
-  <a class="nav-item" href="/app/creations"><span class="nav-icon-circle">📁</span> ဖန်တီးမှုများ</a>
-  <div class="sidebar-bottom">
-  <div class="license-badge" id="sidePlan">—</div>
-  <div class="side-email" id="sideEmail">—</div>
-  <a class="side-btn" onclick="setApiKey()">🔑 API Key Setting</a>
-  <a class="side-btn" id="tgLink" href="#" target="_blank">📨 Telegram</a>
-  <a class="side-btn" id="fbLink" href="#" target="_blank">📘 Facebook</a>
-  <a class="side-btn" id="adminLink" href="/admin" style="display:none;">⚙️ Admin Panel</a>
-  <a class="side-btn" onclick="logout()">🚪 Logout</a>
-  </div>
-</nav>
+  ${renderSidebar('shop', { variant: 'studio' })}
   <main class="main">
     <h1 class="page-title">🛒 Shop Studio</h1>
     <div class="tabs">
@@ -306,7 +289,7 @@ audio { width:100%; margin-top:10px; }
   </main>
 </div>
 <div class="toast" id="toast"></div>
-
+${sidebarScript()}
 <script>
 var TOKEN = localStorage.getItem('aics_token') || '';
 var USER_PLAN = 'FREE';
@@ -336,7 +319,6 @@ function api(path, opts) {
   return fetch(path, { method:opts.method||'GET', headers:headers, body:opts.body?JSON.stringify(opts.body):undefined }).then(function(r){return r.json();});
 }
 function showToast(msg,type){var t=document.getElementById('toast');t.textContent=msg;t.className='toast show'+(type?' '+type:'');setTimeout(function(){t.className='toast';},2500);}
-function toggleSidebar(){document.getElementById('sidebar').classList.toggle('open');}
 function switchTab(id){
   document.querySelectorAll('.tab').forEach(function(b){b.classList.remove('active');});
   document.querySelectorAll('.tab-content').forEach(function(c){c.classList.remove('active');});
@@ -629,26 +611,7 @@ function saveAllVideo(){
   api('/api/creations',{method:'POST',body:{studio:'SHOPVIDEO',type:videoType,title:title||'Shop Video',original_prompt:videoIdeaText,ai_output:t}})
   .then(function(d){if(d.error){showToast('Save မအောင်မြင်','error');return;}showToast('💾 Save ပြီးပါပြီ','success');}).catch(function(){showToast('Network error','error');});
 }
-// ===== Unified Sidebar helpers =====
-var TG_LINK='https://t.me/PASTE_YOUR_TELEGRAM_USERNAME_HERE';
-var FB_LINK='https://facebook.com/YOUR_PAGE_HERE';
-(function(){var tg=document.getElementById('tgLink'),fb=document.getElementById('fbLink');if(tg)tg.href=TG_LINK;if(fb)fb.href=FB_LINK;})();
-api('/api/users/me').then(function(d){
-  if(d.error)return;
-  var sp=document.getElementById('sidePlan'),se=document.getElementById('sideEmail');
-  if(sp)sp.textContent=(d.plan==='PRO')?'⭐ PRO Plan':'FREE Plan';
-  if(se)se.textContent=d.email||'—';
-  var al=document.getElementById('adminLink');if(al)al.style.display=d.is_admin?'flex':'none';
-});
-function setApiKey(){
-  var key=prompt('မင်းရဲ့ Gemini API Key ကို ထည့်ပါ (aistudio.google.com ကနေ အခမဲ့ ရနိုင်ပါတယ်):');
-  if(!key)return;
-  api('/api/user/apikey',{method:'POST',body:{key:key}}).then(function(d){
-    if(d.error){showToast('Save မအောင်မြင်','error');return;}
-    showToast('✓ API Key သိမ်းပြီးပါပြီ','success');
-  }).catch(function(){showToast('Network error','error');});
-}
-function logout(){if(!confirm('Logout လုပ်မှာလား?'))return;localStorage.removeItem('aics_token');localStorage.removeItem('aics_email');localStorage.removeItem('aics_plan');location.href='/app';}
+// ===== Unified Sidebar helpers (Phase 4 — Shared Sidebar Script သို့ ရွှေ့ပြီးပါပြီ) =====
 </script>
 </body>
 </html>`;
