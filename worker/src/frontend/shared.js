@@ -177,7 +177,7 @@ export function sidebarScript() {
     'function logout() {\n' +
     '  if (!confirm(\'Logout လုပ်မှာလား?\')) return;\n' +
     '  localStorage.removeItem(\'aics_token\'); localStorage.removeItem(\'aics_email\'); localStorage.removeItem(\'aics_plan\');\n' +
-    '  location.href = \'/app\';\n' +
+    '  location.href = \'/api/auth/logout\';\n' +
     '}\n' +
     'function setApiKey() {\n' +
     '  var key = prompt(\'မင်းရဲ့ Gemini API Key ကို ထည့်ပါ (aistudio.google.com ကနေ ရနိုင်ပါတယ်):\');\n' +
