@@ -504,7 +504,13 @@ export async function adminApi(request, path, env, verifyToken) {
 
   const method = request.method;
   const authHeader = request.headers.get('Authorization') || '';
-  const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : '';
+  let token = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : '';
+  // Phase 11 — Admin Panel Page မှ Fetch များတွင် Cookie Session ကိုပါ လက်ခံသည် (Header ဦးစားပေး)
+  if (!token) {
+    const c = request.headers.get('Cookie') || '';
+    const m = c.match(/(?:^|;\s*)aics_token=([^;]+)/);
+    if (m) token = decodeURIComponent(m[1]);
+  }
   if (!token) return json({ error: 'unauthorized', detail: 'login required' }, 401);
   const user = await verifyToken(env, token);
   if (!user || !user.email) return json({ error: 'unauthorized', detail: 'login required' }, 401);

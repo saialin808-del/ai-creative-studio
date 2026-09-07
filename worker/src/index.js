@@ -55,6 +55,18 @@ function bearer(req) {
   return h.startsWith('Bearer ') ? h.slice(7).trim() : '';
 }
 
+// Admin Panel ကို Browser မှ တိုက်ရိုက် နှိပ်ဝင်နိုင်ရန် Cookie Session (Phase 11 — Rule 13)
+// HttpOnly Cookie — Frontend JS မှ မဖတ်နိုင်၊ CSRF ကာကွယ်ရန် SameSite=Lax
+function cookieToken(req) {
+  const c = req.headers.get('Cookie') || '';
+  const m = c.match(/(?:^|;\s*)aics_token=([^;]+)/);
+  return m ? decodeURIComponent(m[1]) : '';
+}
+
+function clearSessionCookie() {
+  return 'aics_token=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0';
+}
+
 async function verifyTokenSafe(env, token) {
   try { return await verifyToken(env, token); } catch (e) { return null; }
 }
@@ -273,7 +285,13 @@ export default {
 
           const token = await signToken(env, { sub: String(userId), email: user.email, plan: 'FREE' });
           const state = url.searchParams.get('state') || (origin + '/auth/result');
-          return Response.redirect(state + '#token=' + encodeURIComponent(token), 302);
+          // Phase 11 — Browser မှ Page Navigation များတွင် Header မပါသော်လည်း Admin Panel ဝင်နိုင်ရန်
+          // HttpOnly Cookie ကိုပါ ထည့်ပေးသည် (Authorization Header ကို မူလအတိုင်း ထားသည်)
+          const sessionCookie = 'aics_token=' + encodeURIComponent(token) + '; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=604800';
+          return new Response(null, {
+            status: 302,
+            headers: { Location: state + '#token=' + encodeURIComponent(token), 'Set-Cookie': sessionCookie },
+          });
         } catch (e) {
           return json({ error: 'auth_error', detail: friendlyError(e) }, 500, cors);
         }
@@ -297,15 +315,34 @@ export default {
       if (path === '/app/settings' || path === '/app/settings/') return htmlPage(SETTINGS_HTML);
       if (path === '/app/projects' || path === '/app/projects/') return htmlPage(PROJECTS_HTML);
       if (path === '/admin' || path === '/admin/') {
-        // Admin Panel — admin မဟုတ်သူတွေ မမြင်ရအောင် ပိတ်ထားသည်
-        const token = bearer(request);
-        if (!token) return Response.redirect('/api/auth/login?next=' + encodeURIComponent(url.origin + '/admin'), 302);
+        // Admin Panel — admin မဟုတ်သူတွေ မမြင်ရအောင် Server-side Role Check (Rule 13)
+        // Phase 11 — Browser မှ နှိပ်ဝင်သည့်အခါ Authorization Header မပါတတ်သောကြောင့်
+        // Cookie Session ကိုပါ လက်ခံသည် (Header က ဦးစားပေး)
+        const token = bearer(request) || cookieToken(request);
+        if (!token) return Response.redirect(url.origin + '/api/auth/login?next=' + encodeURIComponent(url.origin + '/admin'), 302);
         const payload = await verifyTokenSafe(env, token);
+        if (!payload) {
+          // Cookie ပျက်သွားပါက Login သို့ ပြန်ပို့ပြီး Cookie ကို ရှင်းသည် (Header ဖြင့်လာပါက 404 ဖြစ်သည်)
+          if (cookieToken(request)) {
+            return new Response(null, {
+              status: 302,
+              headers: { Location: url.origin + '/api/auth/login?next=' + encodeURIComponent(url.origin + '/admin'), 'Set-Cookie': clearSessionCookie() },
+            });
+          }
+          return json({ error: 'not_found' }, 404, cors);
+        }
         const adminEmail = env.ADMIN_EMAIL || 'saialin808@gmail.com';
-        if (!payload || !payload.email || String(payload.email).toLowerCase() !== String(adminEmail).toLowerCase()) {
+        if (String(payload.email).toLowerCase() !== String(adminEmail).toLowerCase()) {
           return json({ error: 'not_found' }, 404, cors);
         }
         return htmlPage(ADMIN_HTML);
+      }
+      // Phase 11 — Logout: HttpOnly Cookie ကို ရှင်းပြီး ပင်မသို့ ပြန်ပို့သည်
+      if (path === '/api/auth/logout' && request.method === 'GET') {
+        return new Response(null, {
+          status: 302,
+          headers: { Location: url.origin + '/app', 'Set-Cookie': clearSessionCookie() },
+        });
       }
       const adminResp = await adminApi(request, path, env, verifyToken);
       if (adminResp) return adminResp;
