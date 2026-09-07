@@ -85,3 +85,9 @@ Create `worker/migrations/009_xxx.sql` (additive `CREATE TABLE` / `ALTER TABLE .
 - `PUT /api/users/me/profile` — `{name}` (whitelist, ≤60 chars) updates display name.
 - `GET /api/users/me` now also returns `name` + `usage {ai_requests, image_generations, voice_generations}`.
 - Google callback default destination changed from `/auth/result` to `/app` (legacy `/auth/result` still served).
+
+### Session guard (Phase 12 fix)
+- `GET /app`, `/app/{studio}`, `/app/creations|settings|projects` — **server-side session guard**: no valid `aics_token` cookie → `302 /login` (users never see the app shell before logging in); bad cookie → cleared + `302 /login`.
+- `GET /login` — valid session → `302 /app` (remember session, Rule 14).
+- `GET /api/auth/session` — returns `{token, email, plan}` when the cookie is valid (lets the sidebar restore a session when `localStorage` is empty).
+- Email/password Sign In & Sign Up now also set the `aics_token` cookie so browser navigation to `/app` works after login.
