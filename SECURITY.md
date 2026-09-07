@@ -5,6 +5,7 @@
 - **Google OAuth** login → signed JWT (7-day validity).
 - Every protected API reads the Bearer token, verifies it, and derives the user id from `payload.sub`.
 - **Never trust a client-supplied user id.**
+- Browser page navigation cannot send an `Authorization` header, so login also sets an **HttpOnly `aics_token` cookie** (`Path=/; Secure; SameSite=Lax; Max-Age=604800`). Protected routes accept the header first, then the cookie. The cookie is invisible to JavaScript and is cleared on `/api/auth/logout`.
 
 ## 2. Authorization & roles (Rule 13)
 
