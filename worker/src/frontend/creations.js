@@ -1,5 +1,8 @@
 // AI Creative Studio — Creations UI Frontend (Phase 9)
 // Dark theme, sidebar nav, list/view/copy/delete creations
+// Phase 2 — Sidebar + Helper Script များကို Shared Component (frontend/shared.js) မှ ယူသည်
+
+import { renderSidebar, sidebarScript } from './shared';
 
 export const CREATIONS_HTML = `<!DOCTYPE html>
 <html lang="my">
@@ -58,30 +61,7 @@ a{color:var(--cyan);text-decoration:none;}
 </style>
 </head>
 <body>
-<button class="hamburger" onclick="toggleSidebar()">☰</button>
-<div class="backdrop" id="backdrop" onclick="toggleSidebar()"></div>
-<nav class="sidebar" id="sidebar">
-  <div class="brand"><div class="brand-title">🎨 AI Creative Studio</div></div>
-  <a class="nav-item" href="/app"><span class="nav-icon-circle">🏠</span> ပင်မ</a>
-  <div class="nav-label">STUDIOS</div>
-  <a class="nav-item" href="/app/story"><span class="nav-icon-circle">📖</span> ဇာတ်လမ်း</a>
-  <a class="nav-item" href="/app/content"><span class="nav-icon-circle">✍️</span> ကွန်တင့်</a>
-  <a class="nav-item" href="/app/short"><span class="nav-icon-circle">🎬</span> ရှော့တ်</a>
-  <a class="nav-item" href="/app/image"><span class="nav-icon-circle">🖼️</span> ဓာတ်ပုံ</a>
-  <a class="nav-item" href="/app/voice"><span class="nav-icon-circle">🎙️</span> အသံ</a>
-  <a class="nav-item" href="/app/shop"><span class="nav-icon-circle">🛒</span> ဈေး</a>
-  <div class="nav-label">MY WORK</div>
-  <a class="nav-item active" href="/app/creations"><span class="nav-icon-circle">📁</span> ဖန်တီးမှုများ</a>
-  <div class="sidebar-bottom">
-    <div class="license-badge" id="licenseBadge">Checking plan...</div>
-    <div class="side-email" id="sideEmail" style="font-size:11.5px;color:var(--text3);margin-bottom:8px;word-break:break-all;">—</div>
-    <button class="side-btn" onclick="setApiKey()">🔑 API Key Setting</button>
-        <a class="side-btn" id="adminLink" href="/admin" style="display:none;">⚙️ Admin Panel</a>
-    <a class="side-btn" id="tgLink" href="#" target="_blank">📨 Telegram</a>
-    <a class="side-btn" id="fbLink" href="#" target="_blank">📘 Facebook</a>
-    <button class="side-btn" onclick="logout()">🚪 Logout</button>
-  </div>
-</nav>
+${renderSidebar('creations')}
 <main class="main-content">
   <h1 class="page-title">📁 My Creations</h1>
   <p class="page-subtitle">သင် Save လုပ်ထားသော AI Result များ — ဒီ Data ကို သင့်အကောင့်ထဲမှာသာ သိမ်းထားပါသည်။</p>
@@ -93,39 +73,20 @@ a{color:var(--cyan);text-decoration:none;}
   <div id="creationsList"></div>
 </main>
 <div class="toast" id="toast"></div>
+${sidebarScript()}
 <script>
 var TOKEN = localStorage.getItem('aics_token') || '';
 var STUDIO_ICONS={"STORY":"📖","STORYVIDEO":"🎬","CONTENT":"✍️","CONTENTVIDEO":"🎥","SHORT":"🎬","SHORTVIDEO":"🎬","IMAGE":"🎨","VOICE":"🎙","VOICETRANSCRIBE":"📝","SHOPCONTENT":"🛒","SHOPVIDEO":"🛒"};
 function api(path,opts){opts=opts||{};var h=opts.headers||{};h['Content-Type']='application/json';if(TOKEN)h['Authorization']='Bearer '+TOKEN;return fetch(path,{method:opts.method||'GET',headers:h,body:opts.body?JSON.stringify(opts.body):undefined}).then(function(r){return r.json();});}
 function showToast(msg,type){var t=document.getElementById('toast');t.textContent=msg;t.className='toast show'+(type?' '+type:'');setTimeout(function(){t.className='toast';},2500);}
-function toggleSidebar(){document.getElementById('sidebar').classList.toggle('open');document.getElementById('backdrop').classList.toggle('show');}
+// (toggleSidebar / logout / setApiKey / TG-FB link များကို Shared Sidebar Script သို့ ရွှေ့ပြီးပါပြီ — Phase 2)
 function escapeHtml(text){var div=document.createElement('div');div.innerText=text;return div.innerHTML;}
 if(!TOKEN){
   document.querySelector('.main-content').innerHTML='<div style="padding:40px;text-align:center;"><h2>🔒 Login လိုအပ်ပါသည်</h2><p style="margin:16px 0;"><a href="/api/auth/login?next='+encodeURIComponent(location.pathname)+'">Google နဲ့ Login လုပ်ပါ</a></p></div>';
 }else{
-  api('/api/users/me').then(function(d){
-    if(d.error){localStorage.removeItem('aics_token');location.reload();return;}
-    var badge=document.getElementById('licenseBadge');
-    if(d.plan==='PRO'){badge.innerText='⭐ PRO Plan';badge.classList.add('pro');}else{badge.innerText='FREE Plan';}
-    var se=document.getElementById('sideEmail');
-    if(se)se.textContent=d.email||'—';
-    var al=document.getElementById('adminLink');
-    if(al)al.style.display=d.is_admin?'flex':'none';
-  });
   loadCreations();
 }
-var TG_LINK='https://t.me/PASTE_YOUR_TELEGRAM_USERNAME_HERE';
-var FB_LINK='https://facebook.com/YOUR_PAGE_HERE';
-(function(){var tg=document.getElementById('tgLink'),fb=document.getElementById('fbLink');if(tg)tg.href=TG_LINK;if(fb)fb.href=FB_LINK;})();
-function setApiKey(){
-  var key=prompt('မင်းရဲ့ Gemini API Key ကို ထည့်ပါ (aistudio.google.com ကနေ ရနိုင်ပါတယ်):');
-  if(!key)return;
-  api('/api/user/apikey',{method:'POST',body:{key:key}}).then(function(d){
-    if(d.error){showToast('Save မအောင်မြင်','error');return;}
-    showToast('✓ API Key သိမ်းပြီးပါပြီ','success');
-  }).catch(function(){showToast('Network error','error');});
-}
-function logout(){if(!confirm('Logout လုပ်မှာလား?'))return;localStorage.removeItem('aics_token');localStorage.removeItem('aics_email');localStorage.removeItem('aics_plan');location.href='/app';}
+// (TG-LINK / FB-LINK / setApiKey / logout များကို Shared Sidebar Script သို့ ရွှေ့ပြီးပါပြီ — Phase 2)
 function loadCreations(){
   api('/api/creations').then(function(d){
     document.getElementById('loadingState').style.display='none';
