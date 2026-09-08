@@ -1,6 +1,7 @@
 // AI Creative Studio — Studio Service 
 import { getCMSData, buildSystemPrompt } from './core/cms.js';
 import { callGeminiText, callGeminiImage } from './core/ai.js';
+import { resolveModel } from './core/aiModels.js';
 
 const IMAGE_STUDIOS = ['IMAGE'];
 
@@ -9,7 +10,7 @@ async function generateImage(env, { studio, type, idea, plan, apiKey }) {
   const c = await getCMSData(env, studio, plan, type);
   const system = c ? buildSystemPrompt(c) : '';
   const prompt = system ? (system + '\n\n' + String(idea).trim()) : String(idea).trim();
-  const img = await callGeminiImage(env, { model: 'gemini-3.1-flash-image', prompt, apiKey });
+  const img = await callGeminiImage(env, { model: await resolveModel(env, 'image', plan), prompt, apiKey });
   return { studio, type, plan, data: img.data, mimeType: img.mimeType };
 }
 
@@ -22,7 +23,7 @@ async function generateStudio(env, opts) {
   const c = await getCMSData(env, opts.studio, opts.plan, opts.type);
   const system = c ? buildSystemPrompt(c) : '';
   const output = await callGeminiText(env, {
-    model: opts.model || 'gemini-3.6-flash',
+    model: await resolveModel(env, 'text', opts.plan, opts.model),
     system: system,
     prompt: String(opts.idea).trim(),
     apiKey: opts.apiKey,

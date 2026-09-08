@@ -561,7 +561,7 @@ export default {
         if (!body) return json({ error: 'bad_request' }, 400, cors);
         try {
           const out = await callGeminiText(env, {
-            model: body.model || 'gemini-3.6-flash',
+            model: body.model || 'gemini-3.5-flash-lite',
             prompt: body.prompt || 'Hello',
             apiKey: body.apiKey,
           });

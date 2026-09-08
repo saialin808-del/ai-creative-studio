@@ -275,7 +275,7 @@ function toggleFeature(id,btn){
 }
 
 // ===== Phase C — AI Models (ထည့်/ပြင်/ဖွင့်/ပိတ်/ဖျက်) =====
-function catLabel(c){return c==='image'?'🖼️ ပုံ':(c==='voice'?'🎙️ အသံ':'📝 စာသား');}
+function catLabel(c){return c==='image'?'🖼️ ပုံ':(c==='voice'?'🎙️ အသံ':(c==='transcribe'?'🎧 အသံ→စာသား':'📝 စာသား'));}
 function loadModels(){
   api('/api/admin/models').then(function(d){
     if(d.error==='forbidden'){location.href='/app';return;}
@@ -284,7 +284,7 @@ function loadModels(){
       '<div class="row" style="margin-top:8px;">'+
       '<input id="nm_id" placeholder="Model ID (ဥပမာ gemini-2.5-pro)" style="flex:2;min-width:150px;">'+
       '<input id="nm_name" placeholder="ပြမည့်နာမည်" style="flex:2;min-width:120px;">'+
-      '<select id="nm_cat"><option value="text">📝 စာသား</option><option value="image">🖼️ ပုံ</option><option value="voice">🎙️ အသံ</option></select>'+
+      '<select id="nm_cat"><option value="text">📝 စာသား</option><option value="image">🖼️ ပုံ</option><option value="voice">🎙️ အသံ</option><option value="transcribe">🎧 အသံ→စာသား</option></select>'+
       '<select id="nm_plan"><option value="FREE">လူတိုင်း</option><option value="PRO">PRO သာ</option></select>'+
       '<button class="btn green" onclick="addModel()">＋ Add</button></div>'+
       '<div style="font-size:11px;color:#6B7280;margin-top:6px;">⚠️ Model ID သည် Google Gemini API တွင် တကယ်ရှိသော နာမည် ဖြစ်ရမည် — မမှန်ပါက Generate လုပ်သော အခါ အမှား ပြပါမည်။</div></div>';
