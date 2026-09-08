@@ -105,7 +105,7 @@ async function callGeminiMultimodal(env, { model, prompt, images, apiKey }) {
 async function callGeminiTTS(env, { text, voiceName, apiKey, model }) {
   const key = apiKey || env.GEMINI_API_KEY;
   if (!key) throw new Error('no_api_key');
-  const ttsModel = model || 'gemini-3.1-flash-tts-preview';
+  const ttsModel = model || 'gemini-2.5-flash-preview-tts';
   const body = {
     contents: [{ parts: [{ text }] }],
     generationConfig: { responseModalities: ['AUDIO'] },

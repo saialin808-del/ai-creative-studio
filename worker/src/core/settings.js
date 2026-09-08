@@ -12,7 +12,7 @@ const SETTINGS_KEYS = ['default_studio', 'default_voice', 'default_model', 'lang
 const SETTINGS_DEFAULTS = {
   default_studio: 'story',
   default_voice: 'Kore',
-  default_model: 'gemini-3.6-flash',
+  default_model: 'gemini-3.5-flash-lite',
   language: 'my',
   theme: 'dark',
 };
