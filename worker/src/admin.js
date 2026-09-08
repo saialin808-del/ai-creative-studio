@@ -14,158 +14,104 @@ export const ADMIN_HTML = `<!DOCTYPE html>
 <html lang="my">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>CMS Manager — AI Creative Studio</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Admin Center — AI Creative Studio</title>
 <style>
+:root{
+  --bg:#080C18;--panel:#0D1424;--card:#111A2C;--card2:#151F33;--line:rgba(255,255,255,.08);
+  --text:#F8FAFC;--muted:#8D98AB;--cyan:#00E5FF;--purple:#7B5CFF;--green:#4ADE80;--orange:#FF9F2B;--red:#FF6672;
+  --shadow:0 18px 60px rgba(0,0,0,.28);--radius:16px
+}
 *{box-sizing:border-box}
-:root{--bg:#f5f7fb;--panel:#ffffff;--line:#e5e7eb;--text:#111827;--muted:#6b7280;--accent:#1b6d96;--soft:#eef6fa}
-body{margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text)}
-#loading{padding:40px 20px;text-align:center;color:var(--muted);font-size:14px}
-.app-shell{min-height:100vh;display:grid;grid-template-columns:240px 1fr}
-.sidebar{position:sticky;top:0;height:100vh;background:#111827;color:#fff;padding:18px 14px;display:flex;flex-direction:column}
-.brand{padding:6px 10px 20px;border-bottom:1px solid rgba(255,255,255,.1);margin-bottom:16px}.brand-title{font-weight:800;font-size:16px}.brand-sub{font-size:11px;color:#9ca3af;margin-top:3px}
-.nav-label{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:#9ca3af;padding:10px 10px 6px}
-.nav-btn{width:100%;text-align:left;border:0;background:transparent;color:#d1d5db;padding:10px 12px;border-radius:9px;font-size:13px;cursor:pointer;margin:2px 0}.nav-btn:hover{background:rgba(255,255,255,.07);color:#fff}.nav-btn.active{background:#1b6d96;color:#fff;font-weight:700}.nav-group{margin-top:5px}.sidebar-footer{margin-top:auto;padding-top:12px;border-top:1px solid rgba(255,255,255,.1)}
-.content{min-width:0}.topbar{height:64px;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 24px;position:sticky;top:0;z-index:10}.page-title{font-size:18px;font-weight:800}.page-sub{font-size:11px;color:var(--muted);margin-top:2px}.user{font-size:12px;color:var(--muted)}.user a{color:var(--accent);text-decoration:none;font-weight:600}
-main{max-width:1180px;margin:0 auto;padding:24px}.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:12px;box-shadow:0 1px 2px rgba(0,0,0,.03)}.btn{background:var(--accent);color:#fff;border:0;border-radius:8px;padding:9px 14px;font-size:13px;cursor:pointer}.btn.green{background:#16a34a}.btn.red{background:#dc2626}.btn.gray{background:#d1d5db;color:#374151}.btn.sm{padding:6px 10px;font-size:12px}.btn.active{background:var(--accent)}.btn.inactive{background:#e5e7eb;color:#374151}.err{color:#b91c1c}.badge{display:inline-block;padding:3px 8px;border-radius:999px;font-size:11px;font-weight:700}.badge.free{background:#f3f4f6;color:#4b5563}.badge.pro{background:#dcfce7;color:#166534}.status-dot{display:inline-flex;align-items:center;gap:5px}.status-dot:before{content:'';width:7px;height:7px;border-radius:50%;background:#22c55e}.status-dot.off:before{background:#9ca3af}
-select,input,textarea{width:100%;font-size:14px;padding:9px;border:1px solid #d1d5db;border-radius:8px;font-family:inherit;background:#fff}select,input{width:auto}textarea{min-height:72px;resize:vertical}label{display:block;font-size:12px;font-weight:700;margin:10px 0 4px}.hidden{display:none}.overlay{position:fixed;inset:0;background:rgba(17,24,39,.5);overflow-y:auto;z-index:50;padding:24px}.form{max-width:760px;margin:0 auto}.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.user-row{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}.user-meta{font-size:11px;color:var(--muted);margin-top:3px}.stat-grid{display:grid;grid-template-columns:repeat(6,minmax(120px,1fr));gap:10px}.stat{background:#f8fafc;border:1px solid var(--line);border-radius:12px;padding:14px}.stat-label{font-size:11px;color:var(--muted)}.stat-value{font-size:22px;font-weight:800;margin-top:5px;color:var(--accent)}.section-title{font-size:14px;font-weight:800;margin-bottom:4px}.hint{font-size:12px;color:var(--muted)}.system-card{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px;border:1px solid var(--line);border-radius:12px;background:#fff;margin-bottom:8px}.system-card h4{margin:0;font-size:14px}.system-card p{margin:3px 0 0;color:var(--muted);font-size:11px}
-details{border:1px solid var(--line);border-radius:10px;margin-top:14px;padding:10px}details summary{cursor:pointer;font-size:12px;font-weight:800;color:#374151}
-@media(max-width:900px){.app-shell{grid-template-columns:1fr}.sidebar{position:relative;height:auto;padding:12px}.brand{margin-bottom:8px}.nav-label{display:none}.nav-group{display:flex;gap:4px;overflow:auto}.nav-btn{white-space:nowrap;width:auto}.sidebar-footer{display:none}.topbar{position:sticky}.stat-grid{grid-template-columns:repeat(3,minmax(110px,1fr))}main{padding:16px}}
-@media(max-width:560px){.stat-grid{grid-template-columns:repeat(2,minmax(100px,1fr))}.topbar{padding:0 14px}}
+html,body{margin:0;min-height:100%;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans Myanmar",sans-serif}
+body{background:radial-gradient(900px 500px at 85% -10%,rgba(123,92,255,.13),transparent 55%),radial-gradient(700px 500px at 10% 0%,rgba(0,229,255,.07),transparent 52%),var(--bg)}
+button,input,select,textarea{font:inherit}
+button{cursor:pointer}
+.hidden{display:none!important}
+#loading{min-height:100vh;display:grid;place-items:center;color:var(--muted);font-size:14px;padding:30px;text-align:center}
+#app{min-height:100vh}
+.shell{display:flex;min-height:100vh}
+.sidebar{position:fixed;left:0;top:0;bottom:0;width:256px;padding:20px 14px;background:rgba(10,16,29,.88);backdrop-filter:blur(18px);border-right:1px solid var(--line);z-index:40;overflow-y:auto}
+.brand{display:flex;align-items:center;gap:11px;padding:6px 8px 22px}
+.brand-mark{width:38px;height:38px;border-radius:12px;display:grid;place-items:center;background:linear-gradient(135deg,var(--purple),var(--cyan));box-shadow:0 8px 28px rgba(0,229,255,.15);font-size:18px}
+.brand-title{font-weight:800;font-size:13px;letter-spacing:.04em}.brand-sub{font-size:10px;color:var(--muted);margin-top:2px}
+.nav-section{font-size:10px;letter-spacing:.12em;color:#667287;font-weight:700;padding:15px 10px 7px;text-transform:uppercase}
+.nav-btn{width:100%;border:1px solid transparent;background:transparent;color:#AEB8C8;text-align:left;border-radius:11px;padding:10px 11px;display:flex;align-items:center;gap:10px;font-size:13px;margin:2px 0;transition:.18s}
+.nav-btn:hover{background:rgba(255,255,255,.045);color:#fff}.nav-btn.active{background:linear-gradient(90deg,rgba(0,229,255,.10),rgba(123,92,255,.08));border-color:rgba(0,229,255,.12);color:#fff;box-shadow:inset 2px 0 0 var(--cyan)}
+.nav-icon{width:20px;text-align:center;font-size:15px}.nav-label{flex:1}.nav-arrow{font-size:11px;color:#5F6A7D}
+.sidebar-footer{position:sticky;bottom:0;margin-top:18px;padding:12px 4px 4px;background:linear-gradient(transparent,rgba(10,16,29,.96) 25%)}
+.app-link{display:flex;align-items:center;gap:8px;color:#B7C1D0;text-decoration:none;border:1px solid var(--line);padding:10px 11px;border-radius:11px;font-size:12px}.app-link:hover{color:#fff;border-color:rgba(0,229,255,.25)}
+.main{margin-left:256px;width:calc(100% - 256px);min-width:0}
+.topbar{position:sticky;top:0;height:68px;display:flex;align-items:center;justify-content:space-between;padding:0 28px;border-bottom:1px solid var(--line);background:rgba(8,12,24,.78);backdrop-filter:blur(18px);z-index:30}
+.mobile-menu{display:none}.crumb{font-size:12px;color:var(--muted)}.crumb b{color:#fff}.top-actions{display:flex;align-items:center;gap:10px}.admin-pill{display:flex;align-items:center;gap:8px;padding:7px 10px;border:1px solid var(--line);border-radius:999px;font-size:11px;color:#C8D0DC}.avatar{width:25px;height:25px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(135deg,var(--purple),var(--cyan));color:#fff;font-size:11px;font-weight:800}
+.content{max-width:1480px;margin:0 auto;padding:28px}
+.page-head{display:flex;justify-content:space-between;align-items:flex-end;gap:18px;margin-bottom:22px}.eyebrow{font-size:11px;color:var(--cyan);font-weight:700;letter-spacing:.1em;text-transform:uppercase}.page-title{font-size:27px;line-height:1.15;margin:6px 0 6px;font-weight:800;letter-spacing:-.02em}.page-desc{margin:0;color:var(--muted);font-size:13px}.head-actions{display:flex;gap:8px;flex-wrap:wrap}
+.btn{border:1px solid transparent;border-radius:10px;padding:9px 13px;font-size:12px;font-weight:650;color:#fff;background:#182338;transition:.18s;white-space:nowrap}.btn:hover{transform:translateY(-1px);border-color:rgba(255,255,255,.12)}.btn.primary{background:linear-gradient(135deg,#00BFD6,#008FA4);box-shadow:0 8px 24px rgba(0,229,255,.12)}.btn.green{background:rgba(74,222,128,.12);color:#8AF0AA;border-color:rgba(74,222,128,.18)}.btn.red{background:rgba(255,102,114,.10);color:#FF9BA3;border-color:rgba(255,102,114,.18)}.btn.gray{background:#151D2C;color:#98A3B5}.btn.sm{padding:7px 10px;font-size:11px}.btn.active{background:rgba(0,229,255,.11);border-color:rgba(0,229,255,.2);color:#fff}.btn.inactive{background:#121A2A;color:#8994A7}
+.card{background:linear-gradient(180deg,rgba(21,31,51,.96),rgba(15,24,41,.96));border:1px solid var(--line);border-radius:var(--radius);padding:17px;margin-bottom:14px;box-shadow:0 10px 34px rgba(0,0,0,.10)}
+.card-title{font-size:13px;font-weight:750}.card-sub{font-size:11px;color:var(--muted);margin-top:4px}.section-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:13px}
+.grid{display:grid;gap:14px}.stats-grid{grid-template-columns:repeat(6,minmax(0,1fr))}.two-col{grid-template-columns:1.3fr .7fr}.three-col{grid-template-columns:repeat(3,minmax(0,1fr))}
+.stat{position:relative;overflow:hidden;min-height:118px}.stat:after{content:"";position:absolute;width:90px;height:90px;border-radius:50%;right:-28px;bottom:-40px;background:rgba(0,229,255,.07)}.stat-label{font-size:11px;color:var(--muted)}.stat-value{font-size:27px;font-weight:800;margin-top:13px;letter-spacing:-.02em}.stat-foot{font-size:10px;color:#667287;margin-top:7px}
+.health{display:flex;align-items:center;gap:9px;padding:11px 12px;border:1px solid rgba(74,222,128,.14);background:rgba(74,222,128,.05);border-radius:11px}.dot{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 12px rgba(74,222,128,.5)}
+.quick{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}.quick .btn{text-align:left;padding:12px}.quick small{display:block;color:var(--muted);font-weight:400;margin-top:3px}
+.list{display:grid;gap:8px}.list-row{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:11px 12px;border:1px solid rgba(255,255,255,.055);border-radius:11px;background:rgba(255,255,255,.018)}.list-main{min-width:0}.list-title{font-size:12px;font-weight:700}.list-meta{font-size:10px;color:var(--muted);margin-top:4px;white-space:normal}.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.user-row{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px}.user-meta{font-size:10px;color:var(--muted);margin-top:4px}
+.badge{display:inline-flex;align-items:center;padding:3px 7px;border-radius:999px;font-size:9px;font-weight:750;letter-spacing:.02em}.badge.free{background:rgba(148,163,184,.10);color:#AAB5C5}.badge.pro{background:rgba(123,92,255,.14);color:#BBAEFF}.badge.on{background:rgba(74,222,128,.10);color:#82EFA3}.badge.off{background:rgba(255,102,114,.10);color:#FF9BA3}
+.filters{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.filters>*{min-height:38px}select,input,textarea{border:1px solid rgba(255,255,255,.10);border-radius:10px;background:#0C1525;color:#EAF0F7;padding:9px 11px;font-size:12px;outline:none}select:focus,input:focus,textarea:focus{border-color:rgba(0,229,255,.42);box-shadow:0 0 0 3px rgba(0,229,255,.06)}select{width:auto}input{width:auto}textarea{width:100%;min-height:78px;resize:vertical}.filters input{min-width:170px}.filters select{min-width:125px}
+.empty{padding:32px;text-align:center;color:var(--muted);font-size:12px;border:1px dashed rgba(255,255,255,.10);border-radius:12px}.err{color:#FF8E98}
+.overlay{position:fixed;inset:0;background:rgba(2,5,12,.78);backdrop-filter:blur(8px);overflow-y:auto;z-index:100;padding:24px}.form{max-width:820px;margin:0 auto}.form h3{font-size:18px;margin:0}.form label{display:block;font-size:10px;font-weight:750;color:#AAB5C5;letter-spacing:.05em;margin:13px 0 5px;text-transform:uppercase}.form-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:18px;padding-top:15px;border-top:1px solid var(--line)}
+.divider{height:1px;background:var(--line);margin:16px 0}.muted{color:var(--muted)}
+@media(max-width:1100px){.stats-grid{grid-template-columns:repeat(3,1fr)}.two-col{grid-template-columns:1fr}.three-col{grid-template-columns:1fr 1fr}}
+@media(max-width:760px){.sidebar{transform:translateX(-100%);transition:.2s;width:280px}.sidebar.open{transform:translateX(0)}.main{margin-left:0;width:100%}.topbar{height:60px;padding:0 14px}.mobile-menu{display:grid;place-items:center;width:36px;height:36px;border:1px solid var(--line);background:#111A2C;color:#fff;border-radius:10px}.crumb{display:none}.content{padding:18px 14px}.page-head{align-items:flex-start;flex-direction:column}.page-title{font-size:23px}.stats-grid{grid-template-columns:repeat(2,1fr)}.three-col{grid-template-columns:1fr}.quick{grid-template-columns:1fr}.top-actions .admin-pill span.email{display:none}.card{padding:14px;border-radius:14px}.filters>*{width:100%!important}.filters .btn{width:auto!important}.list-row{align-items:flex-start;flex-direction:column}.user-row{align-items:flex-start}.form{padding:15px}}
 </style>
 </head>
 <body>
-<div id="loading">⏳ Loading admin panel...</div>
+<div id="loading">⏳ Loading Admin Center…</div>
 <div id="app" class="hidden">
-<div class="app-shell">
-  <aside class="sidebar">
-    <div class="brand"><div class="brand-title">✦ AI Creative Studio</div><div class="brand-sub">Admin Center</div></div>
-    <div class="nav-label">Overview</div>
-    <button class="nav-btn active" id="tabDashboard" onclick="switchTab('dashboard')">⌂ Overview</button>
-    <div class="nav-label">Manage</div>
-    <button class="nav-btn" id="tabUsers" onclick="switchTab('users')">♙ Users</button>
-    <button class="nav-btn" id="tabStudios" onclick="switchTab('studios')">✦ AI Studios</button>
-    <div class="nav-label">System</div>
-    <div class="nav-group">
-      <button class="nav-btn" id="tabCms" onclick="switchTab('cms')">▣ Content / CMS</button>
-      <button class="nav-btn" id="tabFeatures" onclick="switchTab('features')">◈ Plans & Features</button>
-      <button class="nav-btn" id="tabModels" onclick="switchTab('models')">◇ AI Models</button>
-      <button class="nav-btn" id="tabUsage" onclick="switchTab('usage')">▥ Usage</button>
-      <button class="nav-btn" id="tabLogs" onclick="switchTab('logs')">≡ Activity</button>
-    </div>
-    <div class="sidebar-footer"><button class="nav-btn" onclick="location.href='/app'">↗ Open User App</button></div>
+<div class="shell">
+  <aside class="sidebar" id="sidebar">
+    <div class="brand"><div class="brand-mark">✦</div><div><div class="brand-title">AI CREATIVE STUDIO</div><div class="brand-sub">Premium Admin Center</div></div></div>
+    <div class="nav-section">Overview</div>
+    <button class="nav-btn active" id="tabDashboard" onclick="switchTab('dashboard');closeNav()"><span class="nav-icon">⌂</span><span class="nav-label">Overview</span></button>
+    <div class="nav-section">Management</div>
+    <button class="nav-btn inactive" id="tabUsers" onclick="switchTab('users');closeNav()"><span class="nav-icon">♙</span><span class="nav-label">Users</span></button>
+    <button class="nav-btn inactive" id="tabStudios" onclick="switchTab('studios');closeNav()"><span class="nav-icon">✦</span><span class="nav-label">AI Studios</span></button>
+    <div class="nav-section">AI System</div>
+    <button class="nav-btn inactive" id="tabModels" onclick="switchTab('models');closeNav()"><span class="nav-icon">◈</span><span class="nav-label">AI Models</span></button>
+    <button class="nav-btn inactive" id="tabFeatures" onclick="switchTab('features');closeNav()"><span class="nav-icon">⚙</span><span class="nav-label">Plans & Features</span></button>
+    <button class="nav-btn inactive" id="tabCms" onclick="switchTab('cms');closeNav()"><span class="nav-icon">▤</span><span class="nav-label">Content / CMS</span></button>
+    <div class="nav-section">Analytics</div>
+    <button class="nav-btn inactive" id="tabUsage" onclick="switchTab('usage');closeNav()"><span class="nav-icon">⌁</span><span class="nav-label">Usage</span></button>
+    <button class="nav-btn inactive" id="tabLogs" onclick="switchTab('logs');closeNav()"><span class="nav-icon">≡</span><span class="nav-label">Activity</span></button>
+    <div class="sidebar-footer"><a class="app-link" href="/app">↗ <span>Open User App</span></a></div>
   </aside>
-  <section class="content">
-    <header class="topbar">
-      <div><div class="page-title" id="pageTitle">Overview</div><div class="page-sub">Manage your AI Creative Studio from one place</div></div>
-      <div class="user"><span id="userBox"></span> · <a href="/app">Open App →</a></div>
-    </header>
-    <main>
-  <div id="dashboardView">
-    <div class="card row" style="gap:8px;">
-      <button class="btn" onclick="loadDashboard()">⟳ Refresh</button>
-    </div>
-    <div class="card row" id="statCards" style="gap:8px;"></div>
-    <div class="card"><b>🆕 နောက်ဆုံး User များ</b><div id="recentUsers"></div></div>
-  </div>
-  <div id="cmsView" class="hidden">
-    <div class="card row">
-      <select id="fStudio"></select>
-      <select id="fPlan">
-        <option value="">Plan — အားလုံး</option>
-        <option value="FREE">FREE</option>
-        <option value="PRO">PRO</option>
-      </select>
-      <input id="fType" placeholder="Type (1-5)" style="width:110px;">
-      <button class="btn" onclick="load()">⟳ Refresh</button>
-      <button class="btn green" onclick="addEdit(null)">＋ အသစ်ထည့်ရန်</button>
-    </div>
-    <div id="list"></div>
-  </div>
-  <div id="usersView" class="hidden">
-    <div class="card row">
-      <button class="btn" onclick="loadUsers()">⟳ Refresh</button>
-      <span class="hint">User တစ်ယောက်ချင်းစီ၏ FREE / PRO Plan ကို စီမံပါ</span>
-    </div>
-    <div id="usersList"></div>
-  </div>
-  <div id="studiosView" class="hidden">
-    <div class="card row">
-      <button class="btn" onclick="loadStudios()">⟳ Refresh</button>
-      <span class="hint">User App မှာ ပြသမည့် AI Studio များကို ဖွင့် / ပိတ်နိုင်သည်</span>
-    </div>
-    <div id="studiosList"></div>
-  </div>
-  <div id="featuresView" class="hidden">
-    <div class="card row">
-      <button class="btn" onclick="loadFeatures()">⟳ Refresh</button>
-      <span class="hint">FREE / PRO အတွက် Feature access နှင့် limit များကို စီမံပါ</span>
-    </div>
-    <div id="featuresList"></div>
-  </div>
-  <div id="modelsView" class="hidden">
-    <div class="card row">
-      <button class="btn" onclick="loadModels()">⟳ Refresh</button>
-      <span class="hint">AI Model ထည့်ခြင်း၊ default သတ်မှတ်ခြင်းနှင့် access ကို စီမံပါ</span>
-    </div>
-    <div class="card row" style="gap:6px;">
-      <button id="mfAll" class="btn sm active" onclick="mfPlan('')">အားလုံး</button>
-      <button id="mfFree" class="btn sm" onclick="mfPlan('FREE')">လူတိုင်း (FREE)</button>
-      <button id="mfPro" class="btn sm" onclick="mfPlan('PRO')">PRO သာ</button>
-      <select id="mfCat" onchange="mfCat()" style="flex:1;min-width:150px;">
-        <option value="">Category: အားလုံး</option>
-        <option value="text">📝 Text Only</option>
-        <option value="image">🖼️ Image</option>
-        <option value="voice">🎙️ Text → Voice</option>
-        <option value="transcribe">🎧 Voice → Text</option>
-      </select>
-    </div>
-    <div id="modelsList"></div>
-  </div>
-  <div id="usageView" class="hidden">
-    <div class="card row">
-      <button class="btn" onclick="loadUsage()">⟳ Refresh</button>
-      <span class="hint">နေ့စဉ် AI သုံးစွဲမှုနှင့် အများဆုံးအသုံးပြုသူများကို ကြည့်ပါ</span>
-    </div>
-    <div class="card"><b>📅 နေ့အလိုက် သုံးစွဲမှု</b><div id="usageDaily"></div></div>
-    <div class="card"><b>🏆 Top Users</b><div id="usageTop"></div></div>
-  </div>
-  <div id="logsView" class="hidden">
-    <div class="card row">
-      <button class="btn" onclick="loadLogs()">⟳ Refresh</button>
-      <span class="hint">Admin ပြုလုပ်ခဲ့သည့် ပြောင်းလဲမှုများကို စစ်ဆေးပါ</span>
-    </div>
-    <div id="logsList"></div>
-  </div>
-</main>
-</section>
+  <section class="main">
+    <header class="topbar"><div class="row"><button class="mobile-menu" onclick="toggleNav()">☰</button><div class="crumb">Admin Center <span class="muted">/</span> <b id="crumbTitle">Overview</b></div></div><div class="top-actions"><div class="admin-pill"><span class="avatar">A</span><span class="email" id="userBox"></span></div></div></header>
+    <main class="content">
+      <section id="dashboardView">
+        <div class="page-head"><div><div class="eyebrow">Control Center</div><h1 class="page-title">Good morning, Admin</h1><p class="page-desc">AI Creative Studio ရဲ့ System အခြေအနေကို တစ်နေရာတည်းက စီမံပါ။</p></div><div class="head-actions"><button class="btn primary" onclick="loadDashboard()">↻ Refresh</button></div></div>
+        <div class="grid stats-grid" id="statCards"></div>
+        <div class="grid two-col" style="margin-top:14px">
+          <div class="card"><div class="section-head"><div><div class="card-title">Studio Status</div><div class="card-sub">User App မှာ လက်ရှိဖွင့်ထားတဲ့ Studios</div></div></div><div class="grid three-col" id="healthGrid"></div></div>
+          <div class="card"><div class="section-head"><div><div class="card-title">Quick Actions</div><div class="card-sub">မကြာခဏသုံးမယ့် Admin actions</div></div></div><div class="quick"><button class="btn" onclick="switchTab('models')">◈ AI Models<small>Model စီမံရန်</small></button><button class="btn" onclick="switchTab('studios')">✦ Studios<small>ON / OFF ပြုလုပ်ရန်</small></button><button class="btn" onclick="switchTab('cms')">▤ Content<small>Prompt / Template ပြင်ရန်</small></button></div></div>
+        </div>
+        <div class="card" style="margin-top:14px"><div class="section-head"><div><div class="card-title">Recent Users</div><div class="card-sub">နောက်ဆုံးဝင်လာတဲ့ Users</div></div><button class="btn sm" onclick="switchTab('users')">View all →</button></div><div id="recentUsers" class="list"></div></div>
+      </section>
+      <section id="cmsView" class="hidden"><div class="page-head"><div><div class="eyebrow">AI System</div><h1 class="page-title">Content / CMS</h1><p class="page-desc">Studio တစ်ခုချင်းစီအတွက် Prompt, Template နဲ့ AI instructions ကို စီမံပါ။</p></div><div class="head-actions"><button class="btn" onclick="load()">↻ Refresh</button><button class="btn primary" onclick="addEdit(null)">＋ Add Content</button></div></div><div class="card"><div class="filters"><select id="fStudio"></select><select id="fPlan"><option value="">Plan · All</option><option value="FREE">FREE</option><option value="PRO">PRO</option></select><input id="fType" placeholder="Sub-Type (1–5)"><button class="btn sm" onclick="load()">Apply</button></div></div><div id="list"></div></section>
+      <section id="usersView" class="hidden"><div class="page-head"><div><div class="eyebrow">Management</div><h1 class="page-title">Users</h1><p class="page-desc">User plan နဲ့ account အခြေအနေကို စီမံပါ။</p></div><button class="btn" onclick="loadUsers()">↻ Refresh</button></div><div id="usersList"></div></section>
+      <section id="studiosView" class="hidden"><div class="page-head"><div><div class="eyebrow">Management</div><h1 class="page-title">AI Studios</h1><p class="page-desc">User App မှာ ဘယ် Studio တွေကို အသုံးပြုခွင့်ပေးမလဲ စီမံပါ။</p></div><button class="btn" onclick="loadStudios()">↻ Refresh</button></div><div class="card"><div class="card-title">Studio Availability</div><div class="card-sub">OFF လုပ်ထားတဲ့ Studio ကို User App မှာ ဝင်သုံးလို့မရတော့ပါ။</div></div><div id="studiosList"></div></section>
+      <section id="featuresView" class="hidden"><div class="page-head"><div><div class="eyebrow">AI System</div><h1 class="page-title">Plans & Features</h1><p class="page-desc">FREE / PRO access နဲ့ feature limits ကို Code မပြင်ဘဲ စီမံပါ။</p></div><button class="btn" onclick="loadFeatures()">↻ Refresh</button></div><div id="featuresList"></div></section>
+      <section id="modelsView" class="hidden"><div class="page-head"><div><div class="eyebrow">AI System</div><h1 class="page-title">AI Models</h1><p class="page-desc">Text, Image, Voice နဲ့ Transcription models ကို စီမံပါ။</p></div><button class="btn" onclick="loadModels()">↻ Refresh</button></div><div class="card"><div class="filters"><button id="mfAll" class="btn sm active" onclick="mfPlan('')">All</button><button id="mfFree" class="btn sm" onclick="mfPlan('FREE')">FREE</button><button id="mfPro" class="btn sm" onclick="mfPlan('PRO')">PRO</button><select id="mfCat" onchange="mfCat()"><option value="">Category · All</option><option value="text">📝 Text</option><option value="image">🖼️ Image</option><option value="voice">🎙️ Voice</option><option value="transcribe">🎧 Transcribe</option></select></div></div><div id="modelsList"></div></section>
+      <section id="usageView" class="hidden"><div class="page-head"><div><div class="eyebrow">Analytics</div><h1 class="page-title">Usage</h1><p class="page-desc">AI, Voice နဲ့ Image usage ကို စောင့်ကြည့်ပါ။</p></div><button class="btn" onclick="loadUsage()">↻ Refresh</button></div><div class="grid two-col"><div class="card"><div class="section-head"><div><div class="card-title">Daily Usage</div><div class="card-sub">နောက်ဆုံး 28 ရက်</div></div></div><div id="usageDaily" class="list"></div></div><div class="card"><div class="section-head"><div><div class="card-title">Top Users</div><div class="card-sub">Usage အများဆုံး Users</div></div></div><div id="usageTop" class="list"></div></div></div></section>
+      <section id="logsView" class="hidden"><div class="page-head"><div><div class="eyebrow">Analytics</div><h1 class="page-title">Activity</h1><p class="page-desc">Admin ပြုလုပ်ထားတဲ့ အရေးကြီးလုပ်ဆောင်ချက်တွေကို Audit လုပ်ပါ။</p></div><button class="btn" onclick="loadLogs()">↻ Refresh</button></div><div id="logsList" class="list"></div></section>
+    </main>
+  </section>
 </div>
-<div id="formWrap" class="hidden">
-  <div class="overlay">
-    <div class="card form">
-      <h3 id="formTitle" style="margin:0 0 4px;">+ CMS Row</h3>
-      <label>Studio</label><select id="iStudio"></select>
-      <label>Plan</label><select id="iPlan"><option value="FREE">FREE</option><option value="PRO">PRO</option></select>
-      <label>Type</label><input id="iType" value="1" style="width:90px;">
-      <details open><summary>AI Content Settings</summary>
-        <label>Core — အဓိက ရည်ရွယ်ချက်</label><textarea id="iCore"></textarea>
-        <label>Memory — Context / မှတ်ဉာဏ်</label><textarea id="iMemory"></textarea>
-        <label>Knowledge — အသိပညာ / Reference</label><textarea id="iKnowledge"></textarea>
-        <label>Workflow — လုပ်ဆောင်ပုံ</label><textarea id="iWorkflow"></textarea>
-        <label>Template — Output ပုံစံ</label><textarea id="iTemplate"></textarea>
-        <label>Prompt — AI ညွှန်ကြားချက်</label><textarea id="iPrompt"></textarea>
-        <label>Quality Check — အရည်အသွေးစစ်ဆေးမှု</label><textarea id="iQuality_check"></textarea>
-        <label>Final Output — နောက်ဆုံး Output</label><textarea id="iFinal_output"></textarea>
-      </details>
-      <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;">
-        <button class="btn" onclick="save()">💾 Save</button>
-        <button class="btn gray" onclick="closeForm()">Cancel</button>
-      </div>
-    </div>
-  </div>
+<div id="formWrap" class="hidden"><div class="overlay"><div class="card form"><div class="section-head"><div><div class="eyebrow">Content Editor</div><h3 id="formTitle">Add Content</h3></div><button class="btn gray sm" onclick="closeForm()">✕</button></div><div class="grid three-col"><div><label>Studio</label><select id="iStudio" style="width:100%"></select></div><div><label>Plan</label><select id="iPlan" style="width:100%"><option value="FREE">FREE</option><option value="PRO">PRO</option></select></div><div><label>Type</label><input id="iType" value="1" style="width:100%"></div></div><div class="divider"></div><div class="grid two-col"><div><label>core</label><textarea id="iCore"></textarea></div><div><label>memory</label><textarea id="iMemory"></textarea></div><div><label>knowledge</label><textarea id="iKnowledge"></textarea></div><div><label>workflow</label><textarea id="iWorkflow"></textarea></div><div><label>template</label><textarea id="iTemplate"></textarea></div><div><label>prompt</label><textarea id="iPrompt"></textarea></div><div><label>quality check</label><textarea id="iQuality_check"></textarea></div><div><label>final output</label><textarea id="iFinal_output"></textarea></div></div><div class="form-actions"><button class="btn gray" onclick="closeForm()">Cancel</button><button class="btn primary" onclick="save()">Save Changes</button></div></div></div></div>
 </div>
-</div>
-
+<script>
+function toggleNav(){var s=document.getElementById('sidebar');if(s)s.classList.toggle('open');}
+function closeNav(){var s=document.getElementById('sidebar');if(s)s.classList.remove('open');}
+function setCrumb(tab){var m={dashboard:'Overview',cms:'Content / CMS',users:'Users',studios:'AI Studios',features:'Plans & Features',models:'AI Models',usage:'Usage',logs:'Activity'};var e=document.getElementById('crumbTitle');if(e)e.textContent=m[tab]||'Overview';}
+</script>
 <script>
 window.onerror = function(msg, url, line) {
   var el = document.getElementById('loading');
@@ -231,11 +177,9 @@ function fillStudios(){
 
 function switchTab(tab){
   currentTab=tab;
-  var titles={dashboard:'Overview',cms:'Content / CMS',users:'Users',studios:'AI Studios',features:'Plans & Features',models:'AI Models',usage:'Usage',logs:'Activity'};
-  if($('pageTitle')) $('pageTitle').textContent=titles[tab]||'Admin Center';
+  setCrumb(tab);
   ['dashboard','cms','users','studios','features','models','usage','logs'].forEach(function(t){
-    var b=$('tab'+t.charAt(0).toUpperCase()+t.slice(1));
-    if(b)b.className='nav-btn '+(tab===t?'active':'');
+    $('tab'+t.charAt(0).toUpperCase()+t.slice(1)).className='btn '+(tab===t?'active':'inactive');
     $(t+'View').classList.toggle('hidden',tab!==t);
   });
   if(tab==='users') loadUsers();
@@ -262,11 +206,13 @@ function loadDashboard(){
       ['🖼️ Image (ယနေ့)',st.image_today||0]
     ];
     var html='';
-    cards.forEach(function(c){html+='<div style="flex:1 1 120px;min-width:0;background:#f4f6fb;border:1px solid #E4E3DD;border-radius:10px;padding:10px;text-align:center;"><div style="font-size:11px;color:#6B7280;">'+c[0]+'</div><div style="font-size:20px;font-weight:700;color:#1b6d96;">'+esc(c[1])+'</div></div>';});
+    var labels=[['👥','Users','All registered users','users'],['★','PRO Users','Premium accounts','pro'],['▣','Projects','Saved projects','projects'],['◈','AI Today','AI generations today','ai_today'],['◉','Voice Today','Voice generations today','voice_today'],['▧','Image Today','Image generations today','image_today']];
+    labels.forEach(function(x){html+='<div class="card stat"><div class="stat-label">'+x[0]+' '+x[1]+'</div><div class="stat-value">'+esc(st[x[3]]||0)+'</div><div class="stat-foot">'+x[2]+'</div></div>';});
     $('statCards').innerHTML=html;
+    var hg=$('healthGrid'); if(hg){hg.innerHTML='<div class="muted" style="font-size:11px">Loading studio status…</div>'; api('/api/admin/studios').then(function(sd){var arr=sd.items||[]; hg.innerHTML=arr.map(function(x){return '<div class="health" style="opacity:'+(x.enabled?'1':'.55')+'"><span class="dot" style="background:'+(x.enabled?'var(--green)':'#64748B')+';box-shadow:none"></span><span style="font-size:11px">'+esc(x.nameMy||x.name||x.id)+'</span><span style="margin-left:auto;font-size:10px;color:'+(x.enabled?'#82EFA3':'#7C8799')+'">'+(x.enabled?'ON':'OFF')+'</span></div>';}).join('')||'<div class="muted" style="font-size:11px">No studio data</div>';}).catch(function(){hg.innerHTML='<div class="muted" style="font-size:11px">Studio status unavailable</div>';});}
     var ru=$('recentUsers');ru.innerHTML='';
     (d.recent||[]).forEach(function(u){
-      ru.innerHTML+='<div class="user-meta" style="margin-top:6px;">• '+esc(u.email||'')+' <span class="badge '+(u.plan==='PRO'?'pro':'free')+'">'+esc(u.plan||'FREE')+'</span> · '+esc(u.created_at||'')+'</div>';
+      ru.innerHTML+='<div class="list-row"><div class="list-main"><div class="list-title">'+esc(u.email||'')+'</div><div class="list-meta">Joined '+esc(u.created_at||'')+'</div></div><span class="badge '+(u.plan==='PRO'?'pro':'free')+'">'+esc(u.plan||'FREE')+'</span></div>';
     });
   }).catch(function(e){
     $('statCards').innerHTML='<span class="err">Network error: '+esc(String(e&&e.message||e))+'</span>';
@@ -407,10 +353,10 @@ function loadUsage(){
     if(d.error==='forbidden'){location.href='/app';return;}
     if(d.error){$('usageDaily').innerHTML='<span class="err">'+(d.detail||d.error)+'</span>';return;}
     var h='';
-    (d.daily||[]).forEach(function(r){h+='<div class="user-meta" style="margin-top:5px;">'+esc(r.day||'')+' — '+esc(r.category||'')+': <b>'+esc(r.total)+'</b></div>';});
+    (d.daily||[]).forEach(function(r){h+='<div class="list-row"><div class="list-main"><div class="list-title">'+esc(r.day||'')+'</div><div class="list-meta">'+esc(r.category||'')+'</div></div><b>'+esc(r.total)+'</b></div>';});
     $('usageDaily').innerHTML=h||'(no data yet)';
     var t='';
-    (d.byUser||[]).forEach(function(r){t+='<div class="user-meta" style="margin-top:5px;">'+esc(r.email||'')+' — calls: <b>'+esc(r.calls)+'</b> · total: <b>'+esc(r.total)+'</b></div>';});
+    (d.byUser||[]).forEach(function(r){t+='<div class="list-row"><div class="list-main"><div class="list-title">'+esc(r.email||'')+'</div><div class="list-meta">'+esc(r.calls)+' calls</div></div><b>'+esc(r.total)+'</b></div>';});
     $('usageTop').innerHTML=t||'(no data yet)';
   }).catch(function(e){
     $('usageDaily').innerHTML='<span class="err">Network error: '+esc(String(e&&e.message||e))+'</span>';
@@ -424,12 +370,11 @@ function loadLogs(){
     if(d.error){$('logsList').innerHTML='<div class="card"><span class="err">'+(d.detail||d.error)+'</span></div>';return;}
     var list=$('logsList');list.innerHTML='';
     var rows=d.items||[];
-    if(rows.length===0){list.innerHTML='<div class="card">(no logs yet)</div>';return;}
+    if(rows.length===0){list.innerHTML='<div class="empty">No activity yet</div>';return;}
     rows.forEach(function(r){
       var c=document.createElement('div');
-      c.className='card';
-      c.innerHTML='<div class="user-meta"><b>'+esc(r.created_at||'')+'</b> · '+esc(r.admin_email||'')+' · <b>'+esc(r.action||'')+'</b></div>'+
-        '<div style="font-size:12px;color:#333;margin-top:4px;">'+esc(r.detail||'')+'</div>';
+      c.className='list-row';
+      c.innerHTML='<div class="list-main"><div class="list-title">'+esc(r.action||'')+'</div><div class="list-meta">'+esc(r.admin_email||'')+' · '+esc(r.created_at||'')+'</div><div class="list-meta">'+esc(r.detail||'')+'</div></div>';
       list.appendChild(c);
     });
   }).catch(function(e){
@@ -557,7 +502,7 @@ function toggleStudio(id,btn){
 
 function renderUsers(){
   var list=$('usersList');list.innerHTML='';
-  if(users.length===0){list.innerHTML='<div class="card">(no users yet)</div>';return;}
+  if(users.length===0){list.innerHTML='<div class="empty">No users yet</div>';return;}
   users.forEach(function(u){
     var isPro=(u.plan==='PRO');
     var c=document.createElement('div');
