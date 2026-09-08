@@ -9,6 +9,7 @@ import { generateShort, reviseShort, generateShortVideoPlan, generateShortVideoI
 import { generateImagePrompt, generateAdImagePrompt, generateImageFromPrompt } from './studios/image.js';
 import { generateVoiceAudio, transcribeAudio, generateVoiceSrt, translateVoiceSrt } from './studios/voice.js';
 import { generateShopContent, reviseShopContent, generateShopVideo, generateShopVideoImage } from './studios/shop.js';
+import { listEnabledModels } from './core/aiModels.js';
 import { getUserSettings, updateUserSettings, getUserPreferences, updateUserPreferences } from './core/settings.js';
 import { createProject, listProjects, deleteProject } from './core/projects.js';
 import { trackUsage } from './core/usage.js';
@@ -482,6 +483,22 @@ export default {
         return json({ email: payload.email, name, plan, user_id: payload.sub, is_admin: isAdmin, usage, settings, preferences, studio_settings }, 200, cors);
       }
 
+      // ===== Phase C — AI Models List (User အတွက် Studio Dropdown) =====
+      // ဖွင့်ထားသော + User ၏ Plan နှင့် ကိုက်ညီသော Model များကိုသာ ပြန်ပို့သည်
+      if (path === '/api/ai-models' && request.method === 'GET') {
+        const token = bearer(request);
+        if (!token) return json({ error: 'unauthorized' }, 401, cors);
+        const payload = await verifyTokenSafe(env, token);
+        if (!payload) return json({ error: 'invalid_token' }, 401, cors);
+        const plan = await resolvePlan(env, payload);
+        const cat = url.searchParams.get('category') || '';
+        const items = await listEnabledModels(env, cat || undefined, plan);
+        return json({
+          ok: true,
+          items: items.map((m) => ({ id: m.id, name: m.name, category: m.category, plan_access: m.plan_access })),
+        }, 200, cors);
+      }
+
       // ===== Phase 12 — Personal Profile Name ပြောင်းခြင်း (Server-side Whitelist) =====
       if (path === '/api/users/me/profile' && request.method === 'PUT') {
         const token = bearer(request);
@@ -620,7 +637,7 @@ export default {
         try {
           let apiKey = body.apiKey;
           if (!apiKey) apiKey = await getUserApiKey(env, payload.sub);
-          const out = await generateContent(env, { idea: body.idea, type: reqType, plan, apiKey });
+          const out = await generateContent(env, { model: body.model,  idea: body.idea, type: reqType, plan, apiKey });
           await trackUsageSafe(env, payload.sub, 'ai');
           return json({ ok: true, ...out }, 200, cors);
         } catch (e) {
@@ -642,7 +659,7 @@ export default {
         try {
           let apiKey = body.apiKey;
           if (!apiKey) apiKey = await getUserApiKey(env, payload.sub);
-          const out = await reviseContent(env, {
+          const out = await reviseContent(env, { model: body.model, 
             originalContent: body.originalContent || '',
             originalSpeaking: body.originalSpeaking || '',
             originalVoice: body.originalVoice || '',
@@ -666,10 +683,10 @@ export default {
         try {
           let apiKey = body.apiKey;
           if (!apiKey) apiKey = await getUserApiKey(env, payload.sub);
-          const out = await generateContentVoice(env, {
+          const out = await generateContentVoice(env, { model: body.model,
             text: body.text,
             voiceName: body.voiceName || 'Kore',
-            apiKey,
+            plan, apiKey,
           });
           await trackUsageSafe(env, payload.sub, 'voice');
           return json({ ok: true, data: out.data, mimeType: out.mimeType }, 200, cors);
@@ -692,7 +709,7 @@ export default {
         try {
           let apiKey = body.apiKey;
           if (!apiKey) apiKey = await getUserApiKey(env, payload.sub);
-          const out = await generateContentVideo(env, { idea: body.idea, type: reqType, plan, apiKey });
+          const out = await generateContentVideo(env, { model: body.model,  idea: body.idea, type: reqType, plan, apiKey });
           await trackUsageSafe(env, payload.sub, 'ai');
           return json({ ok: true, ...out }, 200, cors);
         } catch (e) {
@@ -711,7 +728,7 @@ export default {
         try {
           let apiKey = body.apiKey;
           if (!apiKey) apiKey = await getUserApiKey(env, payload.sub);
-          const out = await generateContentVideoImage(env, { prompt: body.prompt, apiKey });
+          const out = await generateContentVideoImage(env, { model: body.model, prompt: body.prompt, plan, apiKey });
           return json({ ok: true, data: out.data, mimeType: out.mimeType }, 200, cors);
         } catch (e) {
           return json({ error: 'image_error', detail: friendlyError(e) }, 500, cors);
@@ -729,7 +746,7 @@ export default {
         try {
           let apiKey = body.apiKey;
           if (!apiKey) apiKey = await getUserApiKey(env, payload.sub);
-          const out = await generateContentSrt(env, {
+          const out = await generateContentSrt(env, { model: body.model, 
             audioBase64: body.audioBase64,
             mimeType: body.mimeType || 'audio/mpeg',
             apiKey,
@@ -751,7 +768,7 @@ export default {
         try {
           let apiKey = body.apiKey;
           if (!apiKey) apiKey = await getUserApiKey(env, payload.sub);
-          const out = await translateContentSrt(env, {
+          const out = await translateContentSrt(env, { model: body.model, 
             srtText: body.srtText,
             direction: body.direction || 'my-to-cn',
             apiKey,
@@ -776,7 +793,7 @@ export default {
         try {
           let apiKey = body.apiKey;
           if (!apiKey) apiKey = await getUserApiKey(env, payload.sub);
-          const out = await generateStory(env, { idea: body.idea, type: reqType, plan, apiKey });
+          const out = await generateStory(env, { model: body.model,  idea: body.idea, type: reqType, plan, apiKey });
           await trackUsageSafe(env, payload.sub, 'ai');
           return json({ ok: true, ...out }, 200, cors);
         } catch (e) {
@@ -799,7 +816,7 @@ export default {
         try {
           let apiKey = body.apiKey;
           if (!apiKey) apiKey = await getUserApiKey(env, payload.sub);
-          const out = await reviseStory(env, {
+          const out = await reviseStory(env, { model: body.model, 
             idea: body.idea || '',
             type: reqType,
             currentStory: body.currentStory,
@@ -826,7 +843,7 @@ export default {
         try {
           let apiKey = body.apiKey;
           if (!apiKey) apiKey = await getUserApiKey(env, payload.sub);
-          const out = await generateStoryVideoPlan(env, { idea: body.idea, type: reqType, plan, apiKey });
+          const out = await generateStoryVideoPlan(env, { model: body.model,  idea: body.idea, type: reqType, plan, apiKey });
           await trackUsageSafe(env, payload.sub, 'ai');
           return json({ ok: true, ...out }, 200, cors);
         } catch (e) {
@@ -845,7 +862,7 @@ export default {
         try {
           let apiKey = body.apiKey;
           if (!apiKey) apiKey = await getUserApiKey(env, payload.sub);
-          const out = await generateStoryVideoImage(env, { prompt: body.prompt, apiKey });
+          const out = await generateStoryVideoImage(env, { model: body.model, prompt: body.prompt, plan, apiKey });
           return json({ ok: true, data: out.data, mimeType: out.mimeType }, 200, cors);
         } catch (e) {
           return json({ error: 'image_error', detail: friendlyError(e) }, 500, cors);
@@ -866,7 +883,7 @@ export default {
         try {
           let apiKey = body.apiKey;
           if (!apiKey) apiKey = await getUserApiKey(env, payload.sub);
-          const out = await generateShort(env, { idea: body.idea, type: reqType, plan, apiKey });
+          const out = await generateShort(env, { model: body.model,  idea: body.idea, type: reqType, plan, apiKey });
           await trackUsageSafe(env, payload.sub, 'ai');
           return json({ ok: true, ...out }, 200, cors);
         } catch (e) {
@@ -889,7 +906,7 @@ export default {
         try {
           let apiKey = body.apiKey;
           if (!apiKey) apiKey = await getUserApiKey(env, payload.sub);
-          const out = await reviseShort(env, {
+          const out = await reviseShort(env, { model: body.model, 
             idea: body.idea || '', type: reqType, currentShort: body.currentShort,
             instruction: body.instruction, plan, apiKey,
           });
@@ -913,7 +930,7 @@ export default {
         try {
           let apiKey = body.apiKey;
           if (!apiKey) apiKey = await getUserApiKey(env, payload.sub);
-          const out = await generateShortVideoPlan(env, {
+          const out = await generateShortVideoPlan(env, { model: body.model, 
             idea: body.idea, type: reqType, plan, apiKey,
             images: body.images || [],
           });
@@ -935,7 +952,7 @@ export default {
         try {
           let apiKey = body.apiKey;
           if (!apiKey) apiKey = await getUserApiKey(env, payload.sub);
-          const out = await generateShortVideoImage(env, { prompt: body.prompt, apiKey });
+          const out = await generateShortVideoImage(env, { model: body.model, prompt: body.prompt, plan, apiKey });
           return json({ ok: true, data: out.data, mimeType: out.mimeType }, 200, cors);
         } catch (e) {
           return json({ error: 'image_error', detail: friendlyError(e) }, 500, cors);
@@ -956,7 +973,7 @@ export default {
         try {
           let apiKey = body.apiKey;
           if (!apiKey) apiKey = await getUserApiKey(env, payload.sub);
-          const out = await generateImagePrompt(env, {
+          const out = await generateImagePrompt(env, { model: body.model, 
             idea: body.idea, type: reqType, plan, apiKey,
             images: body.images,
           });
@@ -980,7 +997,7 @@ export default {
         try {
           let apiKey = body.apiKey;
           if (!apiKey) apiKey = await getUserApiKey(env, payload.sub);
-          const out = await generateAdImagePrompt(env, {
+          const out = await generateAdImagePrompt(env, { model: body.model, 
             idea: body.idea, type: reqType, plan, apiKey,
             images: body.images,
           });
@@ -1001,7 +1018,7 @@ export default {
         try {
           let apiKey = body.apiKey;
           if (!apiKey) apiKey = await getUserApiKey(env, payload.sub);
-          const out = await generateImageFromPrompt(env, { prompt: body.prompt, apiKey });
+          const out = await generateImageFromPrompt(env, { model: body.model, prompt: body.prompt, plan, apiKey });
           await trackUsageSafe(env, payload.sub, 'image');
           return json({ ok: true, data: out.data, mimeType: out.mimeType }, 200, cors);
         } catch (e) {
@@ -1020,10 +1037,10 @@ export default {
         try {
           let apiKey = body.apiKey;
           if (!apiKey) apiKey = await getUserApiKey(env, payload.sub);
-          const out = await generateVoiceAudio(env, {
+          const out = await generateVoiceAudio(env, { model: body.model,
             text: body.text,
             voiceName: body.voiceName || 'Kore',
-            apiKey,
+            plan, apiKey,
           });
           await trackUsageSafe(env, payload.sub, 'voice');
           return json({ ok: true, data: out.data, mimeType: out.mimeType }, 200, cors);
@@ -1046,7 +1063,7 @@ export default {
         try {
           let apiKey = body.apiKey;
           if (!apiKey) apiKey = await getUserApiKey(env, payload.sub);
-          const out = await transcribeAudio(env, {
+          const out = await transcribeAudio(env, { model: body.model, 
             audioBase64: body.audioBase64,
             mimeType: body.mimeType || 'audio/mpeg',
             type: reqType, plan, apiKey,
@@ -1071,7 +1088,7 @@ export default {
         try {
           let apiKey = body.apiKey;
           if (!apiKey) apiKey = await getUserApiKey(env, payload.sub);
-          const out = await generateVoiceSrt(env, {
+          const out = await generateVoiceSrt(env, { model: body.model, 
             audioBase64: body.audioBase64,
             mimeType: body.mimeType || 'audio/mpeg',
             type: String(body.type || '2'), plan, apiKey,
@@ -1095,7 +1112,7 @@ export default {
         try {
           let apiKey = body.apiKey;
           if (!apiKey) apiKey = await getUserApiKey(env, payload.sub);
-          const out = await translateVoiceSrt(env, {
+          const out = await translateVoiceSrt(env, { model: body.model, 
             srtText: body.srtText,
             direction: body.direction || 'MY_TO_CN',
             type: String(body.type || '2'), plan, apiKey,
@@ -1120,7 +1137,7 @@ export default {
         try {
           let apiKey = body.apiKey;
           if (!apiKey) apiKey = await getUserApiKey(env, payload.sub);
-          const out = await generateShopContent(env, { idea: body.idea, type: reqType, plan, apiKey, images: body.images || [] });
+          const out = await generateShopContent(env, { model: body.model,  idea: body.idea, type: reqType, plan, apiKey, images: body.images || [] });
           await trackUsageSafe(env, payload.sub, 'ai');
           return json({ ok: true, ...out }, 200, cors);
         } catch (e) {
@@ -1143,7 +1160,7 @@ export default {
         try {
           let apiKey = body.apiKey;
           if (!apiKey) apiKey = await getUserApiKey(env, payload.sub);
-          const out = await reviseShopContent(env, {
+          const out = await reviseShopContent(env, { model: body.model, 
             idea: body.idea || '', type: reqType, currentContent: body.currentContent,
             instruction: body.instruction, plan, apiKey,
           });
@@ -1167,7 +1184,7 @@ export default {
         try {
           let apiKey = body.apiKey;
           if (!apiKey) apiKey = await getUserApiKey(env, payload.sub);
-          const out = await generateShopVideo(env, { idea: body.idea, type: reqType, plan, apiKey, images: body.images || [] });
+          const out = await generateShopVideo(env, { model: body.model,  idea: body.idea, type: reqType, plan, apiKey, images: body.images || [] });
           await trackUsageSafe(env, payload.sub, 'ai');
           return json({ ok: true, ...out }, 200, cors);
         } catch (e) {
@@ -1186,7 +1203,7 @@ export default {
         try {
           let apiKey = body.apiKey;
           if (!apiKey) apiKey = await getUserApiKey(env, payload.sub);
-          const out = await generateShopVideoImage(env, { prompt: body.prompt, apiKey });
+          const out = await generateShopVideoImage(env, { model: body.model, prompt: body.prompt, plan, apiKey });
           return json({ ok: true, data: out.data, mimeType: out.mimeType }, 200, cors);
         } catch (e) {
           return json({ error: 'image_error', detail: friendlyError(e) }, 500, cors);

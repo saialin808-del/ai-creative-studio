@@ -7,6 +7,7 @@ import { setStudioEnabled, getStudioSettings } from './core/studioSettings.js';
 import { STUDIO_REGISTRY } from './config/studios.js';
 import { FEATURE_REGISTRY } from './config/features.js';
 import { getFeatureSettings, setFeatureSetting } from './core/featureSettings.js';
+import { getAiModels, setAiModel, deleteAiModel } from './core/aiModels.js';
 import { logAdminAction, listAdminLogs } from './core/adminLogs.js';
 
 export const ADMIN_HTML = `<!DOCTYPE html>
@@ -61,6 +62,7 @@ label{display:block;font-size:12px;font-weight:600;margin:10px 0 3px}
     <button class="btn inactive" id="tabUsers" onclick="switchTab('users')">👥 Users</button>
     <button class="btn inactive" id="tabStudios" onclick="switchTab('studios')">🎛️ Studios</button>
     <button class="btn inactive" id="tabFeatures" onclick="switchTab('features')">⚙️ Features</button>
+    <button class="btn inactive" id="tabModels" onclick="switchTab('models')">🤖 AI Models</button>
     <button class="btn inactive" id="tabUsage" onclick="switchTab('usage')">📈 Usage</button>
     <button class="btn inactive" id="tabLogs" onclick="switchTab('logs')">🧾 Logs</button>
   </div>
@@ -105,6 +107,13 @@ label{display:block;font-size:12px;font-weight:600;margin:10px 0 3px}
       <span style="font-size:12px;color:#6B7280;">Free/Pro Feature ကို Code မပြင်ဘဲ ဤနေရာမှ ထိန်းချုပ်နိုင်သည် (Rule 15)</span>
     </div>
     <div id="featuresList"></div>
+  </div>
+  <div id="modelsView" class="hidden">
+    <div class="card row">
+      <button class="btn" onclick="loadModels()">⟳ Refresh</button>
+      <span style="font-size:12px;color:#6B7280;">AI Model များကို Code မပြင်ဘဲ ထည့်/ပြင်/ဖွင့်/ပိတ်/ဖျက် လုပ်နိုင်သည် (Phase C) — User တို့သည် Studio မှ Model ရွေးသုံးနိုင်မည်</span>
+    </div>
+    <div id="modelsList"></div>
   </div>
   <div id="usageView" class="hidden">
     <div class="card row">
@@ -189,13 +198,14 @@ function fillStudios(){
 
 function switchTab(tab){
   currentTab=tab;
-  ['dashboard','cms','users','studios','features','usage','logs'].forEach(function(t){
+  ['dashboard','cms','users','studios','features','models','usage','logs'].forEach(function(t){
     $('tab'+t.charAt(0).toUpperCase()+t.slice(1)).className='btn '+(tab===t?'active':'inactive');
     $(t+'View').classList.toggle('hidden',tab!==t);
   });
   if(tab==='users') loadUsers();
   if(tab==='studios') loadStudios();
   if(tab==='features') loadFeatures();
+  if(tab==='models') loadModels();
   if(tab==='usage') loadUsage();
   if(tab==='logs') loadLogs();
   if(tab==='dashboard') loadDashboard();
@@ -261,6 +271,74 @@ function toggleFeature(id,btn){
   var next=!(btn.getAttribute('data-on')==='1');
   api('/api/admin/features/'+id,'PUT',{enabled:next}).then(function(d){
     if(d.ok){loadFeatures();}else{alert('ERROR: '+(d.detail||d.error||'unknown'));}
+  }).catch(function(e){alert('Network error: '+(e&&e.message||e));});
+}
+
+// ===== Phase C — AI Models (ထည့်/ပြင်/ဖွင့်/ပိတ်/ဖျက်) =====
+function catLabel(c){return c==='image'?'🖼️ ပုံ':(c==='voice'?'🎙️ အသံ':'📝 စာသား');}
+function loadModels(){
+  api('/api/admin/models').then(function(d){
+    if(d.error==='forbidden'){location.href='/app';return;}
+    if(d.error){$('modelsList').innerHTML='<div class="card"><span class="err">'+(d.detail||d.error)+'</span></div>';return;}
+    var html='<div class="card"><b>＋ Model အသစ် ထည့်ရန်</b>'+
+      '<div class="row" style="margin-top:8px;">'+
+      '<input id="nm_id" placeholder="Model ID (ဥပမာ gemini-2.5-pro)" style="flex:2;min-width:150px;">'+
+      '<input id="nm_name" placeholder="ပြမည့်နာမည်" style="flex:2;min-width:120px;">'+
+      '<select id="nm_cat"><option value="text">📝 စာသား</option><option value="image">🖼️ ပုံ</option><option value="voice">🎙️ အသံ</option></select>'+
+      '<select id="nm_plan"><option value="FREE">လူတိုင်း</option><option value="PRO">PRO သာ</option></select>'+
+      '<button class="btn green" onclick="addModel()">＋ Add</button></div>'+
+      '<div style="font-size:11px;color:#6B7280;margin-top:6px;">⚠️ Model ID သည် Google Gemini API တွင် တကယ်ရှိသော နာမည် ဖြစ်ရမည် — မမှန်ပါက Generate လုပ်သော အခါ အမှား ပြပါမည်။</div></div>';
+    (d.items||[]).forEach(function(m){
+      var mid=esc(m.id);
+      html+='<div class="card"><div class="user-row"><div><b>'+esc(m.name||m.id)+'</b> <span style="font-size:11px;color:#6B7280;">('+mid+')</span>'+
+        '<div class="user-meta">'+catLabel(m.category)+' · '+(m.plan_access==='PRO'?'<span class="badge pro">PRO သာ</span>':'<span class="badge free">လူတိုင်း</span>')+
+        (m.is_default?' · <span class="badge pro">★ မူရင်း</span>':'')+'</div></div>'+
+        '<div class="row" style="gap:6px;">'+
+        '<select id="pm_'+mid+'"><option value="FREE"'+(m.plan_access!=='PRO'?' selected':'')+'>လူတိုင်း</option><option value="PRO"'+(m.plan_access==='PRO'?' selected':'')+'>PRO သာ</option></select>'+
+        '<button class="btn sm" onclick="saveModel(\\''+mid+'\\')">💾 Save</button>'+
+        '<button class="btn sm '+(m.enabled?'red':'green')+'" data-on="'+(m.enabled?'1':'0')+'" onclick="toggleModel(\\''+mid+'\\',this)">'+(m.enabled?'⏻ ပိတ်မည်':'⏻ ဖွင့်မည်')+'</button>'+
+        '<button class="btn sm '+(m.is_default?'gray':'')+'" onclick="setDefault(\\''+mid+'\\')">★ မူရင်း</button>'+
+        '<button class="btn sm red" onclick="delModel(\\''+mid+'\\')">🗑 ဖျက်</button>'+
+        '</div></div></div>';
+    });
+    $('modelsList').innerHTML=html;
+  }).catch(function(e){
+    $('modelsList').innerHTML='<div class="card"><span class="err">Network error: '+esc(String(e&&e.message||e))+'</span></div>';
+  });
+}
+function addModel(){
+  var id=($('nm_id').value||'').trim();
+  if(!id){alert('Model ID ထည့်ပါ');return;}
+  api('/api/admin/models','POST',{
+    id:id,
+    name:$('nm_name').value.trim(),
+    category:$('nm_cat').value,
+    plan_access:$('nm_plan').value,
+    enabled:true
+  }).then(function(d){
+    if(d.ok){loadModels();}else{alert('ERROR: '+(d.detail||d.error||'unknown'));}
+  }).catch(function(e){alert('Network error: '+(e&&e.message||e));});
+}
+function saveModel(id){
+  api('/api/admin/models/'+id,'PUT',{plan_access:$('pm_'+id).value}).then(function(d){
+    if(d.ok){loadModels();}else{alert('ERROR: '+(d.detail||d.error||'unknown'));}
+  }).catch(function(e){alert('Network error: '+(e&&e.message||e));});
+}
+function toggleModel(id,btn){
+  var next=!(btn.getAttribute('data-on')==='1');
+  api('/api/admin/models/'+id,'PUT',{enabled:next}).then(function(d){
+    if(d.ok){loadModels();}else{alert('ERROR: '+(d.detail||d.error||'unknown'));}
+  }).catch(function(e){alert('Network error: '+(e&&e.message||e));});
+}
+function setDefault(id){
+  api('/api/admin/models/'+id,'PUT',{is_default:true}).then(function(d){
+    if(d.ok){loadModels();}else{alert('ERROR: '+(d.detail||d.error||'unknown'));}
+  }).catch(function(e){alert('Network error: '+(e&&e.message||e));});
+}
+function delModel(id){
+  if(!confirm('ဤ Model ကို ဖျက်မှာလား?'))return;
+  api('/api/admin/models/'+id,'DELETE').then(function(d){
+    if(d.ok||d.ok===undefined){loadModels();}else{alert('ERROR: '+(d.detail||d.error||'unknown'));}
   }).catch(function(e){alert('Network error: '+(e&&e.message||e));});
 }
 
@@ -496,10 +574,11 @@ export async function adminApi(request, path, env, verifyToken) {
   const isUsers = (path === '/api/admin/users' || path.indexOf('/api/admin/users/') === 0);
   const isStudios = (path === '/api/admin/studios' || path.indexOf('/api/admin/studios/') === 0);
   const isFeatures = (path === '/api/admin/features' || path.indexOf('/api/admin/features/') === 0);
+  const isModels = (path === '/api/admin/models' || path.indexOf('/api/admin/models/') === 0);
   const isDashboard = (path === '/api/admin/dashboard');
   const isUsage = (path === '/api/admin/usage');
   const isLogs = (path === '/api/admin/logs');
-  if (!isCms && !isUsers && !isStudios && !isFeatures && !isDashboard && !isUsage && !isLogs) return null;
+  if (!isCms && !isUsers && !isStudios && !isFeatures && !isModels && !isDashboard && !isUsage && !isLogs) return null;
 
   const method = request.method;
   const authHeader = request.headers.get('Authorization') || '';
@@ -625,6 +704,45 @@ export async function adminApi(request, path, env, verifyToken) {
       await logAdminAction(env, user.email, 'feature_update', r.id + ' → enabled=' + r.enabled + ', access=' + r.access + ', limit=' + r.limit_value);
       return json({ ok: true, id: r.id, enabled: r.enabled, access: r.access, limit_value: r.limit_value });
     } catch (e) { return json({ error: 'unknown_feature', detail: String(e && e.message || e) }, 400); }
+  }
+
+  // ===== Phase C — AI Models (List / Add / Update / Delete) =====
+  if (path === '/api/admin/models' && method === 'GET') {
+    try {
+      const items = await getAiModels(env);
+      return json({ ok: true, items });
+    } catch (e) { return json({ error: 'db_error', detail: String(e && e.message || e) }, 500); }
+  }
+
+  if (path === '/api/admin/models' && method === 'POST') {
+    const body = await readBody(request);
+    try {
+      const r = await setAiModel(env, body || {});
+      await logAdminAction(env, user.email, 'model_create', r.id + ' [' + r.category + ']');
+      return json({ ok: true, ...r });
+    } catch (e) { return json({ error: String(e && e.message || e) === 'last_model' ? 'last_model' : 'model_error', detail: String(e && e.message || e) }, 400); }
+  }
+
+  if (path.indexOf('/api/admin/models/') === 0 && method === 'PUT') {
+    const id = decodeURIComponent(path.slice('/api/admin/models/'.length));
+    const body = await readBody(request);
+    try {
+      const r = await setAiModel(env, Object.assign({ id }, body || {}));
+      await logAdminAction(env, user.email, 'model_update', r.id + ' → enabled=' + r.enabled + ', plan=' + r.plan_access + ', default=' + r.is_default);
+      return json({ ok: true, ...r });
+    } catch (e) { return json({ error: String(e && e.message || e) === 'last_model' ? 'last_model' : 'model_error', detail: String(e && e.message || e) }, 400); }
+  }
+
+  if (path.indexOf('/api/admin/models/') === 0 && method === 'DELETE') {
+    const id = decodeURIComponent(path.slice('/api/admin/models/'.length));
+    try {
+      const r = await deleteAiModel(env, id);
+      if (r.ok) {
+        await logAdminAction(env, user.email, 'model_delete', id);
+        return json({ ok: true });
+      }
+      return json({ error: 'not_found', detail: 'Model မတွေ့ပါ' }, 404);
+    } catch (e) { return json({ error: 'last_model', detail: String(e && e.message || e) }, 400); }
   }
 
   // ===== Phase 5 — Dashboard Statistics =====
