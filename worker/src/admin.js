@@ -18,54 +18,49 @@ export const ADMIN_HTML = `<!DOCTYPE html>
 <title>CMS Manager — AI Creative Studio</title>
 <style>
 *{box-sizing:border-box}
-body{margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#F4F3EE;color:#1A1B1C}
-#loading{padding:40px 20px;text-align:center;color:#6B7280;font-size:14px}
-header{position:sticky;top:0;background:#1b6d96;color:#fff;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;z-index:10}
-.logo{font-weight:700;font-size:16px}
-.user{font-size:12px}
-main{max-width:720px;margin:0 auto;padding:16px}
-.card{background:#fff;border:1px solid #E4E3DD;border-radius:12px;padding:12px;margin-bottom:10px}
-.btn{background:#1b6d96;color:#fff;border:0;border-radius:8px;padding:9px 14px;font-size:13px;cursor:pointer}
-.btn.green{background:#52C41A}
-.btn.red{background:#EA6668}
-.btn.gray{background:#bbb}
-.btn.sm{padding:6px 10px;font-size:12px}
-.btn.active{background:#1b6d96}
-.btn.inactive{background:#ccc;color:#555}
-.err{color:#d33}
-.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600}
-.badge.free{background:#eee;color:#666}
-.badge.pro{background:#d4edda;color:#155724}
-select,input,textarea{width:100%;font-size:14px;padding:9px;border:1px solid #ccc;border-radius:8px;font-family:inherit;background:#fff}
-select,input{width:auto}
-textarea{min-height:64px;resize:vertical}
-label{display:block;font-size:12px;font-weight:600;margin:10px 0 3px}
-.hidden{display:none}
-.overlay{position:fixed;inset:0;background:rgba(0,0,0,0.4);overflow-y:auto;z-index:50;padding:16px}
-.form{max-width:680px;margin:0 auto}
-.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-.user-row{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
-.user-meta{font-size:11px;color:#6B7280;margin-top:2px}
+:root{--bg:#f5f7fb;--panel:#ffffff;--line:#e5e7eb;--text:#111827;--muted:#6b7280;--accent:#1b6d96;--soft:#eef6fa}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text)}
+#loading{padding:40px 20px;text-align:center;color:var(--muted);font-size:14px}
+.app-shell{min-height:100vh;display:grid;grid-template-columns:240px 1fr}
+.sidebar{position:sticky;top:0;height:100vh;background:#111827;color:#fff;padding:18px 14px;display:flex;flex-direction:column}
+.brand{padding:6px 10px 20px;border-bottom:1px solid rgba(255,255,255,.1);margin-bottom:16px}.brand-title{font-weight:800;font-size:16px}.brand-sub{font-size:11px;color:#9ca3af;margin-top:3px}
+.nav-label{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:#9ca3af;padding:10px 10px 6px}
+.nav-btn{width:100%;text-align:left;border:0;background:transparent;color:#d1d5db;padding:10px 12px;border-radius:9px;font-size:13px;cursor:pointer;margin:2px 0}.nav-btn:hover{background:rgba(255,255,255,.07);color:#fff}.nav-btn.active{background:#1b6d96;color:#fff;font-weight:700}.nav-group{margin-top:5px}.sidebar-footer{margin-top:auto;padding-top:12px;border-top:1px solid rgba(255,255,255,.1)}
+.content{min-width:0}.topbar{height:64px;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 24px;position:sticky;top:0;z-index:10}.page-title{font-size:18px;font-weight:800}.page-sub{font-size:11px;color:var(--muted);margin-top:2px}.user{font-size:12px;color:var(--muted)}.user a{color:var(--accent);text-decoration:none;font-weight:600}
+main{max-width:1180px;margin:0 auto;padding:24px}.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:12px;box-shadow:0 1px 2px rgba(0,0,0,.03)}.btn{background:var(--accent);color:#fff;border:0;border-radius:8px;padding:9px 14px;font-size:13px;cursor:pointer}.btn.green{background:#16a34a}.btn.red{background:#dc2626}.btn.gray{background:#d1d5db;color:#374151}.btn.sm{padding:6px 10px;font-size:12px}.btn.active{background:var(--accent)}.btn.inactive{background:#e5e7eb;color:#374151}.err{color:#b91c1c}.badge{display:inline-block;padding:3px 8px;border-radius:999px;font-size:11px;font-weight:700}.badge.free{background:#f3f4f6;color:#4b5563}.badge.pro{background:#dcfce7;color:#166534}.status-dot{display:inline-flex;align-items:center;gap:5px}.status-dot:before{content:'';width:7px;height:7px;border-radius:50%;background:#22c55e}.status-dot.off:before{background:#9ca3af}
+select,input,textarea{width:100%;font-size:14px;padding:9px;border:1px solid #d1d5db;border-radius:8px;font-family:inherit;background:#fff}select,input{width:auto}textarea{min-height:72px;resize:vertical}label{display:block;font-size:12px;font-weight:700;margin:10px 0 4px}.hidden{display:none}.overlay{position:fixed;inset:0;background:rgba(17,24,39,.5);overflow-y:auto;z-index:50;padding:24px}.form{max-width:760px;margin:0 auto}.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.user-row{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}.user-meta{font-size:11px;color:var(--muted);margin-top:3px}.stat-grid{display:grid;grid-template-columns:repeat(6,minmax(120px,1fr));gap:10px}.stat{background:#f8fafc;border:1px solid var(--line);border-radius:12px;padding:14px}.stat-label{font-size:11px;color:var(--muted)}.stat-value{font-size:22px;font-weight:800;margin-top:5px;color:var(--accent)}.section-title{font-size:14px;font-weight:800;margin-bottom:4px}.hint{font-size:12px;color:var(--muted)}.system-card{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px;border:1px solid var(--line);border-radius:12px;background:#fff;margin-bottom:8px}.system-card h4{margin:0;font-size:14px}.system-card p{margin:3px 0 0;color:var(--muted);font-size:11px}
+details{border:1px solid var(--line);border-radius:10px;margin-top:14px;padding:10px}details summary{cursor:pointer;font-size:12px;font-weight:800;color:#374151}
+@media(max-width:900px){.app-shell{grid-template-columns:1fr}.sidebar{position:relative;height:auto;padding:12px}.brand{margin-bottom:8px}.nav-label{display:none}.nav-group{display:flex;gap:4px;overflow:auto}.nav-btn{white-space:nowrap;width:auto}.sidebar-footer{display:none}.topbar{position:sticky}.stat-grid{grid-template-columns:repeat(3,minmax(110px,1fr))}main{padding:16px}}
+@media(max-width:560px){.stat-grid{grid-template-columns:repeat(2,minmax(100px,1fr))}.topbar{padding:0 14px}}
 </style>
 </head>
 <body>
 <div id="loading">⏳ Loading admin panel...</div>
 <div id="app" class="hidden">
-<header>
-  <div class="logo">🗂️ Admin Panel</div>
-  <div class="user"><span id="userBox"></span> · <a href="/app" style="color:#fff;">→ App</a></div>
-</header>
-<main>
-  <div class="card row" style="gap:4px;">
-    <button class="btn active" id="tabDashboard" onclick="switchTab('dashboard')">📊 Dashboard</button>
-    <button class="btn inactive" id="tabCms" onclick="switchTab('cms')">📋 CMS</button>
-    <button class="btn inactive" id="tabUsers" onclick="switchTab('users')">👥 Users</button>
-    <button class="btn inactive" id="tabStudios" onclick="switchTab('studios')">🎛️ Studios</button>
-    <button class="btn inactive" id="tabFeatures" onclick="switchTab('features')">⚙️ Features</button>
-    <button class="btn inactive" id="tabModels" onclick="switchTab('models')">🤖 AI Models</button>
-    <button class="btn inactive" id="tabUsage" onclick="switchTab('usage')">📈 Usage</button>
-    <button class="btn inactive" id="tabLogs" onclick="switchTab('logs')">🧾 Logs</button>
-  </div>
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="brand"><div class="brand-title">✦ AI Creative Studio</div><div class="brand-sub">Admin Center</div></div>
+    <div class="nav-label">Overview</div>
+    <button class="nav-btn active" id="tabDashboard" onclick="switchTab('dashboard')">⌂ Overview</button>
+    <div class="nav-label">Manage</div>
+    <button class="nav-btn" id="tabUsers" onclick="switchTab('users')">♙ Users</button>
+    <button class="nav-btn" id="tabStudios" onclick="switchTab('studios')">✦ AI Studios</button>
+    <div class="nav-label">System</div>
+    <div class="nav-group">
+      <button class="nav-btn" id="tabCms" onclick="switchTab('cms')">▣ Content / CMS</button>
+      <button class="nav-btn" id="tabFeatures" onclick="switchTab('features')">◈ Plans & Features</button>
+      <button class="nav-btn" id="tabModels" onclick="switchTab('models')">◇ AI Models</button>
+      <button class="nav-btn" id="tabUsage" onclick="switchTab('usage')">▥ Usage</button>
+      <button class="nav-btn" id="tabLogs" onclick="switchTab('logs')">≡ Activity</button>
+    </div>
+    <div class="sidebar-footer"><button class="nav-btn" onclick="location.href='/app'">↗ Open User App</button></div>
+  </aside>
+  <section class="content">
+    <header class="topbar">
+      <div><div class="page-title" id="pageTitle">Overview</div><div class="page-sub">Manage your AI Creative Studio from one place</div></div>
+      <div class="user"><span id="userBox"></span> · <a href="/app">Open App →</a></div>
+    </header>
+    <main>
   <div id="dashboardView">
     <div class="card row" style="gap:8px;">
       <button class="btn" onclick="loadDashboard()">⟳ Refresh</button>
@@ -77,41 +72,41 @@ label{display:block;font-size:12px;font-weight:600;margin:10px 0 3px}
     <div class="card row">
       <select id="fStudio"></select>
       <select id="fPlan">
-        <option value="">Plan (all)</option>
+        <option value="">Plan — အားလုံး</option>
         <option value="FREE">FREE</option>
         <option value="PRO">PRO</option>
       </select>
-      <input id="fType" placeholder="Sub-Type (1-5)" style="width:110px;">
+      <input id="fType" placeholder="Type (1-5)" style="width:110px;">
       <button class="btn" onclick="load()">⟳ Refresh</button>
-      <button class="btn green" onclick="addEdit(null)">＋ Add New</button>
+      <button class="btn green" onclick="addEdit(null)">＋ အသစ်ထည့်ရန်</button>
     </div>
     <div id="list"></div>
   </div>
   <div id="usersView" class="hidden">
     <div class="card row">
       <button class="btn" onclick="loadUsers()">⟳ Refresh</button>
-      <span style="font-size:12px;color:#6B7280;">Tap button to toggle user plan</span>
+      <span class="hint">User တစ်ယောက်ချင်းစီ၏ FREE / PRO Plan ကို စီမံပါ</span>
     </div>
     <div id="usersList"></div>
   </div>
   <div id="studiosView" class="hidden">
     <div class="card row">
       <button class="btn" onclick="loadStudios()">⟳ Refresh</button>
-      <span style="font-size:12px;color:#6B7280;">Studio ကို ON/OFF ပြုလုပ်ပါက User App ၏ Sidebar နှင့် Access ချက်ချင်း ပြောင်းပါမည်</span>
+      <span class="hint">User App မှာ ပြသမည့် AI Studio များကို ဖွင့် / ပိတ်နိုင်သည်</span>
     </div>
     <div id="studiosList"></div>
   </div>
   <div id="featuresView" class="hidden">
     <div class="card row">
       <button class="btn" onclick="loadFeatures()">⟳ Refresh</button>
-      <span style="font-size:12px;color:#6B7280;">Free/Pro Feature ကို Code မပြင်ဘဲ ဤနေရာမှ ထိန်းချုပ်နိုင်သည် (Rule 15)</span>
+      <span class="hint">FREE / PRO အတွက် Feature access နှင့် limit များကို စီမံပါ</span>
     </div>
     <div id="featuresList"></div>
   </div>
   <div id="modelsView" class="hidden">
     <div class="card row">
       <button class="btn" onclick="loadModels()">⟳ Refresh</button>
-      <span style="font-size:12px;color:#6B7280;">AI Model များကို Code မပြင်ဘဲ ထည့်/ပြင်/ဖွင့်/ပိတ်/ဖျက် လုပ်နိုင်သည် (Phase C) — User တို့သည် Studio မှ Model ရွေးသုံးနိုင်မည်</span>
+      <span class="hint">AI Model ထည့်ခြင်း၊ default သတ်မှတ်ခြင်းနှင့် access ကို စီမံပါ</span>
     </div>
     <div class="card row" style="gap:6px;">
       <button id="mfAll" class="btn sm active" onclick="mfPlan('')">အားလုံး</button>
@@ -130,7 +125,7 @@ label{display:block;font-size:12px;font-weight:600;margin:10px 0 3px}
   <div id="usageView" class="hidden">
     <div class="card row">
       <button class="btn" onclick="loadUsage()">⟳ Refresh</button>
-      <span style="font-size:12px;color:#6B7280;">သုံးစွဲမှု Statistics — Daily + Top Users</span>
+      <span class="hint">နေ့စဉ် AI သုံးစွဲမှုနှင့် အများဆုံးအသုံးပြုသူများကို ကြည့်ပါ</span>
     </div>
     <div class="card"><b>📅 နေ့အလိုက် သုံးစွဲမှု</b><div id="usageDaily"></div></div>
     <div class="card"><b>🏆 Top Users</b><div id="usageTop"></div></div>
@@ -138,27 +133,30 @@ label{display:block;font-size:12px;font-weight:600;margin:10px 0 3px}
   <div id="logsView" class="hidden">
     <div class="card row">
       <button class="btn" onclick="loadLogs()">⟳ Refresh</button>
-      <span style="font-size:12px;color:#6B7280;">Admin လုပ်ဆောင်ချက် မှတ်တမ်း (Audit)</span>
+      <span class="hint">Admin ပြုလုပ်ခဲ့သည့် ပြောင်းလဲမှုများကို စစ်ဆေးပါ</span>
     </div>
     <div id="logsList"></div>
   </div>
 </main>
+</section>
+</div>
 <div id="formWrap" class="hidden">
   <div class="overlay">
     <div class="card form">
       <h3 id="formTitle" style="margin:0 0 4px;">+ CMS Row</h3>
       <label>Studio</label><select id="iStudio"></select>
-      <label>Plan</label>
-      <select id="iPlan"><option value="FREE">FREE</option><option value="PRO">PRO</option></select>
-      <label>Type (Sub-Type 1-5)</label><input id="iType" value="1" style="width:90px;">
-      <label>core</label><textarea id="iCore"></textarea>
-      <label>memory</label><textarea id="iMemory"></textarea>
-      <label>knowledge</label><textarea id="iKnowledge"></textarea>
-      <label>workflow</label><textarea id="iWorkflow"></textarea>
-      <label>template</label><textarea id="iTemplate"></textarea>
-      <label>prompt</label><textarea id="iPrompt"></textarea>
-      <label>quality_check</label><textarea id="iQuality_check"></textarea>
-      <label>final_output</label><textarea id="iFinal_output"></textarea>
+      <label>Plan</label><select id="iPlan"><option value="FREE">FREE</option><option value="PRO">PRO</option></select>
+      <label>Type</label><input id="iType" value="1" style="width:90px;">
+      <details open><summary>AI Content Settings</summary>
+        <label>Core — အဓိက ရည်ရွယ်ချက်</label><textarea id="iCore"></textarea>
+        <label>Memory — Context / မှတ်ဉာဏ်</label><textarea id="iMemory"></textarea>
+        <label>Knowledge — အသိပညာ / Reference</label><textarea id="iKnowledge"></textarea>
+        <label>Workflow — လုပ်ဆောင်ပုံ</label><textarea id="iWorkflow"></textarea>
+        <label>Template — Output ပုံစံ</label><textarea id="iTemplate"></textarea>
+        <label>Prompt — AI ညွှန်ကြားချက်</label><textarea id="iPrompt"></textarea>
+        <label>Quality Check — အရည်အသွေးစစ်ဆေးမှု</label><textarea id="iQuality_check"></textarea>
+        <label>Final Output — နောက်ဆုံး Output</label><textarea id="iFinal_output"></textarea>
+      </details>
       <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;">
         <button class="btn" onclick="save()">💾 Save</button>
         <button class="btn gray" onclick="closeForm()">Cancel</button>
@@ -233,8 +231,11 @@ function fillStudios(){
 
 function switchTab(tab){
   currentTab=tab;
+  var titles={dashboard:'Overview',cms:'Content / CMS',users:'Users',studios:'AI Studios',features:'Plans & Features',models:'AI Models',usage:'Usage',logs:'Activity'};
+  if($('pageTitle')) $('pageTitle').textContent=titles[tab]||'Admin Center';
   ['dashboard','cms','users','studios','features','models','usage','logs'].forEach(function(t){
-    $('tab'+t.charAt(0).toUpperCase()+t.slice(1)).className='btn '+(tab===t?'active':'inactive');
+    var b=$('tab'+t.charAt(0).toUpperCase()+t.slice(1));
+    if(b)b.className='nav-btn '+(tab===t?'active':'');
     $(t+'View').classList.toggle('hidden',tab!==t);
   });
   if(tab==='users') loadUsers();
