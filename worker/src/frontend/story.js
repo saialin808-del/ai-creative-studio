@@ -127,6 +127,12 @@ ${renderSidebar('story', { variant: 'studio' })}
 <div class="main">
 <div id="loginView" class="login-prompt" style="display:none;"><h2>Login လုပ်ရန် လိုအပ်ပါသည်</h2><p>Story Studio ကို အသုံးပြုရန် Google နဲ့ Login ဝင်ပါ။</p><a href="/api/auth/login?next=/app/story" class="btn btn-primary">Google နဲ့ Login</a></div>
 <div id="appView">
+<div class="card" style="padding:14px 18px;margin-bottom:16px;">
+<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+<label style="margin:0;white-space:nowrap;font-weight:600;">&#129302; AI Model</label>
+<select id="aiModelSel" data-category="text" style="max-width:340px;flex:1;"></select>
+<span style="font-size:11.5px;color:var(--text3);">ရွေးထားသော Model ဖြင့် Generate လုပ်ပါမည်</span>
+</div></div>
 <div class="tabs">
 <button class="tab active" onclick="switchTab(1)">Tab 1 — ဇာတ်လမ်းဖန်တီးရန်</button>
 <button class="tab" onclick="switchTab(2)">Tab 2 — ဗီဒီယိုဖန်တီးရန်</button>
@@ -255,7 +261,7 @@ var FIELD_CONFIG=[
 })();
 
 function switchTab(n){var tabs=document.querySelectorAll('.tab'),contents=document.querySelectorAll('.tab-content');for(var i=0;i<tabs.length;i++)tabs[i].classList.remove('active');for(var i=0;i<contents.length;i++)contents[i].classList.remove('active');tabs[n-1].classList.add('active');document.getElementById('tab'+n).classList.add('active');document.getElementById('sidebar').classList.remove('open');}
-function apiCall(url,body){return fetch(url,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify(body)}).then(function(res){return res.json().then(function(data){if(!res.ok)throw new Error(data.detail||data.error||'Request failed');return data;});});}
+function apiCall(url,body){var s=document.getElementById('aiModelSel');if(s&&s.value)body.model=s.value;return fetch(url,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify(body)}).then(function(res){return res.json().then(function(data){if(!res.ok)throw new Error(data.detail||data.error||'Request failed');return data;});});}
 
 function buildTypeChips(containerId,types,prefix){
   var c=document.getElementById(containerId);c.innerHTML='';

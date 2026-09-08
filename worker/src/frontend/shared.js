@@ -376,5 +376,35 @@ export function sidebarScript() {
     '    else if (h === \'/app/creations\') sbL[j].classList.remove(\'active\');\n' +
     '  }\n' +
     '})();\n' +
+    '// ===== Phase C — Studio AI Model Selector (User ရွေးသုံးနိုင်သည်) =====\n' +
+    '// စာမျက်နှာထဲတွင် <select id="aiModelSel" data-category="text|image|voice"> ရှိပါက အလိုအလျောက် ဖြည့်ပေးသည်\n' +
+    '(function () {\n' +
+    '  var sel = document.getElementById(\'aiModelSel\');\n' +
+    '  if (!sel) return;\n' +
+    '  var cat = sel.getAttribute(\'data-category\') || \'text\';\n' +
+    '  var saved = \'\';\n' +
+    '  try { saved = localStorage.getItem(\'aics_default_model\') || \'\'; } catch (e) {}\n' +
+    '  function fill(opts, selected) {\n' +
+    '    if (!opts || opts.length === 0) { sel.innerHTML = \'<option value="">(Model မရှိ)</option>\'; return; }\n' +
+    '    var html = \'\';\n' +
+    '    for (var i = 0; i < opts.length; i++) {\n' +
+    '      var m = opts[i];\n' +
+    '      var isSel = m.id === selected;\n' +
+    '      html += \'<option value="\' + m.id + \'"\' + (isSel ? \' selected\' : \'\') + \'>\' + String(m.name || m.id) + \'</option>\';\n' +
+    '    }\n' +
+    '    sel.innerHTML = html;\n' +
+    '    if (!sel.value) sel.value = opts[0].id;\n' +
+    '  }\n' +
+    '  fetch(\'/api/ai-models?category=\' + encodeURIComponent(cat), { headers: { \'Authorization\': \'Bearer \' + SB_TOKEN } })\n' +
+    '    .then(function (r) { return r.json(); })\n' +
+    '    .then(function (d) {\n' +
+    '      if (!d || d.error || !d.items || d.items.length === 0) { sel.innerHTML = \'<option value="">(Model မရှိ)</option>\'; return; }\n' +
+    '      fill(d.items, saved);\n' +
+    '    })\n' +
+    '    .catch(function () { sel.innerHTML = \'<option value="">(Default)</option>\'; });\n' +
+    '  sel.addEventListener(\'change\', function () {\n' +
+    '    try { localStorage.setItem(\'aics_default_model\', sel.value); } catch (e) {}\n' +
+    '  });\n' +
+    '})();\n' +
     '</script>';
 }

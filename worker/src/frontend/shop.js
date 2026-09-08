@@ -149,6 +149,12 @@ audio { width:100%; margin-top:10px; }
   ${renderSidebar('shop', { variant: 'studio' })}
   <main class="main">
     <h1 class="page-title">🛒 Shop Studio</h1>
+<div class="card" style="padding:14px 18px;margin-bottom:16px;">
+<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+<label style="margin:0;white-space:nowrap;font-weight:600;">&#129302; AI Model</label>
+<select id="aiModelSel" data-category="text" style="max-width:340px;flex:1;"></select>
+<span style="font-size:11.5px;color:var(--text3);">ရွေးထားသော Model ဖြင့် Generate လုပ်ပါမည်</span>
+</div></div>
     <div class="tabs">
       <button class="tab active" onclick="switchTab('content')">📝 Content Maker</button>
       <button class="tab" onclick="switchTab('video')">🎥 Video Maker</button>
@@ -313,6 +319,8 @@ var CONTENT_FIELDS = [
 
 function api(path, opts) {
   opts = opts || {};
+  var s = document.getElementById('aiModelSel');
+  if (s && s.value && opts.body) opts.body.model = s.value;
   var headers = opts.headers || {};
   headers['Content-Type'] = 'application/json';
   if (TOKEN) headers['Authorization'] = 'Bearer ' + TOKEN;

@@ -105,7 +105,8 @@ ${renderSidebar('settings')}
       </div>
       <div class="form-row">
         <label>ပုံမှန် AI Model</label>
-        <input id="pref_model" class="form-input" type="text" placeholder="gemini-3.6-flash">
+        <select id="pref_model" class="form-select"><option value="">Loading…</option></select>
+        <span style="font-size:11px;color:var(--text3);">Studio များတွင် ရွေးထားသော Model ကို ဤနေရာမှ ပုံသေထားနိုင်သည် (Phase C)</span>
       </div>
       <div class="form-row">
         <label>ဘာသာစကား (Language)</label>
@@ -163,7 +164,20 @@ function loadSettings(){
       '<div class="profile-row"><span class="profile-label">📊 အသုံးပြုမှု</span><span class="profile-value">AI: '+(u.ai_requests||0)+' · ပုံ: '+(u.image_generations||0)+' · အသံ: '+(u.voice_generations||0)+'</span></div>';
     document.getElementById('pref_studio').value=s.default_studio||'story';
     document.getElementById('pref_voice').value=s.default_voice||'Kore';
-    document.getElementById('pref_model').value=s.default_model||'gemini-3.6-flash';
+    var pm=document.getElementById('pref_model');
+    pm.value=s.default_model||'';
+    if(!pm.value&&pm.options.length>1)pm.value=pm.options[1].value;
+    try{localStorage.setItem('aics_default_model',pm.value);}catch(e){}
+    (function(){
+      fetch('/api/ai-models',{headers:{'Authorization':'Bearer '+TOKEN}}).then(function(r){return r.json();}).then(function(d){
+        if(!d||d.error||!d.items||d.items.length===0)return;
+        var cur=pm.value;
+        var html='';
+        d.items.forEach(function(m){html+='<option value="'+escapeHtml(m.id)+'"'+(m.id===cur?' selected':'')+'>'+escapeHtml(m.name||m.id)+'</option>';});
+        pm.innerHTML=html;
+        if(!pm.value&&pm.options.length>0)pm.value=pm.options[0].value;
+      }).catch(function(){});
+    })();
     document.getElementById('pref_lang').value=s.language||'my';
     document.getElementById('pref_theme').value=s.theme||'dark';
     loadKeyStatus();

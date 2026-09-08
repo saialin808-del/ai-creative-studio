@@ -600,6 +600,13 @@ select option { background: var(--bg-card); color: var(--text); }
       <a href="/api/auth/login?next=/app/short" class="btn btn-primary">Google နဲ့ Login</a>
     </div>
     <div id="appView">
+<div class="card" style="padding:14px 18px;margin-bottom:16px;">
+<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+<label style="margin:0;white-space:nowrap;font-weight:600;">&#129302; AI Model</label>
+<select id="aiModelSel" data-category="text" style="max-width:340px;flex:1;"></select>
+<span style="font-size:11.5px;color:var(--text3);">ရွေးထားသော Model ဖြင့် Generate လုပ်ပါမည်</span>
+</div></div>
+
       <h1 class="page-title">&#127916; Short Studio</h1>
       <div class="tabs">
         <button class="tab active" onclick="switchTab(1)">&#127916; ဇာတ်ညွှန်းအတို ဖန်တီးရန်</button>
@@ -799,6 +806,8 @@ function collectIdeaText() {
 }
 
 function apiCall(url, body) {
+  var s = document.getElementById('aiModelSel');
+  if (s && s.value) body.model = s.value;
   return fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
