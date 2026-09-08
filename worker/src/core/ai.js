@@ -101,9 +101,11 @@ async function callGeminiMultimodal(env, { model, prompt, images, apiKey }) {
 }
 
 // ===== TTS (Text → Audio) — Voice Studio. Gemini က PCM Audio ပြန်ပေးသည် =====
-async function callGeminiTTS(env, { text, voiceName, apiKey }) {
+// Phase C — TTS Model ကိုလည်း Admin (ai_models) မှ ထိန်းချုပ်နိုင်သည်
+async function callGeminiTTS(env, { text, voiceName, apiKey, model }) {
   const key = apiKey || env.GEMINI_API_KEY;
   if (!key) throw new Error('no_api_key');
+  const ttsModel = model || 'gemini-3.1-flash-tts-preview';
   const body = {
     contents: [{ parts: [{ text }] }],
     generationConfig: { responseModalities: ['AUDIO'] },
@@ -112,7 +114,7 @@ async function callGeminiTTS(env, { text, voiceName, apiKey }) {
   let lastErr = null;
   for (let attempt = 0; attempt < 3; attempt++) {
     try {
-      const res = await fetch(GEMINI_BASE + '/models/gemini-3.1-flash-tts-preview:generateContent', {
+      const res = await fetch(GEMINI_BASE + '/models/' + ttsModel + ':generateContent', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
         body: JSON.stringify(body),
