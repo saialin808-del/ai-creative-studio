@@ -293,7 +293,8 @@ function loadModels(){
       html+='<div class="card"><div class="user-row"><div><b>'+esc(m.name||m.id)+'</b> <span style="font-size:11px;color:#6B7280;">('+mid+')</span>'+
         '<div class="user-meta">'+catLabel(m.category)+' · '+(m.plan_access==='PRO'?'<span class="badge pro">PRO သာ</span>':'<span class="badge free">လူတိုင်း</span>')+
         (m.is_default?' · <span class="badge pro">★ မူရင်း</span>':'')+'</div></div>'+
-        '<div class="row" style="gap:6px;">'+
+        '<div class="row" style="gap:6px;margin-top:6px;">'+
+        '<input id="nm_'+mid+'" value="'+esc(m.name||m.id)+'" placeholder="ပြမည့်နာမည်" style="flex:2;min-width:110px;">'+
         '<select id="pm_'+mid+'"><option value="FREE"'+(m.plan_access!=='PRO'?' selected':'')+'>လူတိုင်း</option><option value="PRO"'+(m.plan_access==='PRO'?' selected':'')+'>PRO သာ</option></select>'+
         '<button class="btn sm" onclick="saveModel(\\''+mid+'\\')">💾 Save</button>'+
         '<button class="btn sm '+(m.enabled?'red':'green')+'" data-on="'+(m.enabled?'1':'0')+'" onclick="toggleModel(\\''+mid+'\\',this)">'+(m.enabled?'⏻ ပိတ်မည်':'⏻ ဖွင့်မည်')+'</button>'+
@@ -320,7 +321,10 @@ function addModel(){
   }).catch(function(e){alert('Network error: '+(e&&e.message||e));});
 }
 function saveModel(id){
-  api('/api/admin/models/'+id,'PUT',{plan_access:$('pm_'+id).value}).then(function(d){
+  var payload={plan_access:$('pm_'+id).value};
+  var nm=$('nm_'+id);
+  if(nm&&String(nm.value||'').trim())payload.name=String(nm.value).trim();
+  api('/api/admin/models/'+id,'PUT',payload).then(function(d){
     if(d.ok){loadModels();}else{alert('ERROR: '+(d.detail||d.error||'unknown'));}
   }).catch(function(e){alert('Network error: '+(e&&e.message||e));});
 }
