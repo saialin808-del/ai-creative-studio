@@ -81,3 +81,26 @@ Every page is rendered server-side by `index.js` from a JS template module in `w
 - All pages share ONE hamburger style defined in `frontend/shared.js` (`responsiveStyles`): `position:fixed; top:14px; left:14px; z-index:300; background:#151b2b; border:1px solid #2a3350; white icon; 44×44px; radius 10px`.
 - App pages use `.hamburger`, studio pages use `.menu-btn` — both render identically (same position, color, size) on every page.
 - On phones, studio headers get `padding-left:64px` so the logo never collides with the fixed button.
+
+## 7. AI Model Service (Phase C — Phase 14)
+
+```
+Admin Panel ──(PUT/POST/DELETE /api/admin/models)──► ai_models (D1)
+      ▲                                                     │
+      │ getAiModels (registry + DB merge)                   ▼
+  User App ──(GET /api/ai-models?category=text|image|voice)──► listEnabledModels
+      │                                                       (enabled + plan filter)
+      ▼
+Studio pages: AI Model dropdown (#aiModelSel, data-category)
+      │ body.model
+      ▼
+index.js studio endpoints ──► resolveModel(userChoice, plan, category)
+                                   │
+                                   ▼
+                  studios/*.js call Gemini with the resolved model
+```
+
+- `resolveModel` priority: **user-selected** (enabled + plan + category match) → **admin default** (`is_default`) → registry/DEFAULT fallback.
+- PRO-only models (`plan_access='PRO'`) are hidden from FREE users on the server (list + resolution), never just in the UI.
+- `core/ai.js` `callGeminiTTS` now accepts a `model` parameter (TTS model is also admin-controlled).
+- Last-model protection: Admin cannot disable/delete the **only enabled model** of a category — the app can never lose its fallback.

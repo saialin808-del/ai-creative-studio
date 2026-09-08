@@ -93,3 +93,19 @@ Create `worker/migrations/009_xxx.sql` (additive `CREATE TABLE` / `ALTER TABLE .
 - `GET /login` — valid session → `302 /app` (remember session, Rule 14).
 - `GET /api/auth/session` — returns `{token, email, plan}` when the cookie is valid (lets the sidebar restore a session when `localStorage` is empty).
 - Email/password Sign In & Sign Up now also set the `aics_token` cookie so browser navigation to `/app` works after login.
+
+### ai_models — Phase C (010)
+
+| Column | Type | Notes |
+|---|---|---|
+| id | TEXT PK | Gemini model id, e.g. `gemini-3.6-flash` |
+| name | TEXT | Display name (Myanmar) |
+| category | TEXT | `text` / `image` / `voice` |
+| enabled | INTEGER | 1/0 — disabled models never reach users |
+| is_default | INTEGER | 1 = this category's default |
+| plan_access | TEXT | `FREE` or `PRO` |
+| updated_at | TEXT | |
+
+- Seeded with the 3 original built-ins (`010_create_ai_models.sql`).
+- Admin upserts via `core/aiModels.js`; the registry in `config/models.js` is the code-side fallback if the table is empty.
+- Rule: never allow disabling/deleting the last enabled model of a category.

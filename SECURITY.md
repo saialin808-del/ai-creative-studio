@@ -65,3 +65,10 @@
 - Google OAuth remains the primary authentication path; email/password is an optional convenience. `password_hash` is **never** returned by any API.
 - Session is unchanged: stateless JWT (7-day expiry) in `localStorage` + HttpOnly cookie fallback for browser navigation (`/admin`, `/login` redirects). Logout clears both.
 - Sign in / sign up error messages do not reveal whether an email exists.
+
+## AI Models security (Phase C — Phase 14)
+
+- `GET /api/ai-models` requires a valid JWT; the response is filtered **server-side** by `enabled` and by the user's plan (PRO-only models are never returned to FREE users).
+- `resolveModel` re-validates user-supplied model ids server-side; a disabled/PRO/unknown id falls back to the admin default — the user cannot force a model they aren't allowed to use.
+- Admin model endpoints (`/api/admin/models*`) go through the same server-side admin role check as every other admin route.
+- Model ids are treated as opaque strings (no dynamic imports / code execution); they are only concatenated into the Gemini REST URL path after an allow-list check (`listEnabledModels`).

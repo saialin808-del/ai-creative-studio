@@ -70,3 +70,14 @@ See **ARCHITECTURE.md**, **DATABASE.md**, **STUDIOS.md**, **ADMIN.md**, **SECURI
 ## 📝 Note on placeholders
 
 `SITE_LINKS` (Telegram / Facebook) in `worker/src/config/studios.js` are placeholders — replace with your real links before launch.
+
+## 🤖 AI Models (Phase C — Phase 14)
+
+- **Before (hard-coded):** every Studio file (`studios/*.js`) had `TEXT_MODEL` / `IMAGE_MODEL` constants and `core/ai.js` hard-coded the TTS model. Changing a model meant editing code + redeploying.
+- **Now (Admin-controlled):**
+  - `config/models.js` — built-in registry (`AI_MODEL_REGISTRY`, 3 models) + fallback defaults.
+  - `worker/migrations/010_create_ai_models.sql` — `ai_models` table, seeded with the 3 built-in models.
+  - `core/aiModels.js` — `getAiModels` (registry + DB merge), `listEnabledModels` (enabled + plan filter), `resolveModel` (user choice → admin default → fallback), `setAiModel` / `deleteAiModel` (with last-model protection).
+  - **Admin → AI Models** — add / rename / enable / disable / set default / delete any Google Gemini model **without touching code**.
+  - **User side** — every Studio shows an **AI Model dropdown** (filtered by category + plan); Settings → ပုံမှန် AI Model is now a real dropdown; the selected model is sent with every request (`body.model`) and used by the server.
+- **Deploy for this phase:** `wrangler d1 migrations apply <DB_NAME> --remote` **then** `wrangler deploy --env prod` (two steps — this phase adds a migration).

@@ -59,3 +59,10 @@ Existing six studios are unaffected.
 | shop | content/generate, content/revise, video/generate, video-image |
 
 Legacy: `/api/studio/generate` (generic) remains for backward compatibility.
+
+## AI Model dropdown (Phase C — Phase 14)
+
+- Every Studio page now shows an **AI Model** dropdown at the top (`#aiModelSel`, category = `text` for Story/Content/Short/Shop, `image` for Image, `voice` for Voice).
+- It is populated from `GET /api/ai-models?category=<cat>` (logged-in, plan-filtered) and remembers the user's choice in `localStorage.aics_default_model`.
+- The selected id is sent as `body.model` with every request; the server resolves the final model via `core/aiModels.js` (user choice → admin default → fallback).
+- Settings → ပုံမှန် AI Model is the same dropdown (all categories) so the user can set a global default.

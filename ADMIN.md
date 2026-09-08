@@ -40,3 +40,13 @@ Key admin actions write a row to `admin_logs` (best-effort): CMS create/update/d
 ## Do not
 
 - Do **not** hide admin buttons in the UI and call that security — every admin API re-checks the role on the server.
+
+## 🤖 AI Models tab (Phase C — Phase 14)
+
+- **ထည့်ရန် (Add):** fill Model ID (real Google Gemini id), ပြမည့်နာမည်, category (စာသား/ပုံ/အသံ), plan (လူတိုင်း/PRO သာ) → ＋ Add.
+- **ပြင်ရန် (Update):** change plan with the per-row dropdown → 💾 Save.
+- **ဖွင့်/ပိတ် (Toggle):** ⏻ button — disabled models disappear from every user dropdown immediately.
+- **မူရင်း (Default):** ★ sets this model as the category default (used when the user doesn't pick one).
+- **ဖျက် (Delete):** 🗑 removes the model.
+- The system refuses to disable/delete the **last enabled model** of a category (protection rule), and any model id that does not exist in Google's Gemini API will produce an error when users generate — double-check ids.
+- Logs every change in Admin → Logs (`model_create` / `model_update` / `model_delete`).
