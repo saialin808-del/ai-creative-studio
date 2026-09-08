@@ -7,7 +7,7 @@
 // ============================================================
 
 export const AI_MODEL_REGISTRY = [
-  { id: 'gemini-3.6-flash', name: 'Gemini 3.6 Flash (စာသား)', category: 'text', enabled: true, is_default: true, plan_access: 'FREE' },
+  { id: 'gemini-3.6-flash', name: 'သာမန်', category: 'text', enabled: true, is_default: true, plan_access: 'FREE' },
   { id: 'gemini-3.1-flash-image', name: 'Gemini 3.1 Flash Image (ပုံ)', category: 'image', enabled: true, is_default: true, plan_access: 'FREE' },
   { id: 'gemini-3.1-flash-tts-preview', name: 'Gemini 3.1 Flash TTS (အသံ)', category: 'voice', enabled: true, is_default: true, plan_access: 'FREE' },
 ];
