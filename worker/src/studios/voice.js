@@ -38,7 +38,7 @@ export async function transcribeAudio(env, { audioBase64, mimeType, type, plan, 
     ? (system + '\n\nအထက်ပါ instruction အတိုင်း အောက်က Audio ကို Text အဖြစ် တိကျစွာ Transcribe လုပ်ပါ။ Transcribe လုပ်ထားသော Text ကိုသာ ပြန်ပေးပါ။')
     : 'အောက်က Audio ကို Text အဖြစ် တိကျစွာ Transcribe လုပ်ပါ။ Transcribe လုပ်ထားသော Text ကိုသာ ပြန်ပေးပါ။';
   const text = await callGeminiMultimodal(env, {
-    model: await resolveModel(env, 'text', plan, model),
+    model: await resolveModel(env, 'transcribe', plan, model),
     prompt,
     images: [{ mimeType: mimeType || 'audio/mpeg', base64: audioBase64 }],
     apiKey,
@@ -87,7 +87,7 @@ export async function generateVoiceSrt(env, { audioBase64, mimeType, type, plan,
     '\n\nSRT format text ကိုသာ ပြန်ပေးပါ၊ ရှင်းလင်းချက် မထည့်ပါနှင့်။';
 
   const srt = await callGeminiMultimodal(env, {
-    model: await resolveModel(env, 'text', plan, model),
+    model: await resolveModel(env, 'transcribe', plan, model),
     prompt: instruction,
     images: [{ mimeType: mimeType || 'audio/mpeg', base64: audioBase64 }],
     apiKey,
@@ -125,6 +125,6 @@ export async function translateVoiceSrt(env, { srtText, direction, type, plan, a
     'SRT format text ကိုသာ ပြန်ပေးပါ၊ ရှင်းလင်းချက် (explanation) မထည့်ပါနှင့်။\n\n' +
     'SRT:\n' + String(srtText).trim();
 
-  const srt = await callGeminiText(env, { model: await resolveModel(env, 'text', plan, model), prompt: instruction, apiKey });
+  const srt = await callGeminiText(env, { model: await resolveModel(env, 'transcribe', plan, model), prompt: instruction, apiKey });
   return { srt };
 }
