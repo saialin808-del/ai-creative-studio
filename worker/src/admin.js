@@ -81,7 +81,7 @@ label{display:block;font-size:12px;font-weight:600;margin:10px 0 3px}
         <option value="FREE">FREE</option>
         <option value="PRO">PRO</option>
       </select>
-      <input id="fType" placeholder="Type (1-5)" style="width:110px;">
+      <input id="fType" placeholder="Sub-Type (1-5)" style="width:110px;">
       <button class="btn" onclick="load()">⟳ Refresh</button>
       <button class="btn green" onclick="addEdit(null)">＋ Add New</button>
     </div>
@@ -113,6 +113,18 @@ label{display:block;font-size:12px;font-weight:600;margin:10px 0 3px}
       <button class="btn" onclick="loadModels()">⟳ Refresh</button>
       <span style="font-size:12px;color:#6B7280;">AI Model များကို Code မပြင်ဘဲ ထည့်/ပြင်/ဖွင့်/ပိတ်/ဖျက် လုပ်နိုင်သည် (Phase C) — User တို့သည် Studio မှ Model ရွေးသုံးနိုင်မည်</span>
     </div>
+    <div class="card row" style="gap:6px;">
+      <button id="mfAll" class="btn sm active" onclick="mfPlan('')">အားလုံး</button>
+      <button id="mfFree" class="btn sm" onclick="mfPlan('FREE')">လူတိုင်း (FREE)</button>
+      <button id="mfPro" class="btn sm" onclick="mfPlan('PRO')">PRO သာ</button>
+      <select id="mfCat" onchange="mfCat()" style="flex:1;min-width:150px;">
+        <option value="">Category: အားလုံး</option>
+        <option value="text">📝 Text Only</option>
+        <option value="image">🖼️ Image</option>
+        <option value="voice">🎙️ Text → Voice</option>
+        <option value="transcribe">🎧 Voice → Text</option>
+      </select>
+    </div>
     <div id="modelsList"></div>
   </div>
   <div id="usageView" class="hidden">
@@ -138,7 +150,7 @@ label{display:block;font-size:12px;font-weight:600;margin:10px 0 3px}
       <label>Studio</label><select id="iStudio"></select>
       <label>Plan</label>
       <select id="iPlan"><option value="FREE">FREE</option><option value="PRO">PRO</option></select>
-      <label>Type (1-5)</label><input id="iType" value="1" style="width:90px;">
+      <label>Type (Sub-Type 1-5)</label><input id="iType" value="1" style="width:90px;">
       <label>core</label><textarea id="iCore"></textarea>
       <label>memory</label><textarea id="iMemory"></textarea>
       <label>knowledge</label><textarea id="iKnowledge"></textarea>
@@ -165,7 +177,24 @@ window.onerror = function(msg, url, line) {
 var TOKEN_KEY='aics_token';
 var token='';
 try { token = localStorage.getItem(TOKEN_KEY) || ''; } catch(e) {}
-var STUDIOS=['STORY','STORYVIDEO','CONTENT','CONTENTVIDEO','SHORT','SHORTVIDEO','IMAGE','VOICE','SHOPCONTENT','SHOPVIDEO'];
+var STUDIO_GROUPS=[
+  {g:'Story', v:[['STORY','စာသား'],['STORYVIDEO','ဗီဒီယို']]},
+  {g:'Content', v:[['CONTENT','စာသား'],['CONTENTVIDEO','ဗီဒီယို']]},
+  {g:'Short', v:[['SHORT','စာသား'],['SHORTVIDEO','ဗီဒီယို']]},
+  {g:'Image', v:[['IMAGE','ပုံ']]},
+  {g:'Voice', v:[['VOICE','အသံ']]},
+  {g:'Shop', v:[['SHOPCONTENT','စာသား'],['SHOPVIDEO','ဗီဒီယို']]}
+];
+var STUDIOS=[];STUDIO_GROUPS.forEach(function(g){g.v.forEach(function(x){STUDIOS.push(x[0]);});});
+function studioLabel(code){
+  for(var i=0;i<STUDIO_GROUPS.length;i++){
+    var g=STUDIO_GROUPS[i];
+    for(var j=0;j<g.v.length;j++){
+      if(g.v[j][0]===code){ return g.g+' · '+g.v[j][1]; }
+    }
+  }
+  return code;
+}
 var FIELDS=['core','memory','knowledge','workflow','template','prompt','quality_check','final_output'];
 var items=[];
 var users=[];
@@ -189,11 +218,17 @@ function api(path,method,body){
 }
 
 function fillStudios(){
-  var ss=$('fStudio');
-  ss.innerHTML='<option value="">Studio (all)</option>';
-  STUDIOS.forEach(function(x){var o=document.createElement('option');o.value=x;o.textContent=x;ss.appendChild(o);});
-  var fs=$('iStudio');fs.innerHTML='';
-  STUDIOS.forEach(function(x){var o=document.createElement('option');o.value=x;o.textContent=x;fs.appendChild(o);});
+  var mk=function(id,allLabel){
+    var html='<option value="">'+allLabel+'</option>';
+    STUDIO_GROUPS.forEach(function(g){
+      html+='<optgroup label="'+g.g+'">';
+      g.v.forEach(function(x){html+='<option value="'+x[0]+'">'+x[1]+'</option>';});
+      html+='</optgroup>';
+    });
+    $(id).innerHTML=html;
+  };
+  mk('fStudio','Studio (all)');
+  mk('iStudio','— ရွေးပါ —');
 }
 
 function switchTab(tab){
@@ -275,37 +310,56 @@ function toggleFeature(id,btn){
 }
 
 // ===== Phase C — AI Models (ထည့်/ပြင်/ဖွင့်/ပိတ်/ဖျက်) =====
-function catLabel(c){return c==='image'?'🖼️ ပုံ':(c==='voice'?'🎙️ အသံ':(c==='transcribe'?'🎧 အသံ→စာသား':'📝 စာသား'));}
+function catLabel(c){return c==='image'?'🖼️ Image (ပုံ)':(c==='voice'?'🎙️ Text → Voice (အသံ)':(c==='transcribe'?'🎧 Voice → Text (အသံ→စာသား)':'📝 Text Only (စာသား)'));}
+var modelItems=[], mfPlanSel='', mfCatSel='';
+function mfPlan(p){
+  mfPlanSel=p;
+  [['','mfAll'],['FREE','mfFree'],['PRO','mfPro']].forEach(function(pair){
+    $(pair[1]).className='btn sm '+(mfPlanSel===pair[0]?'active':'');
+  });
+  renderModels();
+}
+function mfCat(){ mfCatSel=$('mfCat').value; renderModels(); }
 function loadModels(){
   api('/api/admin/models').then(function(d){
     if(d.error==='forbidden'){location.href='/app';return;}
     if(d.error){$('modelsList').innerHTML='<div class="card"><span class="err">'+(d.detail||d.error)+'</span></div>';return;}
-    var html='<div class="card"><b>＋ Model အသစ် ထည့်ရန်</b>'+
-      '<div class="row" style="margin-top:8px;">'+
-      '<input id="nm_id" placeholder="Model ID (ဥပမာ gemini-2.5-pro)" style="flex:2;min-width:150px;">'+
-      '<input id="nm_name" placeholder="ပြမည့်နာမည်" style="flex:2;min-width:120px;">'+
-      '<select id="nm_cat"><option value="text">📝 စာသား</option><option value="image">🖼️ ပုံ</option><option value="voice">🎙️ အသံ</option><option value="transcribe">🎧 အသံ→စာသား</option></select>'+
-      '<select id="nm_plan"><option value="FREE">လူတိုင်း</option><option value="PRO">PRO သာ</option></select>'+
-      '<button class="btn green" onclick="addModel()">＋ Add</button></div>'+
-      '<div style="font-size:11px;color:#6B7280;margin-top:6px;">⚠️ Model ID သည် Google Gemini API တွင် တကယ်ရှိသော နာမည် ဖြစ်ရမည် — မမှန်ပါက Generate လုပ်သော အခါ အမှား ပြပါမည်။</div></div>';
-    (d.items||[]).forEach(function(m){
-      var mid=esc(m.id);
-      html+='<div class="card"><div class="user-row"><div><b>'+esc(m.name||m.id)+'</b> <span style="font-size:11px;color:#6B7280;">('+mid+')</span>'+
-        '<div class="user-meta">'+catLabel(m.category)+' · '+(m.plan_access==='PRO'?'<span class="badge pro">PRO သာ</span>':'<span class="badge free">လူတိုင်း</span>')+
-        (m.is_default?' · <span class="badge pro">★ မူရင်း</span>':'')+'</div></div>'+
-        '<div class="row" style="gap:6px;margin-top:6px;">'+
-        '<input id="nm_'+mid+'" value="'+esc(m.name||m.id)+'" placeholder="ပြမည့်နာမည်" style="flex:2;min-width:110px;">'+
-        '<select id="pm_'+mid+'"><option value="FREE"'+(m.plan_access!=='PRO'?' selected':'')+'>လူတိုင်း</option><option value="PRO"'+(m.plan_access==='PRO'?' selected':'')+'>PRO သာ</option></select>'+
-        '<button class="btn sm" onclick="saveModel(\\''+mid+'\\')">💾 Save</button>'+
-        '<button class="btn sm '+(m.enabled?'red':'green')+'" data-on="'+(m.enabled?'1':'0')+'" onclick="toggleModel(\\''+mid+'\\',this)">'+(m.enabled?'⏻ ပိတ်မည်':'⏻ ဖွင့်မည်')+'</button>'+
-        '<button class="btn sm '+(m.is_default?'gray':'')+'" onclick="setDefault(\\''+mid+'\\')">★ မူရင်း</button>'+
-        '<button class="btn sm red" onclick="delModel(\\''+mid+'\\')">🗑 ဖျက်</button>'+
-        '</div></div></div>';
-    });
-    $('modelsList').innerHTML=html;
+    modelItems=d.items||[];
+    renderModels();
   }).catch(function(e){
     $('modelsList').innerHTML='<div class="card"><span class="err">Network error: '+esc(String(e&&e.message||e))+'</span></div>';
   });
+}
+function renderModels(){
+  var rows=(modelItems||[]).filter(function(m){
+    if(mfPlanSel&&m.plan_access!==mfPlanSel)return false;
+    if(mfCatSel&&m.category!==mfCatSel)return false;
+    return true;
+  });
+  var html='<div class="card"><b>＋ Model အသစ် ထည့်ရန်</b>'+
+    '<div class="row" style="margin-top:8px;">'+
+    '<input id="nm_id" placeholder="Model ID (ဥပမာ gemini-2.5-pro)" style="flex:2;min-width:150px;">'+
+    '<input id="nm_name" placeholder="ပြမည့်နာမည်" style="flex:2;min-width:120px;">'+
+    '<select id="nm_cat"><option value="text">📝 Text Only (စာသား)</option><option value="image">🖼️ Image (ပုံ)</option><option value="voice">🎙️ Text → Voice (အသံ)</option><option value="transcribe">🎧 Voice → Text (အသံ→စာသား)</option></select>'+
+    '<select id="nm_plan"><option value="FREE">လူတိုင်း</option><option value="PRO">PRO သာ</option></select>'+
+    '<button class="btn green" onclick="addModel()">＋ Add</button></div>'+
+    '<div style="font-size:11px;color:#6B7280;margin-top:6px;">⚠️ Model ID သည် Google Gemini API တွင် တကယ်ရှိသော နာမည် ဖြစ်ရမည် — မမှန်ပါက Generate လုပ်သော အခါ အမှား ပြပါမည်။</div></div>';
+  if(rows.length===0){html+='<div class="card">(ဤအပိုင်းတွင် Model မရှိသေး — အောက်ပါ စစ်ထုတ်မှု ပြောင်းပါ သို့မဟုတ် ＋ Add)</div>';}
+  rows.forEach(function(m){
+    var mid=esc(m.id);
+    html+='<div class="card"><div class="user-row"><div><b>'+esc(m.name||m.id)+'</b> <span style="font-size:11px;color:#6B7280;">('+mid+')</span>'+
+      '<div class="user-meta">'+catLabel(m.category)+' · '+(m.plan_access==='PRO'?'<span class="badge pro">PRO သာ</span>':'<span class="badge free">လူတိုင်း</span>')+
+      (m.is_default?' · <span class="badge pro">★ မူရင်း</span>':'')+'</div></div>'+
+      '<div class="row" style="gap:6px;margin-top:6px;">'+
+      '<input id="nm_'+mid+'" value="'+esc(m.name||m.id)+'" placeholder="ပြမည့်နာမည်" style="flex:2;min-width:110px;">'+
+      '<select id="pm_'+mid+'"><option value="FREE"'+(m.plan_access!=='PRO'?' selected':'')+'>လူတိုင်း</option><option value="PRO"'+(m.plan_access==='PRO'?' selected':'')+'>PRO သာ</option></select>'+
+      '<button class="btn sm" onclick="saveModel(\\''+mid+'\\')">💾 Save</button>'+
+      '<button class="btn sm '+(m.enabled?'red':'green')+'" data-on="'+(m.enabled?'1':'0')+'" onclick="toggleModel(\\''+mid+'\\',this)">'+(m.enabled?'⏻ ပိတ်မည်':'⏻ ဖွင့်မည်')+'</button>'+
+      '<button class="btn sm '+(m.is_default?'gray':'')+'" onclick="setDefault(\\''+mid+'\\')">★ မူရင်း</button>'+
+      '<button class="btn sm red" onclick="delModel(\\''+mid+'\\')">🗑 ဖျက်</button>'+
+      '</div></div></div>';
+  });
+  $('modelsList').innerHTML=html;
 }
 function addModel(){
   var id=($('nm_id').value||'').trim();
@@ -411,7 +465,7 @@ function renderList(){
     var c=document.createElement('div');
     c.className='card';
     c.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">'+
-      '<b>['+esc(it.studio)+' / '+esc(it.plan)+' / '+esc(it.type)+']</b>'+
+      '<div><b>'+esc(studioLabel(it.studio))+'</b> <span class="badge '+(it.plan==='PRO'?'pro':'free')+'">'+esc(it.plan)+'</span> · Sub-Type '+esc(it.type)+'</div>'+
       '<span><button class="btn sm" onclick="copyRow('+it.id+')">📋</button> <button class="btn sm" onclick="addEdit('+it.id+')">✏️</button> <button class="btn sm red" onclick="del('+it.id+')">🗑️</button></span></div>'+
       '<div style="font-size:12px;color:#6B7280;margin-top:6px;"><b>core:</b> '+esc((it.core||'').slice(0,80))+'</div>'+
       '<div style="font-size:12px;color:#6B7280;margin-top:2px;"><b>prompt:</b> '+esc((it.prompt||'').slice(0,80))+'</div>';
@@ -423,7 +477,7 @@ function addEdit(id){
   editingId=id;
   var it=null;
   if(id){it=items.filter(function(x){return x.id==id;})[0];}
-  $('formTitle').textContent=it?('Edit — '+it.studio+'/'+it.plan+'/'+it.type):'+ Add New';
+  $('formTitle').textContent=it?('Edit — '+studioLabel(it.studio)+' / '+it.plan+' / '+it.type):'+ Add New';
   $('iStudio').value=it?it.studio:'STORY';
   $('iPlan').value=it?it.plan:'FREE';
   $('iType').value=it?it.type:'1';
@@ -436,7 +490,7 @@ function copyRow(id){
   var it=items.filter(function(x){return x.id==id;})[0];
   if(!it)return;
   addEdit(null);
-  $('formTitle').textContent='Copy — '+it.studio+'/'+it.plan+'/'+it.type;
+  $('formTitle').textContent='Copy — '+studioLabel(it.studio)+' / '+it.plan+' / '+it.type;
   $('iStudio').value=it.studio||'STORY';
   $('iPlan').value=it.plan||'FREE';
   $('iType').value=it.type||'1';
