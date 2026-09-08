@@ -4,14 +4,13 @@
 
 import { getCMSData, buildSystemPrompt } from '../core/cms.js';
 import { callGeminiText, callGeminiImage, callGeminiMultimodal } from '../core/ai.js';
+import { resolveModel } from '../core/aiModels.js';
 
 const CMS_IMAGE = 'IMAGE';
 const CMS_IMAGEAD = 'IMAGEAD';
-const TEXT_MODEL = 'gemini-3.6-flash';
-const IMAGE_MODEL = 'gemini-3.1-flash-image';
 
 // Tab 1 — Image Prompt Generate (ပုံအမျိုးအစား)
-export async function generateImagePrompt(env, { idea, type, plan, apiKey, images }) {
+export async function generateImagePrompt(env, { idea, type, plan, apiKey, images, model }) {
   if (!idea || !String(idea).trim()) throw new Error('missing_idea');
   const c = await getCMSData(env, CMS_IMAGE, plan, type);
   const system = c ? buildSystemPrompt(c) : '';
@@ -27,15 +26,15 @@ export async function generateImagePrompt(env, { idea, type, plan, apiKey, image
       'ကို လေ့လာပြီး အထက်ပါ CORE/WORKFLOW instruction အတိုင်း Prompt ထဲ ' +
       'ထည့်သွင်းရေးပါ။ ပုံများအားလုံးကို ချိတ်ဆက်ပြီး တစ်ညီတည်း Consistent ' +
       'ဖြစ်အောင် ဆင်ခြင်ပါ။)';
-    raw = await callGeminiMultimodal(env, { model: TEXT_MODEL, prompt, images, apiKey });
+    raw = await callGeminiMultimodal(env, { model: await resolveModel(env, 'text', plan, model), prompt, images, apiKey });
   } else {
-    raw = await callGeminiText(env, { model: TEXT_MODEL, prompt, apiKey });
+    raw = await callGeminiText(env, { model: await resolveModel(env, 'text', plan, model), prompt, apiKey });
   }
   return { prompt: raw ? raw.trim() : '' };
 }
 
 // Tab 2 — Ad Image Prompt Generate (ကြော်ငြာပုံ)
-export async function generateAdImagePrompt(env, { idea, type, plan, apiKey, images }) {
+export async function generateAdImagePrompt(env, { idea, type, plan, apiKey, images, model }) {
   if (!idea || !String(idea).trim()) throw new Error('missing_idea');
   const c = await getCMSData(env, CMS_IMAGEAD, plan, type);
   const system = c ? buildSystemPrompt(c) : '';
@@ -50,15 +49,15 @@ export async function generateAdImagePrompt(env, { idea, type, plan, apiKey, ima
       'ဒီပုံများထဲက ကုန်ပစ္စည်း/Product ရဲ့ တကယ့် အရောင်/ပုံသဏ္ဌာန်/Design ကို လေ့လာပြီး ' +
       'ကြော်ငြာပုံ Prompt ရေးတဲ့အခါ ပုံနှင့် ကိုက်ညီအောင် တိကျစွာ ထည့်သွင်းရေးပါ။ PRODUCT/AD ' +
       'DESCRIPTION Text ထက် ပုံအစစ်ကို ဦးစားပေး ကိုးကားပါ။)';
-    raw = await callGeminiMultimodal(env, { model: TEXT_MODEL, prompt, images, apiKey });
+    raw = await callGeminiMultimodal(env, { model: await resolveModel(env, 'text', plan, model), prompt, images, apiKey });
   } else {
-    raw = await callGeminiText(env, { model: TEXT_MODEL, prompt, apiKey });
+    raw = await callGeminiText(env, { model: await resolveModel(env, 'text', plan, model), prompt, apiKey });
   }
   return { prompt: raw ? raw.trim() : '' };
 }
 
 // Tab 1 & 2 — Image Prompt (Text) ကို အခြေခံပြီး AI ပုံအစစ် ထုတ်ခြင်း
-export async function generateImageFromPrompt(env, { prompt, apiKey }) {
+export async function generateImageFromPrompt(env, { prompt, apiKey, model, plan }) {
   if (!prompt || !String(prompt).trim()) throw new Error('missing_prompt');
-  return callGeminiImage(env, { model: IMAGE_MODEL, prompt: String(prompt).trim(), apiKey });
+  return callGeminiImage(env, { model: await resolveModel(env, 'image', plan, model), prompt: String(prompt).trim(), apiKey });
 }

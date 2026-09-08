@@ -5,30 +5,29 @@
 
 import { getCMSData, buildSystemPrompt } from '../core/cms.js';
 import { callGeminiText, callGeminiImage, callGeminiMultimodal } from '../core/ai.js';
+import { resolveModel } from '../core/aiModels.js';
 
 const CMS_STUDIO = 'SHORT';
 const CMS_VIDEO = 'SHORTVIDEO';
-const TEXT_MODEL = 'gemini-3.6-flash';
-const IMAGE_MODEL = 'gemini-3.1-flash-image';
 
 // ============================================================
 // Tab 1 — Short Script Generate
 // ============================================================
-export async function generateShort(env, { idea, type, plan, apiKey }) {
+export async function generateShort(env, { idea, type, plan, apiKey, model }) {
   if (!idea || !String(idea).trim()) throw new Error('missing_idea');
   const c = await getCMSData(env, CMS_STUDIO, plan, type);
   const system = c ? buildSystemPrompt(c) : '';
   const prompt = system
     ? (system + '\n\nUSER IDEA:\n' + String(idea).trim())
     : String(idea).trim();
-  const raw = await callGeminiText(env, { model: TEXT_MODEL, prompt, apiKey });
+  const raw = await callGeminiText(env, { model: await resolveModel(env, 'text', plan, model), prompt, apiKey });
   return { short: raw ? raw.trim() : '' };
 }
 
 // ============================================================
 // Tab 1 — Short Revise (Chat Revision)
 // ============================================================
-export async function reviseShort(env, { idea, type, currentShort, instruction, plan, apiKey }) {
+export async function reviseShort(env, { idea, type, currentShort, instruction, plan, apiKey, model }) {
   if (!instruction || !String(instruction).trim()) throw new Error('missing_instruction');
   if (!currentShort) throw new Error('missing_current_short');
   const c = await getCMSData(env, CMS_STUDIO, plan, type);
@@ -39,7 +38,7 @@ export async function reviseShort(env, { idea, type, currentShort, instruction, 
   prompt += 'User ရဲ့ ထပ်ညွှန်ကြားချက်:\n' + String(instruction).trim() + '\n\n';
   prompt += 'အထက်ပါညွှန်ကြားချက်အတိုင်း Short Content ကို ပြင်ဆင်ပါ။ ' +
     'Content အပြည့်အစုံကိုသာ ပြန်ပေးပါ၊ ရှင်းလင်းချက်များ မထည့်ပါနှင့်။';
-  const raw = await callGeminiText(env, { model: TEXT_MODEL, prompt, apiKey });
+  const raw = await callGeminiText(env, { model: await resolveModel(env, 'text', plan, model), prompt, apiKey });
   return { short: raw ? raw.trim() : '' };
 }
 
@@ -47,7 +46,7 @@ export async function reviseShort(env, { idea, type, currentShort, instruction, 
 // Tab 2 — Short Video Plan (Scenes + Characters)
 // Reference ပုံများ ပါလျှင် Multimodal (Text + Images) ကို သုံးသည်။
 // ============================================================
-export async function generateShortVideoPlan(env, { idea, type, plan, apiKey, images }) {
+export async function generateShortVideoPlan(env, { idea, type, plan, apiKey, images, model }) {
   if (!idea || !String(idea).trim()) throw new Error('missing_idea');
   const c = await getCMSData(env, CMS_VIDEO, plan, type);
   const system = c ? buildSystemPrompt(c) : '';
@@ -64,13 +63,13 @@ export async function generateShortVideoPlan(env, { idea, type, plan, apiKey, im
       'ပုံအစစ်နှင့် ကိုက်ညီအောင် အသေးစိတ် ထည့်သွင်းရေးပါ။ Environment/Video Prompt ' +
       'များကိုလည်း ဒီ Character ပုံစံနှင့် ကိုက်ညီအောင် ချိတ်ဆက်ရေးပါ။)';
     raw = await callGeminiMultimodal(env, {
-      model: TEXT_MODEL,
+      model: await resolveModel(env, 'text', plan, model),
       prompt,
       images: images,
       apiKey,
     });
   } else {
-    raw = await callGeminiText(env, { model: TEXT_MODEL, prompt, apiKey });
+    raw = await callGeminiText(env, { model: await resolveModel(env, 'text', plan, model), prompt, apiKey });
   }
   return parseShortVideoResponse(raw);
 }
@@ -78,10 +77,10 @@ export async function generateShortVideoPlan(env, { idea, type, plan, apiKey, im
 // ============================================================
 // Tab 2 — Short Video Scene/Character Image Generate
 // ============================================================
-export async function generateShortVideoImage(env, { prompt, apiKey }) {
+export async function generateShortVideoImage(env, { prompt, apiKey, model, plan }) {
   if (!prompt || !String(prompt).trim()) throw new Error('missing_prompt');
   return callGeminiImage(env, {
-    model: IMAGE_MODEL,
+    model: await resolveModel(env, 'image', plan, model),
     prompt: String(prompt).trim(),
     apiKey,
   });

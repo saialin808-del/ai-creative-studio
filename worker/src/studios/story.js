@@ -4,26 +4,25 @@
 
 import { getCMSData, buildSystemPrompt } from '../core/cms.js';
 import { callGeminiText, callGeminiImage } from '../core/ai.js';
+import { resolveModel } from '../core/aiModels.js';
 
 const CMS_STUDIO = 'STORY';
 const CMS_VIDEO = 'STORYVIDEO';
-const TEXT_MODEL = 'gemini-3.6-flash';
-const IMAGE_MODEL = 'gemini-3.1-flash-image';
 
 // Tab 1 — Story Generate
-export async function generateStory(env, { idea, type, plan, apiKey }) {
+export async function generateStory(env, { idea, type, plan, apiKey, model }) {
   if (!idea || !String(idea).trim()) throw new Error('missing_idea');
   const c = await getCMSData(env, CMS_STUDIO, plan, type);
   const system = c ? buildSystemPrompt(c) : '';
   const prompt = system
     ? (system + '\n\nUSER IDEA:\n' + String(idea).trim())
     : String(idea).trim();
-  const raw = await callGeminiText(env, { model: TEXT_MODEL, prompt, apiKey });
+  const raw = await callGeminiText(env, { model: await resolveModel(env, 'text', plan, model), prompt, apiKey });
   return { story: raw ? raw.trim() : '' };
 }
 
 // Tab 1 — Story Revise (Chat Revision)
-export async function reviseStory(env, { idea, type, currentStory, instruction, plan, apiKey }) {
+export async function reviseStory(env, { idea, type, currentStory, instruction, plan, apiKey, model }) {
   if (!instruction || !String(instruction).trim()) throw new Error('missing_instruction');
   if (!currentStory) throw new Error('missing_current_story');
   const c = await getCMSData(env, CMS_STUDIO, plan, type);
@@ -34,27 +33,27 @@ export async function reviseStory(env, { idea, type, currentStory, instruction, 
   prompt += 'User ရဲ့ ထပ်ညွှန်ကြားချက်:\n' + String(instruction).trim() + '\n\n';
   prompt += 'အထက်ပါညွှန်ကြားချက်အတိုင်း ဇာတ်လမ်းကို ပြင်ဆင်ပါ။ ' +
     'ဇာတ်လမ်းအပြည့်အစုံကိုသာ ပြန်ပေးပါ၊ ရှင်းလင်းချက်များ မထည့်ပါနှင့်။';
-  const raw = await callGeminiText(env, { model: TEXT_MODEL, prompt, apiKey });
+  const raw = await callGeminiText(env, { model: await resolveModel(env, 'text', plan, model), prompt, apiKey });
   return { story: raw ? raw.trim() : '' };
 }
 
 // Tab 2 — Story Video Plan (Scenes + Characters)
-export async function generateStoryVideoPlan(env, { idea, type, plan, apiKey }) {
+export async function generateStoryVideoPlan(env, { idea, type, plan, apiKey, model }) {
   if (!idea || !String(idea).trim()) throw new Error('missing_idea');
   const c = await getCMSData(env, CMS_VIDEO, plan, type);
   const system = c ? buildSystemPrompt(c) : '';
   const prompt = system
     ? (system + '\n\nUSER STORY/IDEA:\n' + String(idea).trim())
     : String(idea).trim();
-  const raw = await callGeminiText(env, { model: TEXT_MODEL, prompt, apiKey });
+  const raw = await callGeminiText(env, { model: await resolveModel(env, 'text', plan, model), prompt, apiKey });
   return parseStoryVideoResponse(raw);
 }
 
 // Tab 2 — Story Video Scene/Character Image Generate
-export async function generateStoryVideoImage(env, { prompt, apiKey }) {
+export async function generateStoryVideoImage(env, { prompt, apiKey, model, plan }) {
   if (!prompt || !String(prompt).trim()) throw new Error('missing_prompt');
   return callGeminiImage(env, {
-    model: IMAGE_MODEL,
+    model: await resolveModel(env, 'image', plan, model),
     prompt: String(prompt).trim(),
     apiKey,
   });

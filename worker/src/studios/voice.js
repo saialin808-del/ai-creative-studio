@@ -5,21 +5,22 @@
 
 import { getCMSData, buildSystemPrompt } from '../core/cms.js';
 import { callGeminiText, callGeminiMultimodal, callGeminiTTS } from '../core/ai.js';
+import { resolveModel } from '../core/aiModels.js';
 import { pcmToWavBase64 } from '../core/utilities.js';
 
 const CMS_STUDIO = 'VOICE';
-const TEXT_MODEL = 'gemini-3.6-flash';
 
 // ============================================================
 // Tab 1 — Text → Voice (TTS)
 // Gemini TTS မှ L16 PCM ကို WAV အဖြစ် ပြောင်းပြီး ပြန်ပေးသည်
 // ============================================================
-export async function generateVoiceAudio(env, { text, voiceName, apiKey }) {
+export async function generateVoiceAudio(env, { text, voiceName, apiKey, model, plan }) {
   if (!text || !String(text).trim()) throw new Error('missing_text');
   const tts = await callGeminiTTS(env, {
     text: String(text).trim(),
     voiceName: voiceName || 'Kore',
     apiKey,
+    model: await resolveModel(env, 'voice', plan, model),
   });
   const wavBase64 = pcmToWavBase64(tts.data, 24000, 1, 16);
   return { data: wavBase64, mimeType: 'audio/wav' };
@@ -29,7 +30,7 @@ export async function generateVoiceAudio(env, { text, voiceName, apiKey }) {
 // Tab 2 — Audio → Text (Transcribe)
 // CMS VOICE prompt ကို system instruction အဖြစ် သုံးသည်
 // ============================================================
-export async function transcribeAudio(env, { audioBase64, mimeType, type, plan, apiKey }) {
+export async function transcribeAudio(env, { audioBase64, mimeType, type, plan, apiKey, model }) {
   if (!audioBase64) throw new Error('missing_audio');
   const c = await getCMSData(env, CMS_STUDIO, plan, type || '1');
   const system = c ? buildSystemPrompt(c) : '';
@@ -37,7 +38,7 @@ export async function transcribeAudio(env, { audioBase64, mimeType, type, plan, 
     ? (system + '\n\nအထက်ပါ instruction အတိုင်း အောက်က Audio ကို Text အဖြစ် တိကျစွာ Transcribe လုပ်ပါ။ Transcribe လုပ်ထားသော Text ကိုသာ ပြန်ပေးပါ။')
     : 'အောက်က Audio ကို Text အဖြစ် တိကျစွာ Transcribe လုပ်ပါ။ Transcribe လုပ်ထားသော Text ကိုသာ ပြန်ပေးပါ။';
   const text = await callGeminiMultimodal(env, {
-    model: TEXT_MODEL,
+    model: await resolveModel(env, 'text', plan, model),
     prompt,
     images: [{ mimeType: mimeType || 'audio/mpeg', base64: audioBase64 }],
     apiKey,
@@ -70,7 +71,7 @@ const DEFAULT_LINE_RULE =
   '2\n00:00:01,500 --> 00:00:03,000\nAI Voice ဖန်တီးပြီး\n\n' +
   '3\n00:00:03,000 --> 00:00:04,500\nSubtitle လေးတွေ လုပ်ကြမယ်';
 
-export async function generateVoiceSrt(env, { audioBase64, mimeType, type, plan, apiKey }) {
+export async function generateVoiceSrt(env, { audioBase64, mimeType, type, plan, apiKey, model }) {
   if (!audioBase64) throw new Error('missing_audio');
   let lineRule = '';
   try {
@@ -86,7 +87,7 @@ export async function generateVoiceSrt(env, { audioBase64, mimeType, type, plan,
     '\n\nSRT format text ကိုသာ ပြန်ပေးပါ၊ ရှင်းလင်းချက် မထည့်ပါနှင့်။';
 
   const srt = await callGeminiMultimodal(env, {
-    model: TEXT_MODEL,
+    model: await resolveModel(env, 'text', plan, model),
     prompt: instruction,
     images: [{ mimeType: mimeType || 'audio/mpeg', base64: audioBase64 }],
     apiKey,
@@ -97,7 +98,7 @@ export async function generateVoiceSrt(env, { audioBase64, mimeType, type, plan,
 // ============================================================
 // Tab 1 & 2 — Translate SRT Text (PRO only)
 // ============================================================
-export async function translateVoiceSrt(env, { srtText, direction, type, plan, apiKey }) {
+export async function translateVoiceSrt(env, { srtText, direction, type, plan, apiKey, model }) {
   if (!srtText || !String(srtText).trim()) throw new Error('missing_srt');
   const dir = direction || 'MY_TO_CN';
 
@@ -124,6 +125,6 @@ export async function translateVoiceSrt(env, { srtText, direction, type, plan, a
     'SRT format text ကိုသာ ပြန်ပေးပါ၊ ရှင်းလင်းချက် (explanation) မထည့်ပါနှင့်။\n\n' +
     'SRT:\n' + String(srtText).trim();
 
-  const srt = await callGeminiText(env, { model: TEXT_MODEL, prompt: instruction, apiKey });
+  const srt = await callGeminiText(env, { model: await resolveModel(env, 'text', plan, model), prompt: instruction, apiKey });
   return { srt };
 }
