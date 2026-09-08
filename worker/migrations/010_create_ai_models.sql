@@ -17,6 +17,7 @@ CREATE TABLE IF NOT EXISTS ai_models (
 CREATE INDEX IF NOT EXISTS idx_ai_models_category ON ai_models (category);
 
 INSERT OR IGNORE INTO ai_models (id, name, category, enabled, is_default, plan_access, updated_at) VALUES
-('gemini-3.6-flash', 'သာမန်', 'text', 1, 1, 'FREE', datetime('now')),
-('gemini-3.1-flash-image', 'Gemini 3.1 Flash Image (ပုံ)', 'image', 1, 1, 'FREE', datetime('now')),
-('gemini-3.1-flash-tts-preview', 'Gemini 3.1 Flash TTS (အသံ)', 'voice', 1, 1, 'FREE', datetime('now'));
+('gemini-3.5-flash-lite', 'သာမန်', 'text', 1, 1, 'FREE', datetime('now')),
+('gemini-3.1-flash-lite-image', 'သာမန်', 'image', 1, 1, 'FREE', datetime('now')),
+('gemini-2.5-flash-preview-tts', 'သာမန်', 'voice', 1, 1, 'FREE', datetime('now')),
+('gemini-3.5-transcribe', 'သာမန်', 'transcribe', 1, 1, 'FREE', datetime('now'));
