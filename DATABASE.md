@@ -94,11 +94,15 @@ Create `worker/migrations/009_xxx.sql` (additive `CREATE TABLE` / `ALTER TABLE .
 - `GET /api/auth/session` — returns `{token, email, plan}` when the cookie is valid (lets the sidebar restore a session when `localStorage` is empty).
 - Email/password Sign In & Sign Up now also set the `aics_token` cookie so browser navigation to `/app` works after login.
 
+### ai_models — transcribe Model (011)
+- `011_add_transcribe_model.sql` — `transcribe` (အသံ→စာသား) Category + `gemini-3.5-transcribe` မူလပုံသေ Model ထည့်သည်
+- 010 အစောပိုင်း Seed (`gemini-3.6-flash` / `gemini-3.1-flash-image` / `gemini-3.1-flash-tts-preview`) ရှိခဲ့လျှင် `enabled=0` ပိတ်ပေးသည် (Idempotent)
+
 ### ai_models — Phase C (010)
 
 | Column | Type | Notes |
 |---|---|---|
-| id | TEXT PK | Gemini model id, e.g. `gemini-3.6-flash` |
+| id | TEXT PK | Gemini model id, e.g. `gemini-3.5-flash-lite` |
 | name | TEXT | Display name (Myanmar) |
 | category | TEXT | `text` / `image` / `voice` |
 | enabled | INTEGER | 1/0 — disabled models never reach users |

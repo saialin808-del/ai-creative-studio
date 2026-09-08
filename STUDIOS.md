@@ -60,6 +60,11 @@ Existing six studios are unaffected.
 
 Legacy: `/api/studio/generate` (generic) remains for backward compatibility.
 
+### Voice Studio — dropdown ၂ ခု
+- `aiModelSel` (category=voice) — Text → Voice (TTS) အတွက်
+- `aiModelSel2` (category=transcribe) — Voice → Text / SRT / ဘာသာပြန် အတွက်
+- `/transcribe` သို့မဟုတ် `/srt` ပါသော Request များတွင် `aiModelSel2` ၏ Model ကို သုံးသည်
+
 ## AI Model dropdown (Phase C — Phase 14)
 
 - Every Studio page now shows an **AI Model** dropdown at the top (`#aiModelSel`, category = `text` for Story/Content/Short/Shop, `image` for Image, `voice` for Voice).
