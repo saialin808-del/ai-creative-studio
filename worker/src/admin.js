@@ -9,7 +9,6 @@ import { FEATURE_REGISTRY } from './config/features.js';
 import { getFeatureSettings, setFeatureSetting } from './core/featureSettings.js';
 import { getAiModels, setAiModel, deleteAiModel } from './core/aiModels.js';
 import { logAdminAction, listAdminLogs } from './core/adminLogs.js';
-import { workflowFor } from './core/cms.js';
 
 export const ADMIN_HTML = `<!DOCTYPE html>
 <html lang="my">
@@ -96,7 +95,7 @@ button{cursor:pointer}
         </div>
         <div class="card" style="margin-top:14px"><div class="section-head"><div><div class="card-title">Recent Users</div><div class="card-sub">နောက်ဆုံးဝင်လာတဲ့ Users</div></div><button class="btn sm" onclick="switchTab('users')">View all →</button></div><div id="recentUsers" class="list"></div></div>
       </section>
-      <section id="cmsView" class="hidden"><div class="page-head"><div><div class="eyebrow">AI System · Workflow Controller</div><h1 class="page-title">Content / CMS</h1><p class="page-desc">Studio → Tab → Step → CMS Prompt ကို တစ်နေရာတည်းက ထိန်းချုပ်ပါ။ AI က ဒီ workflow profile ကို prompt အဖြစ်ယူသုံးမယ်။</p></div><div class="head-actions"><button class="btn" onclick="load()">↻ Refresh</button><button class="btn primary" onclick="addEdit(null)">＋ Add Workflow</button></div></div><div class="card"><div class="filters"><select id="fStudio"></select><select id="fPlan"><option value="">Plan · All</option><option value="FREE">FREE</option><option value="PRO">PRO</option></select><select id="fTab"><option value="">Tab · All</option><option value="story">Story</option><option value="director">Director</option><option value="content">Content</option><option value="video">Video</option><option value="create">Create</option><option value="ad">Ad</option><option value="audio_tools">Audio Tools</option><option value="product_content">Product Content</option></select><input id="fType" placeholder="Type"><button class="btn sm" onclick="load()">Apply</button></div></div><div id="list"></div></section>
+      <section id="cmsView" class="hidden"><div class="page-head"><div><div class="eyebrow">AI System</div><h1 class="page-title">Content / CMS</h1><p class="page-desc">Studio တစ်ခုချင်းစီအတွက် Prompt, Template နဲ့ AI instructions ကို စီမံပါ။</p></div><div class="head-actions"><button class="btn" onclick="load()">↻ Refresh</button><button class="btn primary" onclick="addEdit(null)">＋ Add Content</button></div></div><div class="card"><div class="filters"><select id="fStudio"></select><select id="fPlan"><option value="">Plan · All</option><option value="FREE">FREE</option><option value="PRO">PRO</option></select><input id="fType" placeholder="Sub-Type (1–5)"><button class="btn sm" onclick="load()">Apply</button></div></div><div id="list"></div></section>
       <section id="usersView" class="hidden"><div class="page-head"><div><div class="eyebrow">Management</div><h1 class="page-title">Users</h1><p class="page-desc">User plan နဲ့ account အခြေအနေကို စီမံပါ။</p></div><button class="btn" onclick="loadUsers()">↻ Refresh</button></div><div id="usersList"></div></section>
       <section id="studiosView" class="hidden"><div class="page-head"><div><div class="eyebrow">Management</div><h1 class="page-title">AI Studios</h1><p class="page-desc">User App မှာ ဘယ် Studio တွေကို အသုံးပြုခွင့်ပေးမလဲ စီမံပါ။</p></div><button class="btn" onclick="loadStudios()">↻ Refresh</button></div><div class="card"><div class="card-title">Studio Availability</div><div class="card-sub">OFF လုပ်ထားတဲ့ Studio ကို User App မှာ ဝင်သုံးလို့မရတော့ပါ။</div></div><div id="studiosList"></div></section>
       <section id="featuresView" class="hidden"><div class="page-head"><div><div class="eyebrow">AI System</div><h1 class="page-title">Plans & Features</h1><p class="page-desc">FREE / PRO access နဲ့ feature limits ကို Code မပြင်ဘဲ စီမံပါ။</p></div><button class="btn" onclick="loadFeatures()">↻ Refresh</button></div><div id="featuresList"></div></section>
@@ -106,7 +105,7 @@ button{cursor:pointer}
     </main>
   </section>
 </div>
-<div id="formWrap" class="hidden"><div class="overlay"><div class="card form"><div class="section-head"><div><div class="eyebrow">Content Editor</div><h3 id="formTitle">Add Content</h3></div><button class="btn gray sm" onclick="closeForm()">✕</button></div><div class="grid three-col"><div><label>Studio</label><select id="iStudio" style="width:100%" onchange="syncCmsFlow()"></select></div><div><label>Plan</label><select id="iPlan" style="width:100%"><option value="FREE">FREE</option><option value="PRO">PRO</option></select></div><div><label>Type</label><input id="iType" value="1" style="width:100%"></div><div><label>Feature</label><input id="iFeature" style="width:100%"></div><div><label>Tab</label><input id="iTab" style="width:100%"></div><div><label>Step</label><input id="iStep" style="width:100%"></div><div><label>Status</label><select id="iStatus" style="width:100%"><option value="ACTIVE">ACTIVE</option><option value="DRAFT">DRAFT</option><option value="DISABLED">DISABLED</option></select></div></div><div class="divider"></div><div class="grid two-col"><div><label>core</label><textarea id="iCore"></textarea></div><div><label>memory</label><textarea id="iMemory"></textarea></div><div><label>knowledge</label><textarea id="iKnowledge"></textarea></div><div><label>workflow</label><textarea id="iWorkflow"></textarea></div><div><label>template</label><textarea id="iTemplate"></textarea></div><div><label>prompt</label><textarea id="iPrompt"></textarea></div><div><label>quality check</label><textarea id="iQuality_check"></textarea></div><div><label>final output</label><textarea id="iFinal_output"></textarea></div></div><div class="form-actions"><button class="btn gray" onclick="closeForm()">Cancel</button><button class="btn primary" onclick="save()">Save Changes</button></div></div></div></div>
+<div id="formWrap" class="hidden"><div class="overlay"><div class="card form"><div class="section-head"><div><div class="eyebrow">Content Editor</div><h3 id="formTitle">Add Content</h3></div><button class="btn gray sm" onclick="closeForm()">✕</button></div><div class="grid three-col"><div><label>Studio</label><select id="iStudio" style="width:100%"></select></div><div><label>Plan</label><select id="iPlan" style="width:100%"><option value="FREE">FREE</option><option value="PRO">PRO</option></select></div><div><label>Type</label><input id="iType" value="1" style="width:100%"></div></div><div class="divider"></div><div class="grid two-col"><div><label>core</label><textarea id="iCore"></textarea></div><div><label>memory</label><textarea id="iMemory"></textarea></div><div><label>knowledge</label><textarea id="iKnowledge"></textarea></div><div><label>workflow</label><textarea id="iWorkflow"></textarea></div><div><label>template</label><textarea id="iTemplate"></textarea></div><div><label>prompt</label><textarea id="iPrompt"></textarea></div><div><label>quality check</label><textarea id="iQuality_check"></textarea></div><div><label>final output</label><textarea id="iFinal_output"></textarea></div></div><div class="form-actions"><button class="btn gray" onclick="closeForm()">Cancel</button><button class="btn primary" onclick="save()">Save Changes</button></div></div></div></div>
 </div>
 <script>
 function toggleNav(){var s=document.getElementById('sidebar');if(s)s.classList.toggle('open');}
@@ -141,7 +140,6 @@ function studioLabel(code){
   return code;
 }
 var FIELDS=['core','memory','knowledge','workflow','template','prompt','quality_check','final_output'];
-var CMS_FLOW={STORY:{feature:'story_generator',tab:'story',step:'generate'},STORYVIDEO:{feature:'director_plan',tab:'director',step:'plan'},CONTENT:{feature:'content_generator',tab:'content',step:'generate'},CONTENTVIDEO:{feature:'video_plan',tab:'video',step:'plan'},IMAGE:{feature:'image_prompt',tab:'create',step:'prompt'},IMAGEAD:{feature:'ad_image_prompt',tab:'ad',step:'prompt'},VOICE:{feature:'audio_tools',tab:'audio_tools',step:'transcribe'},SHOPCONTENT:{feature:'product_content',tab:'product_content',step:'generate'},SHOPVIDEO:{feature:'shop_video',tab:'video',step:'plan'}};
 var items=[];
 var users=[];
 var editingId=null;
@@ -396,12 +394,11 @@ function load(){
 }
 
 function applyFilter(){
-  var s=$('fStudio').value,p=$('fPlan').value,t=$('fType').value.trim(),tab=$('fTab').value;
+  var s=$('fStudio').value,p=$('fPlan').value,t=$('fType').value.trim();
   return items.filter(function(it){
     if(s&&it.studio!==s)return false;
     if(p&&it.plan!==p)return false;
     if(t&&it.type!==t)return false;
-    if(tab&&it.tab!==tab)return false;
     return true;
   });
 }
@@ -414,15 +411,13 @@ function renderList(){
     var c=document.createElement('div');
     c.className='card';
     c.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">'+
-      '<div><b>'+esc(studioLabel(it.studio))+'</b> <span class="badge '+(it.plan==='PRO'?'pro':'free')+'">'+esc(it.plan)+'</span> · '+esc(it.tab||'workflow')+' / '+esc(it.step||'generate')+' · Type '+esc(it.type)+'</div>'+
+      '<div><b>'+esc(studioLabel(it.studio))+'</b> <span class="badge '+(it.plan==='PRO'?'pro':'free')+'">'+esc(it.plan)+'</span> · Sub-Type '+esc(it.type)+'</div>'+
       '<span><button class="btn sm" onclick="copyRow('+it.id+')">📋</button> <button class="btn sm" onclick="addEdit('+it.id+')">✏️</button> <button class="btn sm red" onclick="del('+it.id+')">🗑️</button></span></div>'+
       '<div style="font-size:12px;color:#6B7280;margin-top:6px;"><b>core:</b> '+esc((it.core||'').slice(0,80))+'</div>'+
       '<div style="font-size:12px;color:#6B7280;margin-top:2px;"><b>prompt:</b> '+esc((it.prompt||'').slice(0,80))+'</div>';
     list.appendChild(c);
   });
 }
-
-function syncCmsFlow(){var key=$('iStudio').value,flow=CMS_FLOW[key]||{};if(!editingId||!$('iFeature').value)$('iFeature').value=flow.feature||'';if(!editingId||!$('iTab').value)$('iTab').value=flow.tab||'';if(!editingId||!$('iStep').value)$('iStep').value=flow.step||'';}
 
 function addEdit(id){
   editingId=id;
@@ -432,11 +427,6 @@ function addEdit(id){
   $('iStudio').value=it?it.studio:'STORY';
   $('iPlan').value=it?it.plan:'FREE';
   $('iType').value=it?it.type:'1';
-  var flow=it||CMS_FLOW[$('iStudio').value]||CMS_FLOW.STORY;
-  $('iFeature').value=it?(it.feature||flow.feature):flow.feature;
-  $('iTab').value=it?(it.tab||flow.tab):flow.tab;
-  $('iStep').value=it?(it.step||flow.step):flow.step;
-  $('iStatus').value=it?(it.status||'ACTIVE'):'ACTIVE';
   FIELDS.forEach(function(f){$('i'+f.charAt(0).toUpperCase()+f.slice(1)).value=it?(it[f]||''):'';});
   $('formWrap').classList.remove('hidden');
   window.scrollTo(0,0);
@@ -450,17 +440,13 @@ function copyRow(id){
   $('iStudio').value=it.studio||'STORY';
   $('iPlan').value=it.plan||'FREE';
   $('iType').value=it.type||'1';
-  $('iFeature').value=it.feature||((CMS_FLOW[it.studio]||{}).feature||'');
-  $('iTab').value=it.tab||((CMS_FLOW[it.studio]||{}).tab||'');
-  $('iStep').value=it.step||((CMS_FLOW[it.studio]||{}).step||'');
-  $('iStatus').value=it.status||'ACTIVE';
   FIELDS.forEach(function(f){$('i'+f.charAt(0).toUpperCase()+f.slice(1)).value=it[f]||'';});
 }
 
 function closeForm(){$('formWrap').classList.add('hidden');}
 
 function save(){
-  var data={studio:$('iStudio').value,plan:$('iPlan').value,type:$('iType').value,feature:$('iFeature').value,tab:$('iTab').value,step:$('iStep').value,status:$('iStatus').value};
+  var data={studio:$('iStudio').value,plan:$('iPlan').value,type:$('iType').value};
   FIELDS.forEach(function(f){data[f]=$('i'+f.charAt(0).toUpperCase()+f.slice(1)).value;});
   var url='/api/cms'+(editingId?'/'+editingId:'');
   api(url,editingId?'PUT':'POST',data).then(function(d){
@@ -615,7 +601,7 @@ export async function adminApi(request, path, env, verifyToken) {
     return json({ error: 'forbidden', detail: 'admin only' }, 403);
   }
 
-  const COLS = ['studio','plan','type','feature','tab','step','status','core','memory','knowledge','workflow','template','prompt','quality_check','final_output'];
+  const COLS = ['studio','plan','type','core','memory','knowledge','workflow','template','prompt','quality_check','final_output'];
 
   if (path === '/api/cms' && method === 'GET') {
     const { results } = await env.DB.prepare('SELECT * FROM cms_prompts ORDER BY studio, plan, type').all();
@@ -628,13 +614,8 @@ export async function adminApi(request, path, env, verifyToken) {
     const vals = COLS.map(c => (body[c] === undefined || body[c] === null) ? '' : String(body[c]));
     vals[0] = vals[0].toUpperCase();
     vals[1] = vals[1].toUpperCase();
-      const wf = workflowFor(vals[0]);
-      if (!vals[3]) vals[3] = wf.feature;
-      if (!vals[4]) vals[4] = wf.tab;
-      if (!vals[5]) vals[5] = wf.step;
-      if (!vals[6]) vals[6] = 'ACTIVE';
     try {
-      await env.DB.prepare('INSERT OR REPLACE INTO cms_prompts (studio,plan,type,feature,tab,step,status,core,memory,knowledge,workflow,template,prompt,quality_check,final_output,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,datetime(\'now\'))').bind(...vals).run();
+      await env.DB.prepare('INSERT OR REPLACE INTO cms_prompts (studio,plan,type,core,memory,knowledge,workflow,template,prompt,quality_check,final_output,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,datetime(\'now\'))').bind(...vals).run();
       await logAdminAction(env, user.email, 'cms_create', vals[0] + '/' + vals[1] + '/' + vals[2]);
       return json({ ok: true });
     } catch (e) { return json({ error: 'db_error', detail: String(e && e.message || e) }, 500); }
@@ -648,13 +629,8 @@ export async function adminApi(request, path, env, verifyToken) {
       const vals = COLS.map(c => (body && body[c] !== undefined && body[c] !== null) ? String(body[c]) : '');
       vals[0] = vals[0].toUpperCase();
       vals[1] = vals[1].toUpperCase();
-      const wf = workflowFor(vals[0]);
-      if (!vals[3]) vals[3] = wf.feature;
-      if (!vals[4]) vals[4] = wf.tab;
-      if (!vals[5]) vals[5] = wf.step;
-      if (!vals[6]) vals[6] = 'ACTIVE';
       try {
-        await env.DB.prepare('UPDATE cms_prompts SET ' + sets + ', version=COALESCE(version,0)+1, updated_at=datetime(\'now\') WHERE id=?').bind(...vals, id).run();
+        await env.DB.prepare('UPDATE cms_prompts SET ' + sets + ', updated_at=datetime(\'now\') WHERE id=?').bind(...vals, id).run();
         await logAdminAction(env, user.email, 'cms_update', 'id=' + id + ' ' + vals[0] + '/' + vals[1] + '/' + vals[2]);
         return json({ ok: true });
       } catch (e) { return json({ error: 'db_error', detail: String(e && e.message || e) }, 500); }
