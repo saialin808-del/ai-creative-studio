@@ -101,16 +101,47 @@ export function createStepFlow(steps, saved, storageKey) {
 }
 
 // ---- Client Script (Browser ထဲ ထည့်ရန်) ----
-// Function Source ကို ထည့်သွင်းသည် — Build Tooling မလို
-// createStepFlow ၏ Source ထဲတွင် resolveStates ကို Free Variable အဖြစ် ခေါ်သည် —
-// ထို့ကြောင့် Client Scope တွင် နာမည် အတိအကျ တူသော Function ရှိရမည်
+// self-contained literal string — .toString() မသုံး (minification-safe)
+// Note: ဤအတွင်းရှိ function names များသည် Client-side ၏ လွတ်လပ်သော
+// ရည်ညွှန်းချက်များသာ — Server-side names နှင့် မသက်ဆိုင် (renamed ဖြစ်လည်း ပြဿနာမရှိ)
 export function stepFlowScript() {
-  return '<script>\n' +
-    '(function () {\n' +
-    resolveStates.toString() + '\n' +
-    createStepFlow.toString() + '\n' +
-    '  window.__aicsResolveStates = resolveStates;\n' +
-    '  window.__aicsCreateStepFlow = createStepFlow;\n' +
-    '})();\n' +
-    '</script>';
+  return '<script>(function(){\n' +
+    'function aicsResolveSteps(steps, savedStates){' +
+      'var st=savedStates||{};var out={};' +
+      'for(var i=0;i<steps.length;i++){var id=steps[i].id;' +
+      'if(st[id]==="completed"||st[id]==="stale"||st[id]==="error"||st[id]==="active"){out[id]=st[id];continue;}' +
+      'var allPrevDone=true;' +
+      'for(var j=0;j<i;j++){if(out[steps[j].id]!=="completed"){allPrevDone=false;break;}}' +
+      'out[id]=allPrevDone?"available":"locked";}' +
+      'return out;}\n' +
+    'function aicsCreateFlow(steps, saved, storageKey){' +
+      'var state={states:(saved&&saved.states)||{},data:(saved&&saved.data)||{}};' +
+      'function save(){try{localStorage.setItem(storageKey,JSON.stringify(state));}catch(e){}}' +
+      'function resolve(){return aicsResolveSteps(steps,state.states);}' +
+      'function currentId(){var r=resolve();' +
+        'for(var i=0;i<steps.length;i++){if(r[steps[i].id]==="active")return steps[i].id;}' +
+        'for(var j=0;j<steps.length;j++){if(r[steps[j].id]==="available")return steps[j].id;}' +
+        'return steps[0].id;}' +
+      'var api={' +
+        'state:state,save:save,resolve:resolve,currentId:currentId,' +
+        'isLocked:function(id){return resolve()[id]==="locked";},' +
+        'canEnter:function(id){var s=resolve()[id];return s==="available"||s==="active"||s==="completed"||s==="stale"||s==="error";},' +
+        'setData:function(id,patch){state.data[id]=Object.assign({},state.data[id]||{},patch);save();},' +
+        'getData:function(id){return state.data[id]||{};},' +
+        'fail:function(id){state.states[id]="error";save();},' +
+        'activate:function(id){if(!api.canEnter(id))return false;' +
+          'for(var i=0;i<steps.length;i++){if(state.states[steps[i].id]==="active")delete state.states[steps[i].id];}' +
+          'state.states[id]="active";save();return true;},' +
+        'complete:function(id){state.states[id]="completed";api.invalidate(id);},' +
+        'invalidate:function(fromId){var hit=false;' +
+          'for(var i=0;i<steps.length;i++){var s=steps[i];' +
+          'if(s.id===fromId){hit=true;continue;}' +
+          'if(!hit)continue;' +
+          'if(state.states[s.id]==="completed")state.states[s.id]="stale";}' +
+          'save();}' +
+      '};' +
+      'return api;}\n' +
+    'window.__aicsResolveStates=aicsResolveSteps;' +
+    'window.__aicsCreateStepFlow=aicsCreateFlow;' +
+    '})();</script>';
 }
