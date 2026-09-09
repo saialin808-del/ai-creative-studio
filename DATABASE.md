@@ -1,6 +1,6 @@
 # DATABASE.md
 
-Cloudflare **D1** (SQLite). Schema is applied by migrations in `worker/migrations/`, **in order 001 → 012**. Each migration is incremental and additive — existing tables are never dropped.
+Cloudflare **D1** (SQLite). Schema is applied by migrations in `worker/migrations/`, **in order 001 → 008**. Each migration is incremental and additive — existing tables are never dropped.
 
 ## Migrations
 
@@ -14,8 +14,6 @@ Cloudflare **D1** (SQLite). Schema is applied by migrations in `worker/migration
 | 006 | `006_create_projects_usage.sql` | `projects`, `usage`, `creations.is_favorite` |
 | 007 | `007_create_studio_settings.sql` | `studio_settings` (Admin ON/OFF) |
 | 008 | `008_create_feature_settings_logs.sql` | `feature_settings`, `admin_logs` |
-| 009–011 | `009_create_ai_models.sql` / `010_create_ai_models.sql` / `011_add_transcribe_model.sql` | Auth/model configuration additions |
-| 012 | `012_upgrade_cms_workflow.sql` | Adds CMS workflow metadata: `feature`, `tab`, `step`, `status`, `version` |
 
 ## Tables
 
@@ -29,7 +27,7 @@ Cloudflare **D1** (SQLite). Schema is applied by migrations in `worker/migration
 | created_at / updated_at | TEXT | |
 
 ### cms_prompts (002)
-Studio prompt templates and workflow instructions. Legacy identity remains `UNIQUE(studio, plan, type)`; workflow metadata identifies the AI feature/tab/step. Columns include `feature`, `tab`, `step`, `status`, `version`, plus `core`, `memory`, `knowledge`, `workflow`, `template`, `prompt`, `quality_check`, `final_output`, `updated_at`. Only `ACTIVE` CMS rows are selected by the workflow-aware CMS engine.
+Studio prompt templates — `UNIQUE(studio, plan, type)`; columns `core`, `memory`, `knowledge`, `workflow`, `template`, `prompt`, `quality_check`, `final_output`, `updated_at`.
 
 ### creations (003)
 > **Phase 13 (Option 2):** this table is **deprecated/unused** — user creations are stored **only in the browser** (IndexedDB `aics_creations_v1`, keyed by JWT `sub`). No new rows are written; old rows remain until cleared manually (`DELETE FROM creations;`). D1 stores **no user content** going forward.
@@ -77,7 +75,7 @@ Key-value extensible preferences: `(user_id, pref_key)` PK, `pref_value`, `updat
 
 ## Adding a new migration
 
-Create `worker/migrations/013_xxx.sql` (additive `CREATE TABLE` / `ALTER TABLE ... ADD COLUMN`), apply it, and update this file. Do **not** drop or rename existing tables/columns without a documented plan.
+Create `worker/migrations/009_xxx.sql` (additive `CREATE TABLE` / `ALTER TABLE ... ADD COLUMN`), apply it, and update this file. Do **not** drop or rename existing tables/columns without a documented plan.
 
 ### users — Phase 12 additions (009)
 `name` TEXT NOT NULL DEFAULT '' (personal display name, set from Google profile or Sign Up), `password_hash` TEXT NOT NULL DEFAULT '' (PBKDF2-SHA256 hash of optional email/password login — **never** plaintext). Existing Google-only accounts keep `name=''` / `password_hash=''`; the app falls back to the email prefix for display.
