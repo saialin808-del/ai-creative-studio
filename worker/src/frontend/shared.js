@@ -413,3 +413,289 @@ export function sidebarScript() {
     '})();\n' +
     '</script>';
 }
+
+// ============================================================
+// AI CREATIVE STUDIO — SHARED STUDIO SHELL (Master Instruction — Phase 4)
+// ------------------------------------------------------------
+// တူညီသော Studio UI အခွံ — Studio Header + Workflow Stepper
+// + Work Area / Preview Grid + Bottom Action Bar
+// Studio စာမျက်နှာများသည် renderStudioShell(opts) ကို ခေါ်ယူရုံဖြင့်
+// ပုံစံတူ layout ကို ရရှိပြီး မိမိ step အကြောင်းအရာများကို
+// <div class="aics-step" data-step="N"> ထဲတွင် ထည့်ပါသည်။
+// Page Script မှ သုံးနိုင်သော Global Helpers:
+//   studioGoStep(n) / studioMarkDone(n) / studioSetActions(list)
+//   studioPreview(html) / studioSaveDraft() / studioReset()
+//   studioCollectDraft() / studioRestoreDraft(data) / studioOnStep(n)
+// ============================================================
+
+function aicsShellCss() {
+  return (
+    '<style>\n' +
+    '/* ===== AI Creative Studio — Shared Studio Shell (Phase 4) ===== */\n' +
+    '.aics-login-overlay{position:fixed;inset:0;z-index:999;display:flex;align-items:center;justify-content:center;background:var(--bg,#080c18);padding:20px;}\n' +
+    '.aics-login-box{background:#0d1424;border:1px solid rgba(0,229,255,.2);border-radius:16px;padding:40px 32px;max-width:400px;width:100%;text-align:center;}\n' +
+    '.aics-login-box h2{color:#00e5ff;margin-bottom:10px;font-size:18px;}\n' +
+    '.aics-login-box p{color:#94a3b8;font-size:13.5px;margin-bottom:22px;}\n' +
+    '.aics-header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 20px;}\n' +
+    '.aics-header-left{display:flex;align-items:center;gap:12px;min-width:0;}\n' +
+    '.aics-back{display:inline-flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:10px;border:1px solid rgba(0,229,255,.28);color:#00e5ff;background:rgba(0,229,255,.06);font-size:17px;text-decoration:none;flex-shrink:0;transition:all .2s;}\n' +
+    '.aics-back:hover{background:rgba(0,229,255,.14);transform:translateX(-2px);}\n' +
+    '.aics-title{font-size:16.5px;font-weight:800;letter-spacing:.3px;background:linear-gradient(90deg,#00e5ff,#7b5cff);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;white-space:nowrap;}\n' +
+    '.aics-desc{font-size:11.5px;color:#8b95a8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:340px;}\n' +
+    '.aics-header-right{display:flex;align-items:center;gap:10px;}\n' +
+    '.aics-model{display:flex;align-items:center;gap:8px;}\n' +
+    '.aics-model-label{font-size:11.5px;color:#8b95a8;font-weight:600;white-space:nowrap;}\n' +
+    '.aics-model select{width:auto;min-width:150px;max-width:210px;padding:8px 10px;}\n' +
+    '.aics-hd-save{display:inline-flex;align-items:center;gap:6px;background:#111a2e;border:1px solid rgba(0,229,255,.35);color:#00e5ff;padding:8px 14px;border-radius:10px;font-size:12.5px;font-weight:600;cursor:pointer;font-family:inherit;min-height:38px;transition:all .2s;}\n' +
+    '.aics-hd-save:hover{background:rgba(0,229,255,.12);}\n' +
+    '.aics-user{display:flex;align-items:center;gap:8px;}\n' +
+    '.aics-main{max-width:1280px;margin:0 auto;width:100%;padding:20px 24px;}\n' +
+    '.aics-stepper{margin-bottom:18px;background:#0d1424;border:1px solid rgba(0,229,255,.12);border-radius:14px;padding:10px 12px;overflow-x:auto;}\n' +
+    '.aics-stepper-inner{display:flex;align-items:center;gap:6px;min-width:max-content;}\n' +
+    '.aics-step-btn{display:flex;align-items:center;gap:9px;background:none;border:none;color:#5a6478;padding:8px 12px;border-radius:10px;cursor:pointer;font-family:inherit;font-size:13px;white-space:nowrap;transition:all .2s;}\n' +
+    '.aics-step-btn .aics-step-num{width:23px;height:23px;border-radius:50%;background:#1a2138;color:#94a3b8;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;border:1px solid transparent;}\n' +
+    '.aics-step-btn .aics-step-label{font-weight:600;color:#94a3b8;}\n' +
+    '.aics-step-btn .aics-step-sub{display:block;font-size:10.5px;color:#5a6478;font-weight:400;}\n' +
+    '.aics-step-btn:hover .aics-step-label{color:#e8ecf4;}\n' +
+    '.aics-step-btn.active{background:linear-gradient(90deg,rgba(123,92,255,.18),rgba(0,229,255,.08));border:1px solid rgba(123,92,255,.55);box-shadow:0 0 14px rgba(123,92,255,.25);}\n' +
+    '.aics-step-btn.active .aics-step-num{background:linear-gradient(135deg,#7b5cff,#00e5ff);color:#041018;border-color:transparent;}\n' +
+    '.aics-step-btn.active .aics-step-label{color:#fff;}\n' +
+    '.aics-step-btn.done .aics-step-num{background:rgba(74,222,128,.15);border-color:rgba(74,222,128,.55);color:#4ade80;}\n' +
+    '.aics-step-btn.done .aics-step-label{color:#4ade80;}\n' +
+    '.aics-step-btn.todo{cursor:not-allowed;opacity:.5;}\n' +
+    '.aics-step-link{width:20px;height:1px;background:rgba(0,229,255,.22);flex-shrink:0;}\n' +
+    '.aics-grid{display:grid;grid-template-columns:minmax(0,3fr) minmax(0,2fr);gap:18px;align-items:start;}\n' +
+    '.aics-work{min-width:0;}\n' +
+    '.aics-step{display:none;}\n' +
+    '.aics-step.active{display:block;}\n' +
+    '.aics-panel{position:sticky;top:80px;background:#0d1424;border:1px solid rgba(0,229,255,.15);border-radius:14px;min-height:360px;max-height:calc(100vh - 110px);overflow:auto;}\n' +
+    '.aics-panel-head{padding:12px 16px;font-weight:700;color:#00e5ff;font-size:12.5px;border-bottom:1px solid rgba(0,229,255,.12);letter-spacing:.5px;display:flex;align-items:center;gap:8px;position:sticky;top:0;background:#0d1424;border-radius:14px 14px 0 0;z-index:2;}\n' +
+    '.aics-panel-body{padding:16px;}\n' +
+    '.aics-empty{text-align:center;padding:44px 16px;color:#5a6478;}\n' +
+    '.aics-empty-icon{font-size:34px;margin-bottom:10px;opacity:.7;}\n' +
+    '.aics-empty-title{color:#94a3b8;font-weight:600;font-size:14px;margin-bottom:4px;}\n' +
+    '.aics-empty-sub{font-size:12px;}\n' +
+    '.aics-preview-content{line-height:1.7;font-size:13.5px;word-break:break-word;}\n' +
+    '.aics-preview-content pre{white-space:pre-wrap;word-break:break-word;font-family:inherit;background:#0a1020;border:1px solid rgba(0,229,255,.12);border-radius:10px;padding:14px;font-size:13px;line-height:1.7;margin:0;}\n' +
+    '.aics-pv-label{font-size:11px;color:#8b95a8;font-weight:700;letter-spacing:.5px;margin-bottom:8px;text-transform:uppercase;}\n' +
+    '.aics-pv-card{background:#0a1020;border:1px solid rgba(0,229,255,.12);border-radius:10px;padding:12px 14px;margin-bottom:10px;}\n' +
+    '.aics-pv-card h4{margin:0 0 4px;color:#00e5ff;font-size:13px;}\n' +
+    '.aics-pv-card p{margin:0 0 6px;color:#e8ecf4;font-size:12.5px;line-height:1.6;white-space:pre-wrap;word-break:break-word;}\n' +
+    '.aics-pv-card .aics-pv-sub{color:#8b95a8;font-size:11.5px;}\n' +
+    '.aics-pv-img{max-width:100%;border-radius:8px;border:1px solid rgba(0,229,255,.15);margin-top:6px;}\n' +
+    '.aics-actions{position:sticky;bottom:10px;margin-top:18px;background:rgba(13,20,36,.94);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid rgba(0,229,255,.16);border-radius:14px;padding:12px 16px;z-index:50;box-shadow:0 6px 24px rgba(0,0,0,.4);}\n' +
+    '.aics-actions-inner{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end;}\n' +
+    '.aics-act{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:11px 22px;border-radius:10px;border:none;font-size:13.5px;font-weight:600;cursor:pointer;font-family:inherit;min-height:44px;transition:all .2s;}\n' +
+    '.aics-act.primary{background:linear-gradient(135deg,#00e5ff,#00b8d4);color:#080c18;}\n' +
+    '.aics-act.primary:hover{opacity:.9;transform:translateY(-1px);}\n' +
+    '.aics-act.success{background:linear-gradient(135deg,#00e676,#00c853);color:#080c18;}\n' +
+    '.aics-act.success:hover{opacity:.9;transform:translateY(-1px);}\n' +
+    '.aics-act.purple{background:linear-gradient(135deg,#7b5cff,#9c7cff);color:#fff;}\n' +
+    '.aics-act.purple:hover{opacity:.9;transform:translateY(-1px);}\n' +
+    '.aics-act.secondary{background:#111a2e;color:#00e5ff;border:1px solid rgba(0,229,255,.35);}\n' +
+    '.aics-act.secondary:hover{background:rgba(0,229,255,.1);}\n' +
+    '.aics-act.ghost{background:none;color:#94a3b8;border:1px solid #26324a;}\n' +
+    '.aics-act.ghost:hover{color:#00e5ff;border-color:#00e5ff;}\n' +
+    '@media (min-width:769px) and (max-width:1199px){.aics-grid{grid-template-columns:minmax(0,3fr) minmax(0,2fr);}.aics-desc{max-width:200px;}}\n' +
+    '@media (max-width:768px){\n' +
+    '  .aics-header{padding:8px 12px;padding-left:64px;flex-wrap:wrap;}\n' +
+    '  .aics-title{font-size:15px;}\n' +
+    '  .aics-desc{display:none;}\n' +
+    '  .aics-user .user-email{display:none;}\n' +
+    '  .aics-model-label{display:none;}\n' +
+    '  .aics-model select{min-width:0;max-width:120px;padding:7px 8px;font-size:12px;}\n' +
+    '  .aics-hd-save{padding:8px 10px;font-size:12px;}\n' +
+    '  .aics-grid{grid-template-columns:1fr;}\n' +
+    '  .aics-panel{position:static;max-height:none;min-height:0;}\n' +
+    '  .aics-main{padding:14px;}\n' +
+    '  .aics-actions{position:sticky;bottom:8px;padding:10px 12px;}\n' +
+    '  .aics-actions-inner{justify-content:stretch;}\n' +
+    '  .aics-act{flex:1;padding:11px 10px;font-size:13px;}\n' +
+    '  .aics-stepper{padding:8px;}\n' +
+    '}\n' +
+    '</style>'
+  );
+}
+
+// opts: { id, activeId, nameMy, desc, icon, modelCat, steps:[{label,sub,req?}], content }
+export function renderStudioShell(opts) {
+  opts = opts || {};
+  const id = opts.id || 'studio';
+  const activeId = opts.activeId || id;
+  const nameMy = opts.nameMy || 'Studio';
+  const desc = opts.desc || '';
+  const icon = opts.icon || '🎨';
+  const modelCat = opts.modelCat || 'text';
+  const steps = opts.steps || [];
+  const content = opts.content || '';
+  const stepsJson = JSON.stringify(steps.map(function (s, i) {
+    return { n: i + 1, label: s.label || 'Step ' + (i + 1), sub: s.sub || '', req: s.req || (i === 0 ? [] : [i]) };
+  }));
+
+  return (
+    aicsShellCss() +
+    '<div class="aics-app" id="aicsApp">\n' +
+    '<header class="header aics-header">\n' +
+    '<div class="aics-header-left">\n' +
+    '<button class="menu-btn" onclick="toggleSidebar()">&#9776;</button>\n' +
+    '<a class="aics-back" href="/app" title="Back to Dashboard">&#8592;</a>\n' +
+    '<div style="min-width:0;">\n' +
+    '<div class="aics-title">' + icon + ' ' + nameMy + '</div>\n' +
+    '<div class="aics-desc">' + desc + '</div>\n' +
+    '</div>\n' +
+    '</div>\n' +
+    '<div class="aics-header-right">\n' +
+    '<div class="aics-model"><span class="aics-model-label">&#129302; AI Model</span><select id="aiModelSel" data-category="' + modelCat + '"></select></div>\n' +
+    '<button class="aics-hd-save" onclick="studioSaveDraft()">&#128190; Save Draft</button>\n' +
+    '<div class="aics-user"><span class="user-email" id="userEmail">—</span><span class="plan-badge" id="planBadge">FREE</span></div>\n' +
+    '</div>\n' +
+    '</header>\n' +
+    '<div class="layout">\n' +
+    renderSidebar(activeId, { variant: 'studio' }) +
+    '<main class="main aics-main">\n' +
+    '<div class="aics-stepper" id="aicsStepper"></div>\n' +
+    '<div class="aics-grid">\n' +
+    '<section class="aics-work" id="aicsWork">\n' +
+    content +
+    '</section>\n' +
+    '<aside class="aics-panel" id="aicsPanel">\n' +
+    '<div class="aics-panel-head">&#128065; Preview</div>\n' +
+    '<div class="aics-panel-body">\n' +
+    '<div class="aics-empty" id="aicsEmpty">\n' +
+    '<div class="aics-empty-icon">&#127912;</div>\n' +
+    '<div class="aics-empty-title">Your result will appear here.</div>\n' +
+    '<div class="aics-empty-sub">Complete the steps to generate your result.</div>\n' +
+    '</div>\n' +
+    '<div class="aics-preview-content" id="aicsPreviewContent" style="display:none;"></div>\n' +
+    '</div>\n' +
+    '</aside>\n' +
+    '</div>\n' +
+    '<div class="aics-actions" id="aicsActions"></div>\n' +
+    '</main>\n' +
+    '</div>\n' +
+    '</div>\n' +
+    '<script>\n' +
+    '(function () {\n' +
+    '  var SHELL_ID = ' + JSON.stringify(id) + ';\n' +
+    '  var STEPS = ' + stepsJson + ';\n' +
+    '  var draftKey = "aics_draft_" + SHELL_ID;\n' +
+    '  var cur = 1;\n' +
+    '  var doneMap = {};\n' +
+    '  var started = false;\n' +
+    '  function el(id) { return document.getElementById(id); }\n' +
+    '  function toast(msg, isErr) { try { __sbToast(msg, isErr); } catch (e) { try { alert(msg); } catch (e2) {} } }\n' +
+    '  function allowed(n) {\n' +
+    '    if (doneMap[n]) return true;\n' +
+    '    if (n === 1) return true;\n' +
+    '    for (var i = 0; i < STEPS.length; i++) {\n' +
+    '      if (STEPS[i].n === n) {\n' +
+    '        var req = STEPS[i].req || [];\n' +
+    '        for (var r = 0; r < req.length; r++) { if (!doneMap[req[r]]) return false; }\n' +
+    '        return true;\n' +
+    '      }\n' +
+    '    }\n' +
+    '    return false;\n' +
+    '  }\n' +
+    '  function renderStepper() {\n' +
+    '    var c = el("aicsStepper"); if (!c) return;\n' +
+    '    var html = \'<div class="aics-stepper-inner">\';\n' +
+    '    for (var i = 0; i < STEPS.length; i++) {\n' +
+    '      var s = STEPS[i];\n' +
+    '      html += \'<button class="aics-step-btn" data-step="\' + s.n + \'" onclick="studioGoStep(\' + s.n + \')">\' +\n' +
+    '        \'<span class="aics-step-num">\' + s.n + \'</span>\' +\n' +
+    '        \'<span class="aics-step-txt"><span class="aics-step-label">\' + s.label + \'</span>\' + (s.sub ? \'<span class="aics-step-sub">\' + s.sub + \'</span>\' : \'\') + \'</span></button>\';\n' +
+    '      if (i < STEPS.length - 1) html += \'<span class="aics-step-link"></span>\';\n' +
+    '    }\n' +
+    '    html += \'</div>\';\n' +
+    '    c.innerHTML = html;\n' +
+    '  }\n' +
+    '  function updateStepper() {\n' +
+    '    var btns = document.querySelectorAll(".aics-step-btn");\n' +
+    '    for (var i = 0; i < btns.length; i++) {\n' +
+    '      var n = parseInt(btns[i].getAttribute("data-step"), 10);\n' +
+    '      btns[i].classList.remove("active", "done", "todo");\n' +
+    '      if (n === cur) btns[i].classList.add("active");\n' +
+    '      else if (doneMap[n]) btns[i].classList.add("done");\n' +
+    '      else if (!allowed(n)) btns[i].classList.add("todo");\n' +
+    '    }\n' +
+    '  }\n' +
+    '  function showStep(n) {\n' +
+    '    var steps = document.querySelectorAll(".aics-step");\n' +
+    '    for (var i = 0; i < steps.length; i++) {\n' +
+    '      var sn = parseInt(steps[i].getAttribute("data-step"), 10);\n' +
+    '      steps[i].classList.toggle("active", sn === n);\n' +
+    '    }\n' +
+    '    var w = el("aicsWork"); if (w) w.scrollTop = 0;\n' +
+    '    updateStepper();\n' +
+    '    if (window.studioOnStep) { try { window.studioOnStep(n); } catch (e) {} }\n' +
+    '  }\n' +
+    '  window.studioGoStep = function (n) {\n' +
+    '    if (!allowed(n)) return;\n' +
+    '    cur = n;\n' +
+    '    showStep(n);\n' +
+    '  };\n' +
+    '  window.studioMarkDone = function (n) {\n' +
+    '    doneMap[n] = true;\n' +
+    '    updateStepper();\n' +
+    '  };\n' +
+    '  window.studioCur = function () { return cur; };\n' +
+    '  window.studioSetActions = function (list) {\n' +
+    '    var c = el("aicsActions"); if (!c) return;\n' +
+    '    var html = \'<div class="aics-actions-inner">\';\n' +
+    '    for (var i = 0; i < (list || []).length; i++) {\n' +
+    '      var a = list[i];\n' +
+    '      html += \'<button class="aics-act \' + (a.cls || "secondary") + \'" onclick="studioAct(\' + i + \')">\' + a.label + \'</button>\';\n' +
+    '    }\n' +
+    '    html += \'</div>\';\n' +
+    '    c.innerHTML = html;\n' +
+    '    window.__studioActions = list || [];\n' +
+    '  };\n' +
+    '  window.studioAct = function (i) {\n' +
+    '    var list = window.__studioActions || [];\n' +
+    '    var a = list[i];\n' +
+    '    if (!a) return;\n' +
+    '    if (typeof a.fn === "function") { try { a.fn(); } catch (e) { toast("Action error: " + (e && e.message || ""), true); } }\n' +
+    '    else if (a.fn && window[a.fn]) { try { window[a.fn](); } catch (e) { toast("Action error: " + (e && e.message || ""), true); } }\n' +
+    '  };\n' +
+    '  window.studioPreview = function (html) {\n' +
+    '    var pc = el("aicsPreviewContent"), em = el("aicsEmpty");\n' +
+    '    if (html === null || html === undefined || html === "") {\n' +
+    '      if (pc) { pc.style.display = "none"; pc.innerHTML = ""; }\n' +
+    '      if (em) em.style.display = "block";\n' +
+    '      return;\n' +
+    '    }\n' +
+    '    if (em) em.style.display = "none";\n' +
+    '    if (pc) { pc.innerHTML = html; pc.style.display = "block"; }\n' +
+    '  };\n' +
+    '  window.studioSaveDraft = function () {\n' +
+    '    var data = null;\n' +
+    '    if (window.studioCollectDraft) { try { data = window.studioCollectDraft(); } catch (e) { data = null; } }\n' +
+    '    try {\n' +
+    '      localStorage.setItem(draftKey, JSON.stringify({ step: cur, data: data, savedAt: new Date().toISOString() }));\n' +
+    '      toast("&#10004; Draft သိမ်းပြီးပါပြီ");\n' +
+    '    } catch (e) { toast("Save မအောင်မြင်ပါ", true); }\n' +
+    '  };\n' +
+    '  window.studioReset = function () {\n' +
+    '    if (!confirm("ဤ Studio ရဲ့ အချက်အလက်အားလုံးကို ဖျက်ပြီး အစကပြန်စမလား?")) return;\n' +
+    '    try { localStorage.removeItem(draftKey); } catch (e) {}\n' +
+    '    location.reload();\n' +
+    '  };\n' +
+    '  function init() {\n' +
+    '    renderStepper();\n' +
+    '    var raw = null;\n' +
+    '    try { raw = localStorage.getItem(draftKey); } catch (e) {}\n' +
+    '    if (raw) {\n' +
+    '      try {\n' +
+    '        var d = JSON.parse(raw);\n' +
+    '        if (d && d.data && window.studioRestoreDraft) { window.studioRestoreDraft(d.data); }\n' +
+    '        if (d && d.step && allowed(d.step)) cur = d.step;\n' +
+    '      } catch (e) {}\n' +
+    '    }\n' +
+    '    showStep(cur);\n' +
+    '  }\n' +
+    '  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);\n' +
+    '  else init();\n' +
+    '})();\n' +
+    '</script>'
+  );
+}
