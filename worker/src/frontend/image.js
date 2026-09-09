@@ -19,7 +19,14 @@ const STEP1_HTML = `
 <div class="card">
 <div class="card-title">&#127912; Image Prompt</div>
 <p style="color:var(--text2);font-size:13px;margin-bottom:14px;">Type ရွေးပြီး ပုံအကြောင်း ဖော်ပြပါ — နောက်အဆင့်မှာ Customize လုပ်ပြီး Prompt ဖန်တီးပါမယ်။</p>
+<div class="aich-label">&#128247; ဓာတ်ပုံ အမျိုးအစား</div>
 <div class="type-chips" id="typeChips1"></div>
+<div class="aich-label">&#128101; ဘယ်သူအတွက်</div>
+<div class="aich-chips" id="audChips"></div>
+<div class="aich-model-wrap">
+<div class="aich-label">&#129302; AI မော်ဒယ်</div>
+<select id="aiModelSel" data-category="image"></select>
+</div>
 <div id="ideaFields1"></div>
 <div class="ref-upload-area">
 <label>&#128444; Reference ပုံများ ပူးတွဲရန် (ချန်ထားလို့ရသည်)</label>
@@ -262,14 +269,15 @@ var lastImageData={1:null,2:null};
 
 (function init(){
   if(!token){document.getElementById('loginView').style.display='flex';document.getElementById('aicsApp').style.display='none';return;}
-  document.getElementById('userEmail').textContent=userEmail||'—';
-  document.getElementById('planBadge').textContent=userPlan||'FREE';
+  var _ue=document.getElementById('userEmail');if(_ue)_ue.textContent=userEmail||'—';
+  var _pb=document.getElementById('planBadge');if(_pb)_pb.textContent=userPlan||'FREE';
   buildTypeChips(1,TYPES_1);
   buildTypeChips(2,TYPES_2);
   buildFields(1,'ideaFields1',MAIN_FIELDS_1);
   buildFields(1,'customizeFields1',CUSTOM_FIELDS_1);
   buildFields(2,'ideaFields2',MAIN_FIELDS_2);
   buildFields(2,'customizeFields2',CUSTOM_FIELDS_2);
+  if(typeof aichBuildAud==='function')aichBuildAud('audChips');
 })();
 
 function buildTypeChips(tab,types){

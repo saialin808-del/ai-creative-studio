@@ -19,7 +19,14 @@ const STEP1_HTML = `
 <div class="card">
 <div class="card-title">&#128230; Product — ကုန်ပစ္စည်း အချက်အလက်</div>
 <p class="hint">Type ရွေးပြီး အောက်ကနေရာလေးများကို ဖြည့်ရေးပါ — AI Marketing Content ဖန်တီးပေးပါမယ်။</p>
+<div class="aich-label">&#128230; ဈေးကွန်တင့် အမျိုးအစား</div>
 <div class="type-chips" id="contentTypes"></div>
+<div class="aich-label">&#128101; ဘယ်သူအတွက်</div>
+<div class="aich-chips" id="audChips"></div>
+<div class="aich-model-wrap">
+<div class="aich-label">&#129302; AI မော်ဒယ်</div>
+<select id="aiModelSel" data-category="text"></select>
+</div>
 <div id="contentFields"></div>
 </div>
 </div>`;
@@ -328,12 +335,12 @@ function base64ToBlob(b64,mime){var bin=atob(b64);var arr=new Uint8Array(bin.len
     document.getElementById('aicsApp').style.display='none';
     return;
   }
-  document.getElementById('userEmail').textContent=localStorage.getItem('aics_email')||'—';
-  document.getElementById('planBadge').textContent=localStorage.getItem('aics_plan')||'FREE';
+  var _ve=document.getElementById('userEmail');if(_ve)_ve.textContent=localStorage.getItem('aics_email')||'—';
+  var _vp=document.getElementById('planBadge');if(_vp)_vp.textContent=localStorage.getItem('aics_plan')||'FREE';
   api('/api/users/me').then(function(d){
     if(d.error){localStorage.removeItem('aics_token');location.reload();return;}
-    document.getElementById('userEmail').textContent=d.email||'';
-    document.getElementById('planBadge').textContent=d.plan||'FREE';
+    var _ve2=document.getElementById('userEmail');if(_ve2)_ve2.textContent=d.email||'';
+    var _vp2=document.getElementById('planBadge');if(_vp2)_vp2.textContent=d.plan||'FREE';
     var al=document.getElementById('adminLink');
     if(al)al.style.display=d.is_admin?'flex':'none';
     USER_PLAN=d.plan||'FREE';
@@ -345,6 +352,7 @@ function base64ToBlob(b64,mime){var bin=atob(b64);var arr=new Uint8Array(bin.len
       document.getElementById('proLockNote').textContent='🔒 ဒီ Feature ကို Pro User သာ အသုံးပြုနိုင်ပါသည်';
     }
   });
+  if(typeof aichBuildAud==='function')aichBuildAud('audChips');
 })();
 
 function buildTypes(containerId,types,varName){

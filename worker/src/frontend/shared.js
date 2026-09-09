@@ -69,6 +69,8 @@ function appShellSidebar(activeId) {
 // (Phase 4 တွင် Studio ၆ ခု၏ UI Shell ကို ဤပုံစံဖြင့် တစ်ညီတည်း ဖြစ်အောင် ပြုလုပ်ပါမည်)
 function studioPageSidebar(activeId) {
   const homeActive = activeId === 'home' ? ' active' : '';
+  const creActive = activeId === 'creations' ? ' active' : '';
+  const favActive = activeId === 'favorites' ? ' active' : '';
   return (
     '<div class="backdrop" id="backdrop" onclick="toggleSidebar()"></div>\n' +
     '<div class="sidebar" id="sidebar" style="display:flex;flex-direction:column;">\n' +
@@ -77,12 +79,10 @@ function studioPageSidebar(activeId) {
     '  <div class="nav-label">STUDIOS</div>\n' +
     '  ' + studioLinks(activeId) + '\n' +
     '  <div class="nav-label">MY WORK</div>\n' +
-    '  ' + myWorkLinks(activeId) + '\n' +
+    '  <a class="nav-item' + creActive + '" href="/app/creations"><span class="nav-icon-circle">📁</span> ဖန်တီးမှုများ</a>\n' +
+    '  <a class="nav-item' + favActive + '" href="/app/creations?fav=1"><span class="nav-icon-circle">⭐</span> အနှစ်သက်ဆုံး</a>\n' +
     '  </div>\n' +
     '  <div class="sidebar-bottom">\n' +
-    '  <div class="side-user"><div class="avatar" id="sideAvatar">👤</div><div class="side-name" id="sideName">—</div></div>\n' +
-    '  <div class="license-badge" id="sidePlan">—</div>\n' +
-    '  <div class="side-email" id="sideEmail">—</div>\n' +
     '  <a class="side-btn" onclick="setApiKey()">🔑 API Key Setting</a>\n' +
     '  <a class="side-btn" id="tgLink" href="' + SITE_LINKS.telegram + '" target="_blank">📨 Telegram</a>\n' +
     '  <a class="side-btn" id="fbLink" href="' + SITE_LINKS.facebook + '" target="_blank">📘 Facebook</a>\n' +
@@ -449,6 +449,21 @@ function aicsShellCss() {
     '.aics-hd-save{display:inline-flex;align-items:center;gap:6px;background:#111a2e;border:1px solid rgba(0,229,255,.35);color:#00e5ff;padding:8px 14px;border-radius:10px;font-size:12.5px;font-weight:600;cursor:pointer;font-family:inherit;min-height:38px;transition:all .2s;}\n' +
     '.aics-hd-save:hover{background:rgba(0,229,255,.12);}\n' +
     '.aics-user{display:flex;align-items:center;gap:8px;}\n' +
+    '.aics-gear{display:inline-flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:10px;border:1px solid rgba(0,229,255,.28);color:#00e5ff;background:rgba(0,229,255,.06);font-size:17px;text-decoration:none;flex-shrink:0;transition:all .2s;}\n' +
+    '.aics-gear:hover{background:rgba(0,229,255,.14);}\n' +
+    '.aics-userblock{display:flex;align-items:center;gap:9px;}\n' +
+    '.aics-avatar{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#7b5cff,#00e5ff);color:#041018;font-weight:700;font-size:15px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}\n' +
+    '.aics-username{font-size:13px;font-weight:600;color:#e8ecf4;white-space:nowrap;}\n' +
+    '.aics-planbadge{font-size:10.5px;font-weight:700;color:#00e5ff;border:1px solid rgba(0,229,255,.4);border-radius:999px;padding:2px 9px;white-space:nowrap;}\n' +
+    '.aich-label{font-size:11.5px;color:#8b95a8;font-weight:700;letter-spacing:.4px;margin:16px 0 8px;}\n' +
+    '.aich-chips{display:flex;flex-wrap:wrap;gap:8px;}\n' +
+    '.aich-chip{display:inline-flex;align-items:center;gap:6px;background:#111a2e;border:1px solid #26324a;color:#c7d0e0;padding:9px 16px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s;}\n' +
+    '.aich-chip:hover{border-color:rgba(0,229,255,.45);color:#fff;}\n' +
+    '.aich-chip.active{background:rgba(0,229,255,.12);border-color:#00e5ff;color:#00e5ff;}\n' +
+    '.aich-chip.pro{border-color:rgba(123,92,255,.4);color:#b7a8ff;}\n' +
+    '.aich-chip.pro.active{background:rgba(123,92,255,.16);color:#b7a8ff;}\n' +
+    '.aich-model-wrap{margin-top:16px;}\n' +
+    '.aich-model-wrap select{width:100%;padding:11px 12px;border-radius:10px;background:#0d1424;border:1px solid #26324a;color:#fff;font-size:13.5px;font-family:inherit;}\n' +
     '.aics-main{max-width:1280px;margin:0 auto;width:100%;padding:20px 24px;}\n' +
     '.aics-stepper{margin-bottom:18px;background:#0d1424;border:1px solid rgba(0,229,255,.12);border-radius:14px;padding:10px 12px;overflow-x:auto;}\n' +
     '.aics-stepper-inner{display:flex;align-items:center;gap:6px;min-width:max-content;}\n' +
@@ -538,16 +553,10 @@ export function renderStudioShell(opts) {
     '<header class="header aics-header">\n' +
     '<div class="aics-header-left">\n' +
     '<button class="menu-btn" onclick="toggleSidebar()">&#9776;</button>\n' +
-    '<a class="aics-back" href="/app" title="Back to Dashboard">&#8592;</a>\n' +
-    '<div style="min-width:0;">\n' +
-    '<div class="aics-title">' + icon + ' ' + nameMy + '</div>\n' +
-    '<div class="aics-desc">' + desc + '</div>\n' +
-    '</div>\n' +
     '</div>\n' +
     '<div class="aics-header-right">\n' +
-    '<div class="aics-model"><span class="aics-model-label">&#129302; AI Model</span><select id="aiModelSel" data-category="' + modelCat + '"></select></div>\n' +
-    '<button class="aics-hd-save" onclick="studioSaveDraft()">&#128190; Save Draft</button>\n' +
-    '<div class="aics-user"><span class="user-email" id="userEmail">—</span><span class="plan-badge" id="planBadge">FREE</span></div>\n' +
+    '<a class="aics-gear" href="/app/settings" title="Settings">&#9881;</a>\n' +
+    '<div class="aics-userblock"><div class="aics-avatar" id="sideAvatar">👤</div><div class="aics-username" id="sideName">—</div><div class="aics-planbadge" id="sidePlan">FREE</div></div>\n' +
     '</div>\n' +
     '</header>\n' +
     '<div class="layout">\n' +
@@ -639,6 +648,25 @@ export function renderStudioShell(opts) {
     '    updateStepper();\n' +
     '  };\n' +
     '  window.studioCur = function () { return cur; };\n' +
+    '  window.aichAudChoices = [\'လူတိုင်း\', \'လူငယ်\', \'လူကြီး\', \'ကလေး\'];\n' +
+    '  window.aichAud = \'လူတိုင်း\';\n' +
+    '  window.aichBuildAud = function (containerId, selected) {\n' +
+    '    var c = el(containerId); if (!c) return;\n' +
+    '    window.aichAud = selected || window.aichAud;\n' +
+    '    var html = \'\';\n' +
+    '    for (var i = 0; i < window.aichAudChoices.length; i++) {\n' +
+    '      var v = window.aichAudChoices[i];\n' +
+    '      html += \'<button type="button" class="aich-chip\' + (v === window.aichAud ? \' active\' : \'\') + \'" onclick="aichPickAud(this)">\' + v + \'</button>\';\n' +
+    '    }\n' +
+    '    c.innerHTML = html;\n' +
+    '  };\n' +
+    '  window.aichPickAud = function (btn) {\n' +
+    '    var p = btn.parentElement;\n' +
+    '    var btns = p.querySelectorAll(".aich-chip");\n' +
+    '    for (var i = 0; i < btns.length; i++) btns[i].classList.remove("active");\n' +
+    '    btn.classList.add("active");\n' +
+    '    window.aichAud = btn.textContent;\n' +
+    '  };\n' +
     '  window.studioSetActions = function (list) {\n' +
     '    var c = el("aicsActions"); if (!c) return;\n' +
     '    var html = \'<div class="aics-actions-inner">\';\n' +

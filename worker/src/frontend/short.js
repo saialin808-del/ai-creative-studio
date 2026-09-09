@@ -19,7 +19,14 @@ const STEP1_HTML = `
 <div class="card">
 <div class="card-title">&#127916; Short Script — Create</div>
 <p style="color:var(--text2);font-size:13px;margin-bottom:14px;">Type ရွေးပြီး အောက်ကနေရာလေးများကို ဖြည့်ရေးပါ — TikTok/Reels/Shorts အတွက် Script ဖန်တီးပေးပါမယ်။</p>
+<div class="aich-label">&#127909; ရှော့တ် အမျိုးအစား</div>
 <div class="type-chips" id="typeChips1"></div>
+<div class="aich-label">&#128101; ဘယ်သူအတွက်</div>
+<div class="aich-chips" id="audChips"></div>
+<div class="aich-model-wrap">
+<div class="aich-label">&#129302; AI မော်ဒယ်</div>
+<select id="aiModelSel" data-category="text"></select>
+</div>
 <div id="ideaFields"></div>
 </div>
 </div>`;
@@ -263,11 +270,12 @@ var refImages=[];
 
 (function init(){
   if(!token){document.getElementById('loginView').style.display='flex';document.getElementById('aicsApp').style.display='none';return;}
-  document.getElementById('userEmail').textContent=userEmail||'—';
-  document.getElementById('planBadge').textContent=userPlan||'FREE';
+  var _ue=document.getElementById('userEmail');if(_ue)_ue.textContent=userEmail||'—';
+  var _pb=document.getElementById('planBadge');if(_pb)_pb.textContent=userPlan||'FREE';
   buildTypeChips('typeChips1',1);
   buildTypeChips('typeChips2',2);
   buildIdeaFields();
+  if(typeof aichBuildAud==='function')aichBuildAud('audChips');
 })();
 
 function setTypeChip(containerId,val){

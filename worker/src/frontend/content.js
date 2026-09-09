@@ -24,6 +24,12 @@ const STEP1_HTML = `
 <label>သင့် အကြံ / အကြောင်းအရာ (User Idea) *</label>
 <textarea id="ideaInput" placeholder="ဥပမာ — ကော်ဖီဆိုင်တစ်ဆင်အတွက် social media content ရေးပါ..." style="min-height:130px;"></textarea>
 </div>
+<div class="aich-label">&#128101; ဘယ်သူအတွက်</div>
+<div class="aich-chips" id="audChips"></div>
+<div class="aich-model-wrap">
+<div class="aich-label">&#129302; AI မော်ဒယ်</div>
+<select id="aiModelSel" data-category="text"></select>
+</div>
 <details class="aics-advanced">
 <summary>&#9881; Advanced Settings</summary>
 <div style="margin-top:12px;">
@@ -379,9 +385,10 @@ var QUICK_PROMPTS={
 
 (function init(){
   if(!token){document.getElementById('loginView').style.display='flex';document.getElementById('aicsApp').style.display='none';return;}
-  document.getElementById('userEmail').textContent=userEmail||'—';
-  document.getElementById('planBadge').textContent=userPlan||'FREE';
+  var _ue=document.getElementById('userEmail');if(_ue)_ue.textContent=userEmail||'—';
+  var _pb=document.getElementById('planBadge');if(_pb)_pb.textContent=userPlan||'FREE';
   buildQuickActions();
+  if(typeof aichBuildAud==='function')aichBuildAud('audChips');
 })();
 
 function buildQuickActions(){

@@ -23,6 +23,12 @@ const STEP1_HTML = `
 <label>Voice ပြောင်းလိုသော Text *</label>
 <textarea id="ttsText01" placeholder="Voice ပြောင်းလိုသော Text ကို ထည့်ပါ"></textarea>
 </div>
+<div class="aich-label">&#128101; ဘယ်သူအတွက်</div>
+<div class="aich-chips" id="audChips"></div>
+<div class="aich-model-wrap">
+<div class="aich-label">&#129302; AI မော်ဒယ်</div>
+<select id="aiModelSel" data-category="voice"></select>
+</div>
 </div>
 </div>`;
 
@@ -321,8 +327,8 @@ function hydratePlan(){
       location.reload();
       return;
     }
-    document.getElementById('userEmail').textContent=d.email||'';
-    document.getElementById('planBadge').textContent=d.plan||'FREE';
+    var _ve=document.getElementById('userEmail');if(_ve)_ve.textContent=d.email||'';
+    var _vp=document.getElementById('planBadge');if(_vp)_vp.textContent=d.plan||'FREE';
     USER_PLAN=d.plan||'FREE';
     if(USER_PLAN!=='PRO'){
       document.getElementById('proCard01').classList.add('locked');
@@ -345,9 +351,10 @@ function hydratePlan(){
     document.getElementById('aicsApp').style.display='none';
     return;
   }
-  document.getElementById('userEmail').textContent=localStorage.getItem('aics_email')||'—';
-  document.getElementById('planBadge').textContent=localStorage.getItem('aics_plan')||'FREE';
+  var _ve=document.getElementById('userEmail');if(_ve)_ve.textContent=localStorage.getItem('aics_email')||'—';
+  var _vp=document.getElementById('planBadge');if(_vp)_vp.textContent=localStorage.getItem('aics_plan')||'FREE';
   hydratePlan();
+  if(typeof aichBuildAud==='function')aichBuildAud('audChips');
 })();
 
 // ===== Tab 01: Text → Voice =====

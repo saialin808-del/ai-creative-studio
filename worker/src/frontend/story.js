@@ -19,7 +19,14 @@ const STEP1_HTML = `
 <div class="card">
 <div class="card-title">&#128221; Create Your Story Idea</div>
 <p style="color:var(--text2);font-size:13px;margin-bottom:14px;">Type ရွေးပြီး အောက်ကနေရာလေးများကို ဖြည့်ရေးပါ — Generate နှိပ်လိုက်ရင် AI က ဇာတ်လမ်းရေးပေးပါမယ်။</p>
+<div class="aich-label">&#128200; ဇာတ်လမ်းအမျိုးအစား</div>
 <div class="type-chips" id="storyTypeChips"></div>
+<div class="aich-label">&#128101; ဘယ်သူအတွက်</div>
+<div class="aich-chips" id="audChips"></div>
+<div class="aich-model-wrap">
+<div class="aich-label">&#129302; AI မော်ဒယ်</div>
+<select id="aiModelSel" data-category="text"></select>
+</div>
 <div class="form-group">
 <label>ဇာတ်လမ်းအကြောင်း *</label>
 <textarea id="field_0" placeholder="ဥပမာ — ရန်ကုန်မှာ အောင်မြင်မှုရဖို့ ကြိုးစားနေတဲ့ လူငယ်တစ်ယောက်ရဲ့ ခရီး..." style="min-height:110px;"></textarea>
@@ -274,10 +281,11 @@ var FIELD_CONFIG=[
 
 (function init(){
   if(!token){document.getElementById('loginView').style.display='flex';document.getElementById('aicsApp').style.display='none';return;}
-  document.getElementById('userEmail').textContent=userEmail||'—';
-  document.getElementById('planBadge').textContent=userPlan||'FREE';
+  var _ue=document.getElementById('userEmail');if(_ue)_ue.textContent=userEmail||'—';
+  var _pb=document.getElementById('planBadge');if(_pb)_pb.textContent=userPlan||'FREE';
   buildTypeChips('storyTypeChips',STORY_TYPES,'story');
   buildTypeChips('videoTypeChips',VIDEO_TYPES,'video');
+  if(typeof aichBuildAud==='function')aichBuildAud('audChips');
   buildIdeaFields();
   buildQuickTemplates();
 })();
