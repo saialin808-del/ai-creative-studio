@@ -19,13 +19,21 @@ const STEP1_HTML = `
 <div class="card">
 <div class="card-title">&#128221; Create Your Story Idea</div>
 <p style="color:var(--text2);font-size:13px;margin-bottom:14px;">Type ရွေးပြီး အောက်ကနေရာလေးများကို ဖြည့်ရေးပါ — Generate နှိပ်လိုက်ရင် AI က ဇာတ်လမ်းရေးပေးပါမယ်။</p>
-<div class="aich-label">&#128200; ဇာတ်လမ်းအမျိုးအစား</div>
-<div class="type-chips" id="storyTypeChips"></div>
-<div class="aich-label">&#128101; ဘယ်သူအတွက်</div>
-<div class="aich-chips" id="audChips"></div>
-<div class="aich-model-wrap">
-<div class="aich-label">&#129302; AI မော်ဒယ်</div>
-<select id="aiModelSel" data-category="text"></select>
+<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;">
+<div class="form-group" style="flex:1;min-width:170px;margin-bottom:0;">
+<label>ဇာတ်လမ်းအမျိုးအစား</label>
+<select id="storyTypeSel" onchange="selectedStoryType=this.value;">
+<option value="1" selected>ဇာတ်လမ်း (Free)</option>
+<option value="2">ရုပ်ရှင် (Pro)</option>
+<option value="3">ဇာတ်လမ်းတွဲ (Pro)</option>
+<option value="4">ဇာတ်လမ်းတို (Pro)</option>
+<option value="5">ဟာသဇာတ်လမ်း (Pro)</option>
+</select>
+</div>
+<div class="form-group" style="flex:1;min-width:170px;margin-bottom:0;">
+<label>ဘယ်သူအတွက်</label>
+<select id="audSel" onchange="window.aichAud=this.value;"><option>လူတိုင်း</option><option>လူငယ်</option><option>လူကြီး</option><option>ကလေး</option></select>
+</div>
 </div>
 <div class="form-group">
 <label>ဇာတ်လမ်းအကြောင်း *</label>
@@ -283,9 +291,7 @@ var FIELD_CONFIG=[
   if(!token){document.getElementById('loginView').style.display='flex';document.getElementById('aicsApp').style.display='none';return;}
   var _ue=document.getElementById('userEmail');if(_ue)_ue.textContent=userEmail||'—';
   var _pb=document.getElementById('planBadge');if(_pb)_pb.textContent=userPlan||'FREE';
-  buildTypeChips('storyTypeChips',STORY_TYPES,'story');
   buildTypeChips('videoTypeChips',VIDEO_TYPES,'video');
-  if(typeof aichBuildAud==='function')aichBuildAud('audChips');
   buildIdeaFields();
   buildQuickTemplates();
 })();
@@ -363,12 +369,15 @@ function collectIdeaText(){
   }
   var tone=document.getElementById('toneSel');if(tone&&tone.value)lines.push('Tone: '+tone.value);
   var lang=document.getElementById('langSel');if(lang&&lang.value)lines.push('Language: '+lang.value);
+  var aud=document.getElementById('audSel');if(aud&&aud.value)lines.push('Audience: '+aud.value);
   return{text:lines.join('\\n'),valid:valid};
 }
 
 function generateStory(){
   var collected=collectIdeaText();
   if(!collected.valid){showError('genError','ဇာတ်လမ်းအကြောင်း အနည်းဆုံး ဖြည့်ရေးပါ');return;}
+  var stMeta=STORY_TYPES[parseInt(selectedStoryType,10)-1];
+  if(stMeta&&stMeta.pro&&!isPro){showToastMsg('ဒီ Type ကို Pro User သာ အသုံးပြုနိုင်ပါသည်။');return;}
   var idea=collected.text;
   setLoading('genLoading',true);hideError('genError');
   document.getElementById('generateBtn')&&(document.getElementById('generateBtn').disabled=true);
@@ -713,6 +722,7 @@ function studioCollectDraft(){
   return {
     storyType:selectedStoryType,
     videoType:selectedVideoType,
+    aud:(document.getElementById('audSel')?document.getElementById('audSel').value:''),
     tone:document.getElementById('toneSel')?document.getElementById('toneSel').value:'',
     lang:document.getElementById('langSel')?document.getElementById('langSel').value:'',
     fields:fields,
@@ -730,6 +740,8 @@ function studioRestoreDraft(d){
   if(!d)return;
   selectedStoryType=d.storyType||'1';
   selectedVideoType=d.videoType||'1';
+  var sts=document.getElementById('storyTypeSel');if(sts)sts.value=selectedStoryType;
+  var aud=document.getElementById('audSel');if(aud&&d.aud)aud.value=d.aud;window.aichAud=(aud?aud.value:'လူတိုင်း');
   var tone=document.getElementById('toneSel');if(tone&&d.tone)tone.value=d.tone;
   var lang=document.getElementById('langSel');if(lang&&d.lang)lang.value=d.lang;
   if(d.fields){for(var i=0;i<FIELD_CONFIG.length;i++){var f=document.getElementById('field_'+i);if(f)f.value=d.fields[i]||'';}}
@@ -742,7 +754,6 @@ function studioRestoreDraft(d){
   currentScenes=d.scenes||[];
   if(currentStory)studioMarkDone(1);
   if(currentCharacters.length||currentScenes.length){studioMarkDone(2);studioMarkDone(4);}
-  setChipByValue('storyTypeChips',selectedStoryType);
   setChipByValue('videoTypeChips',selectedVideoType);
   renderScenes();
 }

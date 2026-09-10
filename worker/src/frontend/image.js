@@ -19,13 +19,21 @@ const STEP1_HTML = `
 <div class="card">
 <div class="card-title">&#127912; Image Prompt</div>
 <p style="color:var(--text2);font-size:13px;margin-bottom:14px;">Type ရွေးပြီး ပုံအကြောင်း ဖော်ပြပါ — နောက်အဆင့်မှာ Customize လုပ်ပြီး Prompt ဖန်တီးပါမယ်။</p>
-<div class="aich-label">&#128247; ဓာတ်ပုံ အမျိုးအစား</div>
-<div class="type-chips" id="typeChips1"></div>
-<div class="aich-label">&#128101; ဘယ်သူအတွက်</div>
-<div class="aich-chips" id="audChips"></div>
-<div class="aich-model-wrap">
-<div class="aich-label">&#129302; AI မော်ဒယ်</div>
-<select id="aiModelSel" data-category="image"></select>
+<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;">
+<div class="form-group" style="flex:1;min-width:170px;margin-bottom:0;">
+<label>ဓာတ်ပုံ အမျိုးအစား</label>
+<select id="typeSel1" onchange="selectedType[1]=this.value;">
+<option value="1" selected>💡 Idea To Image (Free)</option>
+<option value="2">👤 Character Design (Pro)</option>
+<option value="3">📱 Social Media Thumbnail (Pro)</option>
+<option value="4">🛒 Product Image (Pro)</option>
+<option value="5">👤🛒 Character Product Ad (Pro)</option>
+</select>
+</div>
+<div class="form-group" style="flex:1;min-width:170px;margin-bottom:0;">
+<label>ဘယ်သူအတွက်</label>
+<select id="audSel" onchange="window.aichAud=this.value;"><option>လူတိုင်း</option><option>လူငယ်</option><option>လူကြီး</option><option>ကလေး</option></select>
+</div>
 </div>
 <div id="ideaFields1"></div>
 <div class="ref-upload-area">
@@ -271,13 +279,11 @@ var lastImageData={1:null,2:null};
   if(!token){document.getElementById('loginView').style.display='flex';document.getElementById('aicsApp').style.display='none';return;}
   var _ue=document.getElementById('userEmail');if(_ue)_ue.textContent=userEmail||'—';
   var _pb=document.getElementById('planBadge');if(_pb)_pb.textContent=userPlan||'FREE';
-  buildTypeChips(1,TYPES_1);
   buildTypeChips(2,TYPES_2);
   buildFields(1,'ideaFields1',MAIN_FIELDS_1);
   buildFields(1,'customizeFields1',CUSTOM_FIELDS_1);
   buildFields(2,'ideaFields2',MAIN_FIELDS_2);
   buildFields(2,'customizeFields2',CUSTOM_FIELDS_2);
-  if(typeof aichBuildAud==='function')aichBuildAud('audChips');
 })();
 
 function buildTypeChips(tab,types){
@@ -429,6 +435,9 @@ function generatePrompt(tab){
     return;
   }
   currentIdea[tab]=collected.text;
+  if(tab===1&&selectedType[1]!=='1'&&!isPro){showToast('ဒီ Type ကို Pro User သာ အသုံးပြုနိုင်ပါသည်။',true);setLoading('loading'+tab,false);return;}
+  var audEl=document.getElementById('audSel');
+  if(tab===1&&audEl&&audEl.value){collected.text+='\\n\\nAudience: '+audEl.value;window.aichAud=audEl.value;}
   setLoading('loading'+tab,true);
   hideError('error'+tab);
   var endpoint=(tab===1)?'/api/studio/image/prompt':'/api/studio/image/ad-prompt';
@@ -610,6 +619,7 @@ function studioCollectDraft(){
     fields:fields,
     type1:selectedType[1],
     type2:selectedType[2],
+    aud:(document.getElementById('audSel')?document.getElementById('audSel').value:''),
     idea1:currentIdea[1],
     idea2:currentIdea[2],
     result1:document.getElementById('result1').value,
@@ -628,7 +638,8 @@ function studioRestoreDraft(d){
       if(el)el.value=d.fields[k];
     }
   }
-  if(d.type1){selectedType[1]=d.type1;setTypeChip(1,d.type1);}
+  if(d.type1){selectedType[1]=d.type1;var ts1=document.getElementById('typeSel1');if(ts1)ts1.value=String(d.type1);}
+  var audEl=document.getElementById('audSel');if(audEl&&d.aud)audEl.value=d.aud;if(audEl)window.aichAud=audEl.value;
   if(d.type2){selectedType[2]=d.type2;setTypeChip(2,d.type2);}
   if(d.idea1)currentIdea[1]=d.idea1;
   if(d.idea2)currentIdea[2]=d.idea2;

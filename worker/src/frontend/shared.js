@@ -83,6 +83,7 @@ function studioPageSidebar(activeId) {
     '  <a class="nav-item' + favActive + '" href="/app/creations?fav=1"><span class="nav-icon-circle">⭐</span> အနှစ်သက်ဆုံး</a>\n' +
     '  </div>\n' +
     '  <div class="sidebar-bottom">\n' +
+    '  <a class="side-btn' + (activeId === 'settings' ? ' active' : '') + '" href="/app/settings">🛠️ ဆက်တင်များ</a>\n' +
     '  <a class="side-btn" onclick="setApiKey()">🔑 API Key Setting</a>\n' +
     '  <a class="side-btn" id="tgLink" href="' + SITE_LINKS.telegram + '" target="_blank">📨 Telegram</a>\n' +
     '  <a class="side-btn" id="fbLink" href="' + SITE_LINKS.facebook + '" target="_blank">📘 Facebook</a>\n' +
@@ -498,7 +499,10 @@ function aicsShellCss() {
     '.aics-pv-card p{margin:0 0 6px;color:#e8ecf4;font-size:12.5px;line-height:1.6;white-space:pre-wrap;word-break:break-word;}\n' +
     '.aics-pv-card .aics-pv-sub{color:#8b95a8;font-size:11.5px;}\n' +
     '.aics-pv-img{max-width:100%;border-radius:8px;border:1px solid rgba(0,229,255,.15);margin-top:6px;}\n' +
-    '.aics-actions{position:sticky;bottom:10px;margin-top:18px;background:rgba(13,20,36,.94);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid rgba(0,229,255,.16);border-radius:14px;padding:12px 16px;z-index:50;box-shadow:0 6px 24px rgba(0,0,0,.4);}\n' +
+    '.aics-actions{position:sticky;bottom:10px;margin-top:18px;background:rgba(13,20,36,.94);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid rgba(0,229,255,.16);border-radius:14px;padding:12px 16px;z-index:50;box-shadow:0 6px 24px rgba(0,0,0,.4);display:flex;align-items:center;gap:14px;justify-content:space-between;flex-wrap:wrap;}\n' +
+    '.aics-actions-model{display:flex;align-items:center;gap:8px;flex-shrink:0;}\n' +
+    '.aics-actions-model-label{font-size:11.5px;color:#8b95a8;font-weight:700;white-space:nowrap;letter-spacing:.4px;}\n' +
+    '.aics-actions-model select{min-width:150px;max-width:230px;padding:9px 10px;background:#0d1424;border:1px solid #26324a;color:#fff;border-radius:10px;font-size:13px;font-family:inherit;}\n' +
     '.aics-actions-inner{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end;}\n' +
     '.aics-act{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:11px 22px;border-radius:10px;border:none;font-size:13.5px;font-weight:600;cursor:pointer;font-family:inherit;min-height:44px;transition:all .2s;}\n' +
     '.aics-act.primary{background:linear-gradient(135deg,#00e5ff,#00b8d4);color:#080c18;}\n' +
@@ -523,7 +527,9 @@ function aicsShellCss() {
     '  .aics-grid{grid-template-columns:1fr;}\n' +
     '  .aics-panel{position:static;max-height:none;min-height:0;}\n' +
     '  .aics-main{padding:14px;}\n' +
-    '  .aics-actions{position:sticky;bottom:8px;padding:10px 12px;}\n' +
+    '  .aics-actions{position:sticky;bottom:8px;padding:10px 12px;flex-direction:column;align-items:stretch;gap:8px;}\n' +
+    '  .aics-actions-model{width:100%;}\n' +
+    '  .aics-actions-model select{max-width:none;width:100%;}\n' +
     '  .aics-actions-inner{justify-content:stretch;}\n' +
     '  .aics-act{flex:1;padding:11px 10px;font-size:13px;}\n' +
     '  .aics-stepper{padding:8px;}\n' +
@@ -551,13 +557,7 @@ export function renderStudioShell(opts) {
     aicsShellCss() +
     '<div class="aics-app" id="aicsApp">\n' +
     '<header class="header aics-header">\n' +
-    '<div class="aics-header-left">\n' +
     '<button class="menu-btn" onclick="toggleSidebar()">&#9776;</button>\n' +
-    '</div>\n' +
-    '<div class="aics-header-right">\n' +
-    '<a class="aics-gear" href="/app/settings" title="Settings">&#9881;</a>\n' +
-    '<div class="aics-userblock"><div class="aics-avatar" id="sideAvatar">👤</div><div class="aics-username" id="sideName">—</div><div class="aics-planbadge" id="sidePlan">FREE</div></div>\n' +
-    '</div>\n' +
     '</header>\n' +
     '<div class="layout">\n' +
     renderSidebar(activeId, { variant: 'studio' }) +
@@ -579,7 +579,10 @@ export function renderStudioShell(opts) {
     '</div>\n' +
     '</aside>\n' +
     '</div>\n' +
-    '<div class="aics-actions" id="aicsActions"></div>\n' +
+    '<div class="aics-actions">\n' +
+    '<div class="aics-actions-model"><span class="aics-actions-model-label">&#129302; AI မော်ဒယ်</span><select id="aiModelSel" data-category="' + modelCat + '"></select></div>\n' +
+    '<div class="aics-actions-inner" id="aicsActionsInner"></div>\n' +
+    '</div>\n' +
     '</main>\n' +
     '</div>\n' +
     '</div>\n' +
@@ -668,13 +671,12 @@ export function renderStudioShell(opts) {
     '    window.aichAud = btn.textContent;\n' +
     '  };\n' +
     '  window.studioSetActions = function (list) {\n' +
-    '    var c = el("aicsActions"); if (!c) return;\n' +
-    '    var html = \'<div class="aics-actions-inner">\';\n' +
+    '    var c = el("aicsActionsInner"); if (!c) return;\n' +
+    '    var html = \'\';\n' +
     '    for (var i = 0; i < (list || []).length; i++) {\n' +
     '      var a = list[i];\n' +
     '      html += \'<button class="aics-act \' + (a.cls || "secondary") + \'" onclick="studioAct(\' + i + \')">\' + a.label + \'</button>\';\n' +
     '    }\n' +
-    '    html += \'</div>\';\n' +
     '    c.innerHTML = html;\n' +
     '    window.__studioActions = list || [];\n' +
     '  };\n' +

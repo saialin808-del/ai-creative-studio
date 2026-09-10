@@ -24,11 +24,9 @@ const STEP1_HTML = `
 <label>သင့် အကြံ / အကြောင်းအရာ (User Idea) *</label>
 <textarea id="ideaInput" placeholder="ဥပမာ — ကော်ဖီဆိုင်တစ်ဆင်အတွက် social media content ရေးပါ..." style="min-height:130px;"></textarea>
 </div>
-<div class="aich-label">&#128101; ဘယ်သူအတွက်</div>
-<div class="aich-chips" id="audChips"></div>
-<div class="aich-model-wrap">
-<div class="aich-label">&#129302; AI မော်ဒယ်</div>
-<select id="aiModelSel" data-category="text"></select>
+<div class="form-group" style="margin-bottom:16px;">
+<label>ဘယ်သူအတွက်</label>
+<select id="audSel"><option>လူတိုင်း</option><option>လူငယ်</option><option>လူကြီး</option><option>ကလေး</option></select>
 </div>
 <details class="aics-advanced">
 <summary>&#9881; Advanced Settings</summary>
@@ -388,7 +386,6 @@ var QUICK_PROMPTS={
   var _ue=document.getElementById('userEmail');if(_ue)_ue.textContent=userEmail||'—';
   var _pb=document.getElementById('planBadge');if(_pb)_pb.textContent=userPlan||'FREE';
   buildQuickActions();
-  if(typeof aichBuildAud==='function')aichBuildAud('audChips');
 })();
 
 function buildQuickActions(){
@@ -428,7 +425,10 @@ function generateContent(){
   var idea=document.getElementById('ideaInput').value.trim();
   var type=document.getElementById('typeSelect').value;
   var byok=document.getElementById('byokInput').value.trim();
+  var audEl=document.getElementById('audSel');
   if(!idea){showError('genError','အကြောင်းအရာ (User Idea) ထည့်ပါ။');return;}
+  if(audEl&&audEl.value)idea+='\\n\\nဘယ်သူအတွက်: '+audEl.value;
+  window.aichAud=audEl?audEl.value:'လူတိုင်း';
   setLoading('genLoading',true);
   hideError('genError');
   var body={idea:idea,type:type};
@@ -836,6 +836,7 @@ function studioCollectDraft(){
   return {
     idea:document.getElementById('ideaInput').value,
     type:document.getElementById('typeSelect').value,
+    aud:(document.getElementById('audSel')?document.getElementById('audSel').value:''),
     byok:document.getElementById('byokInput').value,
     videoIdea:document.getElementById('videoIdeaInput').value,
     videoType:document.getElementById('videoTypeSelect').value,
@@ -856,6 +857,7 @@ function studioRestoreDraft(d){
   if(!d)return;
   if(d.idea)document.getElementById('ideaInput').value=d.idea;
   if(d.type)document.getElementById('typeSelect').value=d.type;
+  var audEl=document.getElementById('audSel');if(audEl&&d.aud)audEl.value=d.aud;if(audEl)window.aichAud=audEl.value;
   if(d.byok)document.getElementById('byokInput').value=d.byok;
   if(d.videoIdea)document.getElementById('videoIdeaInput').value=d.videoIdea;
   if(d.videoType)document.getElementById('videoTypeSelect').value=d.videoType;

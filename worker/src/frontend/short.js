@@ -19,13 +19,21 @@ const STEP1_HTML = `
 <div class="card">
 <div class="card-title">&#127916; Short Script — Create</div>
 <p style="color:var(--text2);font-size:13px;margin-bottom:14px;">Type ရွေးပြီး အောက်ကနေရာလေးများကို ဖြည့်ရေးပါ — TikTok/Reels/Shorts အတွက် Script ဖန်တီးပေးပါမယ်။</p>
-<div class="aich-label">&#127909; ရှော့တ် အမျိုးအစား</div>
-<div class="type-chips" id="typeChips1"></div>
-<div class="aich-label">&#128101; ဘယ်သူအတွက်</div>
-<div class="aich-chips" id="audChips"></div>
-<div class="aich-model-wrap">
-<div class="aich-label">&#129302; AI မော်ဒယ်</div>
-<select id="aiModelSel" data-category="text"></select>
+<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;">
+<div class="form-group" style="flex:1;min-width:170px;margin-bottom:0;">
+<label>ရှော့တ် အမျိုးအစား</label>
+<select id="typeSel1" onchange="selectedType1=this.value;">
+<option value="1" selected>Short Video (Free)</option>
+<option value="2">Type 2 (Pro)</option>
+<option value="3">Type 3 (Pro)</option>
+<option value="4">Type 4 (Pro)</option>
+<option value="5">Type 5 (Pro)</option>
+</select>
+</div>
+<div class="form-group" style="flex:1;min-width:170px;margin-bottom:0;">
+<label>ဘယ်သူအတွက်</label>
+<select id="audSel" onchange="window.aichAud=this.value;"><option>လူတိုင်း</option><option>လူငယ်</option><option>လူကြီး</option><option>ကလေး</option></select>
+</div>
 </div>
 <div id="ideaFields"></div>
 </div>
@@ -272,10 +280,8 @@ var refImages=[];
   if(!token){document.getElementById('loginView').style.display='flex';document.getElementById('aicsApp').style.display='none';return;}
   var _ue=document.getElementById('userEmail');if(_ue)_ue.textContent=userEmail||'—';
   var _pb=document.getElementById('planBadge');if(_pb)_pb.textContent=userPlan||'FREE';
-  buildTypeChips('typeChips1',1);
   buildTypeChips('typeChips2',2);
   buildIdeaFields();
-  if(typeof aichBuildAud==='function')aichBuildAud('audChips');
 })();
 
 function setTypeChip(containerId,val){
@@ -342,6 +348,8 @@ function collectIdeaText(){
     if(field.required&&!val)valid=false;
     if(val)lines.push(field.label+': '+val);
   });
+  var audEl=document.getElementById('audSel');
+  if(audEl&&audEl.value)lines.push('Audience: '+audEl.value);
   return{text:lines.join('\\n'),valid:valid};
 }
 
@@ -354,6 +362,8 @@ function apiCall(url,body){
 function generateShort(){
   var collected=collectIdeaText();
   if(!collected.valid){showToast('Video ရဲ့ အကြောင်းအရာ အနည်းဆုံး ဖြည့်ရေးပါ',true);return;}
+  if(selectedType1!=='1'&&!isPro){showToast('ဒီ Type ကို Pro User သာ အသုံးပြုနိုင်ပါသည်။',true);return;}
+  window.aichAud=(document.getElementById('audSel')?document.getElementById('audSel').value:'လူတိုင်း');
   setLoading('genLoading',true);
   hideError('genError');
   document.getElementById('scriptActions').style.display='none';
@@ -849,6 +859,7 @@ function studioCollectDraft(){
     videoIdea:document.getElementById('videoIdea').value,
     type1:selectedType1,
     type2:selectedType2,
+    aud:(document.getElementById('audSel')?document.getElementById('audSel').value:''),
     shortIdea:currentShortIdea,
     short:document.getElementById('shortResult').value,
     videoIdeaSaved:currentVideoIdea,
@@ -867,7 +878,8 @@ function studioRestoreDraft(d){
       if(el)el.value=d.fields[k];
     }
   }
-  if(d.type1){selectedType1=d.type1;setTypeChip('typeChips1',d.type1);}
+  if(d.type1){selectedType1=d.type1;var ts1=document.getElementById('typeSel1');if(ts1)ts1.value=String(d.type1);}
+  var audEl=document.getElementById('audSel');if(audEl&&d.aud)audEl.value=d.aud;if(audEl)window.aichAud=audEl.value;
   if(d.type2){selectedType2=d.type2;setTypeChip('typeChips2',d.type2);}
   if(d.videoIdea)document.getElementById('videoIdea').value=d.videoIdea;
   if(d.short){currentShort=d.short;document.getElementById('shortResult').value=d.short;document.getElementById('scriptActions').style.display='flex';document.getElementById('reviseSection').style.display='block';}

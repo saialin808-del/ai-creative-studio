@@ -19,13 +19,21 @@ const STEP1_HTML = `
 <div class="card">
 <div class="card-title">&#128230; Product — ကုန်ပစ္စည်း အချက်အလက်</div>
 <p class="hint">Type ရွေးပြီး အောက်ကနေရာလေးများကို ဖြည့်ရေးပါ — AI Marketing Content ဖန်တီးပေးပါမယ်။</p>
-<div class="aich-label">&#128230; ဈေးကွန်တင့် အမျိုးအစား</div>
-<div class="type-chips" id="contentTypes"></div>
-<div class="aich-label">&#128101; ဘယ်သူအတွက်</div>
-<div class="aich-chips" id="audChips"></div>
-<div class="aich-model-wrap">
-<div class="aich-label">&#129302; AI မော်ဒယ်</div>
-<select id="aiModelSel" data-category="text"></select>
+<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;">
+<div class="form-group" style="flex:1;min-width:170px;margin-bottom:0;">
+<label>ဈေးကွန်တင့် အမျိုးအစား</label>
+<select id="contentTypeSel" onchange="contentType=this.value;">
+<option value="1" selected>📦 Product Description (Free)</option>
+<option value="2">💰 Sales Copy (Pro)</option>
+<option value="3">📢 Marketing Script (Pro)</option>
+<option value="4">📄 Content Type 4 (Pro)</option>
+<option value="5">📄 Content Type 5 (Pro)</option>
+</select>
+</div>
+<div class="form-group" style="flex:1;min-width:170px;margin-bottom:0;">
+<label>ဘယ်သူအတွက်</label>
+<select id="audSel" onchange="window.aichAud=this.value;"><option>လူတိုင်း</option><option>လူငယ်</option><option>လူကြီး</option><option>ကလေး</option></select>
+</div>
 </div>
 <div id="contentFields"></div>
 </div>
@@ -352,7 +360,6 @@ function base64ToBlob(b64,mime){var bin=atob(b64);var arr=new Uint8Array(bin.len
       document.getElementById('proLockNote').textContent='🔒 ဒီ Feature ကို Pro User သာ အသုံးပြုနိုင်ပါသည်';
     }
   });
-  if(typeof aichBuildAud==='function')aichBuildAud('audChips');
 })();
 
 function buildTypes(containerId,types,varName){
@@ -381,13 +388,6 @@ function setTypeChip(containerId,val){
   });
 }
 
-buildTypes('contentTypes',[
-  {val:'1',label:'📦 Product Description (Free)'},
-  {val:'2',label:'💰 Sales Copy (Pro)'},
-  {val:'3',label:'📢 Marketing Script (Pro)'},
-  {val:'4',label:'📄 Content Type 4 (Pro)'},
-  {val:'5',label:'📄 Content Type 5 (Pro)'}
-],'content');
 buildTypes('videoTypes',[
   {val:'1',label:'🎬 Product Video (Free)'},
   {val:'2',label:'🎬 Scene Planning (Pro)'},
@@ -413,6 +413,8 @@ function collectContentIdea(){
     var v=document.getElementById('cf'+i).value.trim();
     if(v)parts.push(f.label+': '+v);
   });
+  var audEl=document.getElementById('audSel');
+  if(audEl&&audEl.value){parts.push('ဘယ်သူအတွက်: '+audEl.value);window.aichAud=audEl.value;}
   return parts.join('\\n\\n');
 }
 
@@ -691,6 +693,7 @@ function studioCollectDraft(){
     fields:fields,
     contentType:contentType,
     videoType:videoType,
+    aud:(document.getElementById('audSel')?document.getElementById('audSel').value:''),
     resultContent:document.getElementById('resultContent').value,
     ttsText:document.getElementById('ttsText').value,
     voiceName:document.getElementById('voiceSelect').value,
@@ -713,7 +716,8 @@ function studioRestoreDraft(d){
       if(el)el.value=d.fields[k];
     }
   }
-  if(d.contentType){contentType=d.contentType;setTypeChip('contentTypes',d.contentType);}
+  if(d.contentType){contentType=d.contentType;var cts=document.getElementById('contentTypeSel');if(cts)cts.value=String(d.contentType);}
+  var audEl=document.getElementById('audSel');if(audEl&&d.aud)audEl.value=d.aud;if(audEl)window.aichAud=audEl.value;
   if(d.videoType){videoType=d.videoType;setTypeChip('videoTypes',d.videoType);}
   if(d.resultContent)document.getElementById('resultContent').value=d.resultContent;
   if(d.ttsText)document.getElementById('ttsText').value=d.ttsText;

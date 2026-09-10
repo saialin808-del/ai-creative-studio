@@ -23,11 +23,9 @@ const STEP1_HTML = `
 <label>Voice ပြောင်းလိုသော Text *</label>
 <textarea id="ttsText01" placeholder="Voice ပြောင်းလိုသော Text ကို ထည့်ပါ"></textarea>
 </div>
-<div class="aich-label">&#128101; ဘယ်သူအတွက်</div>
-<div class="aich-chips" id="audChips"></div>
-<div class="aich-model-wrap">
-<div class="aich-label">&#129302; AI မော်ဒယ်</div>
-<select id="aiModelSel" data-category="voice"></select>
+<div class="form-group" style="margin-bottom:16px;">
+<label>ဘယ်သူအတွက်</label>
+<select id="audSel" onchange="window.aichAud=this.value;"><option>လူတိုင်း</option><option>လူငယ်</option><option>လူကြီး</option><option>ကလေး</option></select>
 </div>
 </div>
 </div>`;
@@ -354,7 +352,6 @@ function hydratePlan(){
   var _ve=document.getElementById('userEmail');if(_ve)_ve.textContent=localStorage.getItem('aics_email')||'—';
   var _vp=document.getElementById('planBadge');if(_vp)_vp.textContent=localStorage.getItem('aics_plan')||'FREE';
   hydratePlan();
-  if(typeof aichBuildAud==='function')aichBuildAud('audChips');
 })();
 
 // ===== Tab 01: Text → Voice =====
@@ -364,6 +361,8 @@ function generateVoice01(){
   var style=document.getElementById('styleInstruction01').value.trim();
   var voiceName=document.getElementById('voiceNameSelect01').value;
   var combined=style?'[Speaking & Voice Style Instruction: '+style+']\\n\\n'+text:text;
+  var audEl=document.getElementById('audSel');
+  if(audEl&&audEl.value){combined+='\\n\\n(Target audience: '+audEl.value+')';window.aichAud=audEl.value;}
 
   var btn=document.getElementById('genVoiceBtn01');
   btn.disabled=true;
@@ -717,6 +716,7 @@ window.studioOnStep=studioOnStep;
 function studioCollectDraft(){
   return{
     ttsText:document.getElementById('ttsText01').value,
+    aud:(document.getElementById('audSel')?document.getElementById('audSel').value:''),
     style:document.getElementById('styleInstruction01').value,
     voiceName:document.getElementById('voiceNameSelect01').value,
     srt1:document.getElementById('srtOriginal01').value,
@@ -733,6 +733,7 @@ window.studioCollectDraft=studioCollectDraft;
 function studioRestoreDraft(d){
   if(!d)return;
   if(d.ttsText)document.getElementById('ttsText01').value=d.ttsText;
+  var audEl=document.getElementById('audSel');if(audEl&&d.aud)audEl.value=d.aud;if(audEl)window.aichAud=audEl.value;
   if(d.style)document.getElementById('styleInstruction01').value=d.style;
   if(d.voiceName){
     var sel=document.getElementById('voiceNameSelect01');
