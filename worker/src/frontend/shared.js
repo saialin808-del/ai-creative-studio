@@ -658,6 +658,16 @@ export function renderStudioShell(opts) {
     '    updateStepper();\n' +
     '  };\n' +
     '  window.studioCur = function () { return cur; };\n' +
+    '  window.studioSetLoading = function (on) {\n' +
+    '    var btn = document.querySelector(\'.aics-step-btn.active .aics-step-label\');\n' +
+    '    if (!btn) return;\n' +
+    '    if (on) {\n' +
+    '      if (!btn.dataset.origLabel) btn.dataset.origLabel = btn.textContent;\n' +
+    '      btn.textContent = \'ဖန်တီးနေသည်...\';\n' +
+    '    } else {\n' +
+    '      if (btn.dataset.origLabel) { btn.textContent = btn.dataset.origLabel; delete btn.dataset.origLabel; }\n' +
+    '    }\n' +
+    '  };\n' +
     '  window.aichAudChoices = [\'လူတိုင်း\', \'လူငယ်\', \'လူကြီး\', \'ကလေး\'];\n' +
     '  window.aichAud = \'လူတိုင်း\';\n' +
     '  window.aichBuildAud = function (containerId, selected) {\n' +

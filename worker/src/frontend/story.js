@@ -7,11 +7,11 @@
 import { renderSidebar, sidebarScript, renderStudioShell } from './shared.js';
 
 const STEPS = [
-  { label: 'Create', sub: 'Idea' },
-  { label: 'Characters', sub: 'Add characters', req: [1] },
-  { label: 'Story', sub: 'Write story', req: [1] },
-  { label: 'Scenes', sub: 'Create scenes', req: [2] },
-  { label: 'Result', sub: 'Final output', req: [4] },
+  { label: 'ဖန်တီးရန်', sub: 'အကြံအစည်' },
+  { label: 'ဇာတ်ကောင်', sub: 'ဇာတ်ကောင်များ ထည့်ရန်', req: [1] },
+  { label: 'ဇာတ်လမ်း', sub: 'ဇာတ်လမ်းရေးရန်', req: [1] },
+  { label: 'မြင်ကွင်း', sub: 'မြင်ကွင်းဖန်တီးရန်', req: [2] },
+  { label: 'အပြီးသတ်', sub: 'နောက်ဆုံးရလဒ်', req: [4] },
 ];
 
 const STEP1_HTML = `

@@ -7,11 +7,11 @@
 import { renderSidebar, sidebarScript, renderStudioShell } from './shared.js';
 
 const STEPS = [
-  { label: 'Product', sub: 'Product info' },
-  { label: 'Goal', sub: 'Type & generate', req: [] },
-  { label: 'Content', sub: 'Edit & revise', req: [2] },
-  { label: 'Voice', sub: 'TTS & SRT', req: [] },
-  { label: 'Video', sub: 'Visual & final', req: [] },
+  { label: 'ဖန်တီးရန်', sub: 'ကုန်ပစ္စည်းအချက်အလက်' },
+  { label: 'ရည်ရွယ်ချက်', sub: 'အမျိုးအစား/ဖန်တီးရန်', req: [] },
+  { label: 'အကြောင်းအရာ', sub: 'ပြင်ဆင်ရန်', req: [2] },
+  { label: 'အသံ', sub: 'TTS & SRT', req: [] },
+  { label: 'ဗီဒီယို', sub: 'Visual & final', req: [] },
 ];
 
 const STEP1_HTML = `
