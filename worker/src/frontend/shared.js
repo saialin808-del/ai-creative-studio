@@ -434,7 +434,13 @@ function aicsShellCss() {
     '.aics-login-box{background:#0d1424;border:1px solid rgba(0,229,255,.2);border-radius:16px;padding:40px 32px;max-width:400px;width:100%;text-align:center;}\n' +
     '.aics-login-box h2{color:#00e5ff;margin-bottom:10px;font-size:18px;}\n' +
     '.aics-login-box p{color:#94a3b8;font-size:13.5px;margin-bottom:22px;}\n' +
-    '.aics-header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 20px;}\n' +
+    '.aics-header{display:flex;align-items:center;gap:14px;padding:10px 20px;background:linear-gradient(135deg,#0a1628,#0d1f3c);border-bottom:1px solid rgba(0,229,255,.12);position:sticky;top:0;z-index:100;}\n' +
+    '.aics-header .menu-btn{display:inline-flex;align-items:center;justify-content:center;width:42px;height:42px;border-radius:12px;background:rgba(255,255,255,.06);border:1px solid rgba(0,229,255,.2);color:#00e5ff;font-size:19px;cursor:pointer;flex-shrink:0;transition:all .2s;padding:0;}\n' +
+    '.aics-header .menu-btn:hover{background:rgba(0,229,255,.14);}\n' +
+    '.aics-brand{display:flex;align-items:center;gap:10px;flex:1;min-width:0;}\n' +
+    '.aics-brand-icon{font-size:20px;flex-shrink:0;}\n' +
+    '.aics-title{font-size:17px;font-weight:800;letter-spacing:.3px;background:linear-gradient(90deg,#00e5ff,#7b5cff);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}\n' +
+    '.aics-pro{padding:6px 16px;border-radius:999px;background:linear-gradient(135deg,#7b5cff,#00e5ff);color:#fff;font-size:12px;font-weight:700;letter-spacing:.5px;flex-shrink:0;box-shadow:0 2px 12px rgba(123,92,255,.35);}\n' +
     '.aics-header-left{display:flex;align-items:center;gap:12px;min-width:0;}\n' +
     '.aics-back{display:inline-flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:10px;border:1px solid rgba(0,229,255,.28);color:#00e5ff;background:rgba(0,229,255,.06);font-size:17px;text-decoration:none;flex-shrink:0;transition:all .2s;}\n' +
     '.aics-back:hover{background:rgba(0,229,255,.14);transform:translateX(-2px);}\n' +
@@ -515,8 +521,10 @@ function aicsShellCss() {
     '.aics-act.ghost:hover{color:#00e5ff;border-color:#00e5ff;}\n' +
     '@media (min-width:769px) and (max-width:1199px){.aics-grid{grid-template-columns:minmax(0,3fr) minmax(0,2fr);}.aics-desc{max-width:200px;}}\n' +
     '@media (max-width:768px){\n' +
-    '  .aics-header{padding:8px 12px;padding-left:64px;flex-wrap:wrap;}\n' +
+    '  .aics-header{padding:8px 12px;gap:10px;}\n' +
     '  .aics-title{font-size:15px;}\n' +
+    '  .aics-brand-icon{font-size:17px;}\n' +
+    '  .aics-pro{padding:5px 12px;font-size:11px;}\n' +
     '  .aics-desc{display:none;}\n' +
     '  .aics-user .user-email{display:none;}\n' +
     '  .aics-model-label{display:none;}\n' +
@@ -557,6 +565,8 @@ export function renderStudioShell(opts) {
     '<div class="aics-app" id="aicsApp">\n' +
     '<header class="header aics-header">\n' +
     '<button class="menu-btn" onclick="toggleSidebar()">&#9776;</button>\n' +
+    '<div class="aics-brand"><span class="aics-brand-icon">' + icon + '</span><span class="aics-title">' + nameMy + '</span></div>\n' +
+    '<div class="aics-pro" id="sidePlan">FREE</div>\n' +
     '</header>\n' +
     '<div class="layout">\n' +
     renderSidebar(activeId, { variant: 'studio' }) +
