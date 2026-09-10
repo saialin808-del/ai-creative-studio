@@ -274,7 +274,6 @@ select option{background:var(--bg-card);color:var(--text)}
 .form-group{margin-bottom:16px}
 .adv-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
 .adv-grid .form-group{margin-bottom:0;}
-@media(max-width:640px){.adv-grid{grid-template-columns:1fr;}}
 .form-row{display:flex;gap:14px;flex-wrap:wrap}
 .form-row .form-group{flex:1;min-width:200px}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:12px 24px;border-radius:8px;border:none;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .2s;min-height:44px;min-width:44px}

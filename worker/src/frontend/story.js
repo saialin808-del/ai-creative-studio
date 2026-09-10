@@ -35,10 +35,6 @@ const STEP1_HTML = `
 <select id="audSel" onchange="window.aichAud=this.value;"><option>လူတိုင်း</option><option>လူငယ်</option><option>လူကြီး</option><option>ကလေး</option></select>
 </div>
 </div>
-<div class="form-group">
-<label>ဇာတ်လမ်းအကြောင်း *</label>
-<textarea id="field_0" placeholder="ဥပမာ — ရန်ကုန်မှာ အောင်မြင်မှုရဖို့ ကြိုးစားနေတဲ့ လူငယ်တစ်ယောက်ရဲ့ ခရီး..." style="min-height:110px;"></textarea>
-</div>
 <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;">
 <div class="form-group" style="flex:1;min-width:170px;margin-bottom:0;">
 <label>Tone</label>
@@ -48,6 +44,10 @@ const STEP1_HTML = `
 <label>Language</label>
 <select id="langSel"><option>မြန်မာ (ဘာသာ)</option><option>English</option><option>မြန်မာ + English</option></select>
 </div>
+</div>
+<div class="form-group">
+<label>ဇာတ်လမ်းအကြောင်း *</label>
+<textarea id="field_0" placeholder="ဥပမာ — ရန်ကုန်မှာ အောင်မြင်မှုရဖို့ ကြိုးစားနေတဲ့ လူငယ်တစ်ယောက်ရဲ့ ခရီး..." style="min-height:110px;"></textarea>
 </div>
 <div id="ideaFields" class="adv-grid" style="margin-top:16px;"></div>
 <div class="loading" id="genLoading"><div class="spinner"></div> AI ဇာတ်လမ်းရေးသားနေပါသည်...</div>
@@ -164,7 +164,6 @@ select option{background:var(--bg-card);color:var(--text)}
 .form-group{margin-bottom:16px}
 .adv-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
 .adv-grid .form-group{margin-bottom:0;}
-@media(max-width:640px){.adv-grid{grid-template-columns:1fr;}}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:12px 24px;border-radius:8px;border:none;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .2s;min-height:44px;min-width:44px}
 .btn-primary{background:linear-gradient(135deg,var(--cyan),#00b8d4);color:#080c18}
 .btn-primary:hover{opacity:.9;transform:translateY(-1px)}
