@@ -7,10 +7,10 @@
 import { renderSidebar, sidebarScript, renderStudioShell } from './shared.js';
 
 const STEPS = [
-  { label: 'ဇာတ်လမ်းရေးရန်' },
-  { label: 'စဥ်းစားရေးသားနေသည်...', req: [1] },
+  { label: 'ဖန်တီးရန်' },
+  { label: 'ဇာတ်ကောင်', req: [1] },
   { label: 'ဇာတ်လမ်း', req: [1] },
-  { label: 'မြင်ကွင်းဖန်တီးနေသည်...', req: [2] },
+  { label: 'မြင်ကွင်း', req: [2] },
   { label: 'အပြီးသတ်', req: [4] },
 ];
 
@@ -212,9 +212,9 @@ select option{background:var(--bg-card);color:var(--text)}
 .scene-prompt-textarea:focus{outline:none;border-color:var(--cyan)}
 .scene-image-area{margin-top:10px;text-align:center}
 .scene-image-area img{max-width:100%;border-radius:8px;border:1px solid var(--border)}
-.loading{display:none;position:fixed;bottom:90px;left:50%;transform:translateX(-50%);align-items:center;gap:10px;color:#00e5ff;font-size:13px;font-weight:600;padding:10px 20px;border-radius:30px;background:rgba(8,12,24,.92);border:1px solid rgba(0,229,255,.35);box-shadow:0 4px 24px rgba(0,229,255,.25);z-index:9999;backdrop-filter:blur(10px);white-space:nowrap;}
+.loading{display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);align-items:center;gap:12px;color:#00e5ff;font-size:15px;font-weight:600;padding:16px 28px;border-radius:16px;background:rgba(8,12,24,.95);border:1px solid rgba(0,229,255,.4);box-shadow:0 8px 40px rgba(0,229,255,.3);z-index:99999;backdrop-filter:blur(12px);white-space:nowrap;}
 .loading.show{display:flex}
-.spinner{width:14px;height:14px;border:2px solid rgba(0,229,255,.2);border-top-color:#00e5ff;border-radius:50%;animation:spin .8s linear infinite}
+.spinner{width:20px;height:20px;border:3px solid rgba(0,229,255,.2);border-top-color:#00e5ff;border-radius:50%;animation:spin .8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 .error-box{display:none;background:rgba(255,82,82,.1);border:1px solid rgba(255,82,82,.3);color:var(--error);padding:12px 16px;border-radius:8px;font-size:13px;margin-top:12px}
 .error-box.show{display:block}
