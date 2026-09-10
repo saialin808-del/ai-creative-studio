@@ -619,7 +619,7 @@ export function renderStudioShell(opts) {
     '    for (var i = 0; i < STEPS.length; i++) {\n' +
     '      var s = STEPS[i];\n' +
     '      html += \'<button class="aics-step-btn" data-step="\' + s.n + \'" onclick="studioGoStep(\' + s.n + \')">\' +\n' +
-    '        \'<span class="aics-step-txt"><span class="aics-step-label">\' + s.label + \'</span>\' + (s.sub ? \'<span class="aics-step-sub" data-orig-sub="\' + s.sub + \'">\' + s.sub + \'</span>\' : \'\') + \'</span></button>\';\n' +
+    '        \'<span class="aics-step-txt"><span class="aics-step-label">\' + s.label + \'</span></span></button>\';\n' +
     '      if (i < STEPS.length - 1) html += \'<span class="aics-step-link"></span>\';\n' +
     '    }\n' +
     '    html += \'</div>\';\n' +
