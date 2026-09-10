@@ -7,10 +7,10 @@
 import { renderSidebar, sidebarScript, renderStudioShell } from './shared.js';
 
 const STEPS = [
-  { label: 'ဖန်တီးရန်' },
-  { label: 'ဇာတ်ကောင်', req: [1] },
+  { label: 'ဇာတ်လမ်းရေးရန်' },
+  { label: 'ရေသားနေသည်', req: [1] },
   { label: 'ဇာတ်လမ်း', req: [1] },
-  { label: 'မြင်ကွင်း', req: [2] },
+  { label: 'ပုံရပ်ဖန်တီးနေသည်', req: [2] },
   { label: 'အပြီးသတ်', req: [4] },
 ];
 
