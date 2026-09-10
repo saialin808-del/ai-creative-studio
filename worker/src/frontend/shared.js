@@ -471,7 +471,6 @@ function aicsShellCss() {
     '.aics-stepper-inner{display:flex;align-items:center;gap:6px;min-width:max-content;}\n' +
     '.aics-step-btn{display:flex;flex-direction:column;align-items:flex-start;gap:2px;background:none;border:1px solid transparent;color:#5a6478;padding:8px 14px;border-radius:10px;cursor:pointer;font-family:inherit;font-size:13px;white-space:nowrap;transition:all .2s;}\n' +
     '.aics-step-btn .aics-step-label{font-weight:600;color:#94a3b8;font-size:13.5px;}\n' +
-    '.aics-step-btn .aics-step-sub{display:block;font-size:10.5px;color:#5a6478;font-weight:400;}\n' +
     '.aics-step-btn:hover .aics-step-label{color:#e8ecf4;}\n' +
     '.aics-step-btn.active{background:linear-gradient(90deg,rgba(123,92,255,.18),rgba(0,229,255,.08));border:1px solid rgba(123,92,255,.55);box-shadow:0 0 14px rgba(123,92,255,.25);}\n' +
     '.aics-step-btn.active .aics-step-label{color:#fff;}\n' +
@@ -479,19 +478,10 @@ function aicsShellCss() {
     '.aics-step-btn.done .aics-step-label{color:#4ade80;}\n' +
     '.aics-step-btn.todo{cursor:not-allowed;opacity:.4;}\n' +
     '.aics-step-link{width:20px;height:1px;background:rgba(0,229,255,.22);flex-shrink:0;}\n' +
-    '.aics-grid{display:grid;grid-template-columns:minmax(0,3fr) minmax(0,2fr);gap:18px;align-items:start;}\n' +
+    '.aics-grid{display:block;}\n' +
     '.aics-work{min-width:0;}\n' +
     '.aics-step{display:none;}\n' +
     '.aics-step.active{display:block;}\n' +
-    '.aics-panel{position:sticky;top:80px;background:#0d1424;border:1px solid rgba(0,229,255,.15);border-radius:14px;min-height:360px;max-height:calc(100vh - 110px);overflow:auto;}\n' +
-    '.aics-panel-head{padding:12px 16px;font-weight:700;color:#00e5ff;font-size:12.5px;border-bottom:1px solid rgba(0,229,255,.12);letter-spacing:.5px;display:flex;align-items:center;gap:8px;position:sticky;top:0;background:#0d1424;border-radius:14px 14px 0 0;z-index:2;}\n' +
-    '.aics-panel-body{padding:16px;}\n' +
-    '.aics-empty{text-align:center;padding:44px 16px;color:#5a6478;}\n' +
-    '.aics-empty-icon{font-size:34px;margin-bottom:10px;opacity:.7;}\n' +
-    '.aics-empty-title{color:#94a3b8;font-weight:600;font-size:14px;margin-bottom:4px;}\n' +
-    '.aics-empty-sub{font-size:12px;}\n' +
-    '.aics-preview-content{line-height:1.7;font-size:13.5px;word-break:break-word;}\n' +
-    '.aics-preview-content pre{white-space:pre-wrap;word-break:break-word;font-family:inherit;background:#0a1020;border:1px solid rgba(0,229,255,.12);border-radius:10px;padding:14px;font-size:13px;line-height:1.7;margin:0;}\n' +
     '.aics-pv-label{font-size:11px;color:#8b95a8;font-weight:700;letter-spacing:.5px;margin-bottom:8px;text-transform:uppercase;}\n' +
     '.aics-pv-card{background:#0a1020;border:1px solid rgba(0,229,255,.12);border-radius:10px;padding:12px 14px;margin-bottom:10px;}\n' +
     '.aics-pv-card h4{margin:0 0 4px;color:#00e5ff;font-size:13px;}\n' +
@@ -516,7 +506,7 @@ function aicsShellCss() {
     '.aics-act.secondary:hover{background:rgba(0,229,255,.16);}\n' +
     '.aics-act.ghost{background:rgba(255,255,255,.04);color:#94a3b8;border:1px solid rgba(148,163,184,.25);}\n' +
     '.aics-act.ghost:hover{color:#00e5ff;border-color:rgba(0,229,255,.4);background:rgba(0,229,255,.06);}\n' +
-    '@media (min-width:769px) and (max-width:1199px){.aics-grid{grid-template-columns:minmax(0,3fr) minmax(0,2fr);}.aics-desc{max-width:200px;}}\n' +
+    '@media (min-width:769px) and (max-width:1199px){.aics-desc{max-width:200px;}}\n' +
     '@media (max-width:768px){\n' +
     '  .aics-header{padding:8px 12px;gap:10px;}\n' +
     '  .aics-title{font-size:15px;}\n' +
@@ -527,8 +517,6 @@ function aicsShellCss() {
     '  .aics-model-label{display:none;}\n' +
     '  .aics-model select{min-width:0;max-width:120px;padding:7px 8px;font-size:12px;}\n' +
     '  .aics-hd-save{padding:8px 10px;font-size:12px;}\n' +
-    '  .aics-grid{grid-template-columns:1fr;}\n' +
-    '  .aics-panel{position:static;max-height:none;min-height:0;}\n' +
     '  .aics-main{padding:14px;}\n' +
     '  .aics-actions{position:sticky;bottom:8px;padding:10px 12px;}\n' +
     '  .aics-actions-inner{justify-content:flex-end;gap:8px;}\n' +
@@ -570,20 +558,9 @@ export function renderStudioShell(opts) {
     '<main class="main aics-main">\n' +
     '<div class="aics-stepper" id="aicsStepper"></div>\n' +
     '<div class="aics-grid">\n' +
-    '<section class="aics-work" id="aicsWork">\n' +
+    '<section class="aics-work" id="aicsWork" style="max-width:820px;margin:0 auto;width:100%;">\n' +
     content +
     '</section>\n' +
-    '<aside class="aics-panel" id="aicsPanel">\n' +
-    '<div class="aics-panel-head">&#128065; Preview</div>\n' +
-    '<div class="aics-panel-body">\n' +
-    '<div class="aics-empty" id="aicsEmpty">\n' +
-    '<div class="aics-empty-icon">&#127912;</div>\n' +
-    '<div class="aics-empty-title">Your result will appear here.</div>\n' +
-    '<div class="aics-empty-sub">Complete the steps to generate your result.</div>\n' +
-    '</div>\n' +
-    '<div class="aics-preview-content" id="aicsPreviewContent" style="display:none;"></div>\n' +
-    '</div>\n' +
-    '</aside>\n' +
     '</div>\n' +
     '<div class="aics-actions">\n' +
     '<div class="aics-actions-inner" id="aicsActionsInner"><div class="aics-actions-model"><span class="aics-actions-model-label">&#129302; AI မော်ဒယ်</span><select id="aiModelSel" data-category="' + modelCat + '"></select></div></div>\n' +
@@ -655,17 +632,7 @@ export function renderStudioShell(opts) {
     '    updateStepper();\n' +
     '  };\n' +
     '  window.studioCur = function () { return cur; };\n' +
-    '  window.studioSetLoading = function (on) {\n' +
-    '    var sub = document.querySelector(\'.aics-step-btn.active .aics-step-sub\');\n' +
-    '    if (!sub) return;\n' +
-    '    if (on) {\n' +
-    '      if (!sub.dataset.origSub) sub.dataset.origSub = sub.textContent;\n' +
-    '      sub.textContent = \'ဖန်တီးနေသည်...\';\n' +
-    '      sub.style.color = \'#00e5ff\';\n' +
-    '    } else {\n' +
-    '      if (sub.dataset.origSub) { sub.textContent = sub.dataset.origSub; delete sub.dataset.origSub; sub.style.color = \'\'; }\n' +
-    '    }\n' +
-    '  };\n' +
+    '  window.studioSetLoading = function (on) { /* toast handles loading UI */ };\n' +
     '  window.aichAudChoices = [\'လူတိုင်း\', \'လူငယ်\', \'လူကြီး\', \'ကလေး\'];\n' +
     '  window.aichAud = \'လူတိုင်း\';\n' +
     '  window.aichBuildAud = function (containerId, selected) {\n' +
@@ -706,16 +673,7 @@ export function renderStudioShell(opts) {
     '    if (typeof a.fn === "function") { try { a.fn(); } catch (e) { toast("Action error: " + (e && e.message || ""), true); } }\n' +
     '    else if (a.fn && window[a.fn]) { try { window[a.fn](); } catch (e) { toast("Action error: " + (e && e.message || ""), true); } }\n' +
     '  };\n' +
-    '  window.studioPreview = function (html) {\n' +
-    '    var pc = el("aicsPreviewContent"), em = el("aicsEmpty");\n' +
-    '    if (html === null || html === undefined || html === "") {\n' +
-    '      if (pc) { pc.style.display = "none"; pc.innerHTML = ""; }\n' +
-    '      if (em) em.style.display = "block";\n' +
-    '      return;\n' +
-    '    }\n' +
-    '    if (em) em.style.display = "none";\n' +
-    '    if (pc) { pc.innerHTML = html; pc.style.display = "block"; }\n' +
-    '  };\n' +
+    '  window.studioPreview = function (html) { /* preview panel removed */ };\n' +
     '  window.studioSaveDraft = function () {\n' +
     '    var data = null;\n' +
     '    if (window.studioCollectDraft) { try { data = window.studioCollectDraft(); } catch (e) { data = null; } }\n' +
