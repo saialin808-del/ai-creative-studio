@@ -107,7 +107,7 @@ function responsiveStyles() {
     '.sidebar{display:flex;flex-direction:column;}\n' +
     '.sidebar-nav{flex:1 1 auto;overflow-y:auto;min-height:0;}\n' +
     '.sidebar > .brand{flex-shrink:0;}\n' +
-    '.sidebar-bottom{flex-shrink:0;margin-top:auto;}\n' +
+    '.sidebar-bottom{flex-shrink:0;margin-top:16px;}\n' +
     '/* ===== Phase 12-fix — Unified Menu Button (စာမျက်နှာအားလုံး တစ်ပုံစံတည်း) ===== */\n' +
     '/* App Pages (.hamburger) + Studio Pages (.menu-btn) — နေရာ/အရောင်/အရွယ် တူညီအောင် ပေါင်းထားသည် */\n' +
     '.hamburger,.menu-btn{\n' +
@@ -150,7 +150,7 @@ function responsiveStyles() {
     '  .layout > .sidebar{position:fixed;left:-280px;top:57px;bottom:0;z-index:99;width:256px;max-width:82vw;margin:0;border-radius:0 16px 16px 0;padding:16px 14px;transition:left .3s;box-shadow:4px 0 20px rgba(0,0,0,.5);}\n' +
     '  /* Drawer ထဲတွင် Nav သာ Scroll ဖြစ်ပြီး အောက်ခလုတ် (API Key/Logout စသည်) အမြဲမြင်ရမည် */\n' +
     '  .layout > .sidebar .sidebar-nav{flex:1 1 auto;overflow-y:auto;min-height:0;}\n' +
-    '  .layout > .sidebar .sidebar-bottom{flex-shrink:0;margin-top:auto;padding-top:12px;}\n' +
+    '  .layout > .sidebar .sidebar-bottom{flex-shrink:0;margin-top:16px;padding-top:12px;}\n' +
     '  .layout > .sidebar.open{left:0;}\n' +
     '  .layout > .main,.layout > main.main{padding:14px;}\n' +
     '  .main-content{margin-left:0;padding:64px 14px 20px;}\n' +
