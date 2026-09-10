@@ -7,7 +7,7 @@
 import { renderSidebar, sidebarScript, renderStudioShell } from './shared.js';
 
 const STEPS = [
-  { label: 'ဖန်တီးရန်' },
+  { label: 'အကြောင်းအရာရေးသားရန်' },
   { label: 'အကြောင်းအရာ', req: [1] },
   { label: 'ပြင်ဆင်ရန်', req: [2] },
   { label: 'အသံ/ပုံစံ', req: [2] },
