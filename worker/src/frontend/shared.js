@@ -477,10 +477,11 @@ function aicsShellCss() {
     '.aics-step-btn.done{opacity:.7;}\n' +
     '.aics-step-btn.done .aics-step-label{color:#4ade80;}\n' +
     '.aics-step-btn.todo{cursor:not-allowed;opacity:.4;}\n' +
-    '.aics-step-btn .aics-step-loading{display:none;font-size:10.5px;color:#00e5ff;font-weight:600;align-items:center;gap:4px;margin-top:2px;}\n' +
+    '.aics-step-btn .aics-step-loading{display:none;font-size:11px;color:#00e5ff;font-weight:700;align-items:center;gap:5px;margin-top:3px;white-space:nowrap;}\n' +
     '.aics-step-btn.loading .aics-step-loading{display:flex;}\n' +
-    '.aics-step-btn.loading{border-color:rgba(0,229,255,.5);box-shadow:0 0 14px rgba(0,229,255,.3);}\n' +
-    '.aics-step-btn .aics-step-spinner{width:10px;height:10px;border:1.5px solid rgba(0,229,255,.2);border-top-color:#00e5ff;border-radius:50%;animation:spin .8s linear infinite;}\n' +
+    '.aics-step-btn.loading{border-color:rgba(0,229,255,.6);box-shadow:0 0 18px rgba(0,229,255,.4);}\n' +
+    '.aics-step-btn.loading .aics-step-label{color:#00e5ff;}\n' +
+    '.aics-step-btn .aics-step-spinner{width:12px;height:12px;border:2px solid rgba(0,229,255,.25);border-top-color:#00e5ff;border-radius:50%;animation:spin .7s linear infinite;}\n' +
     '.aics-step-link{width:20px;height:1px;background:rgba(0,229,255,.22);flex-shrink:0;}\n' +
     '.aics-grid{display:block;}\n' +
     '.aics-work{min-width:0;}\n' +
@@ -640,7 +641,7 @@ export function renderStudioShell(opts) {
     '  window.studioSetLoading = function (on) {\n' +
     '    var btn = document.querySelector(\'.aics-step-btn.active\');\n' +
     '    if (!btn) return;\n' +
-    '    if (on) btn.classList.add(\'loading\');\n' +
+    '    if (on) { btn.classList.add(\'loading\'); try { btn.scrollIntoView({behavior:\'smooth\',inline:\'center\',block:\'nearest\'}); } catch(e){} }\n' +
     '    else btn.classList.remove(\'loading\');\n' +
     '  };\n' +
     '  window.aichAudChoices = [\'လူတိုင်း\', \'လူငယ်\', \'လူကြီး\', \'ကလေး\'];\n' +
