@@ -7,11 +7,11 @@
 import { renderSidebar, sidebarScript, renderStudioShell } from './shared.js';
 
 const STEPS = [
-  { label: 'ဖန်တီးရန်', sub: 'ပုံအကြောင်းရေးရန်' },
-  { label: 'ချိန်ညှိရန်', sub: 'Ratio · Caption', req: [] },
-  { label: 'ဖန်တီးနေသည်', sub: 'Prompt → Image', req: [2] },
-  { label: 'အပြီးသတ်', sub: 'ကြည့်/သိမ်းရန်', req: [3] },
-  { label: 'ကြော်ငြာပုံ', sub: 'ကြော်ငြာ', req: [1] },
+  { label: 'ဖန်တီးရန်' },
+  { label: 'ချိန်ညှိရန်', req: [] },
+  { label: 'ဖန်တီးနေသည်', req: [2] },
+  { label: 'အပြီးသတ်', req: [3] },
+  { label: 'ကြော်ငြာပုံ', req: [1] },
 ];
 
 const STEP1_HTML = `

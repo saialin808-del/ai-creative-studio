@@ -7,11 +7,11 @@
 import { renderSidebar, sidebarScript, renderStudioShell } from './shared.js';
 
 const STEPS = [
-  { label: 'ဖန်တီးရန်', sub: 'စာသားရေးရန်' },
-  { label: 'အသံ', sub: 'အသံရွေးရန်', req: [] },
-  { label: 'ဖန်တီးနေသည်', sub: 'Audio ဖန်တီးရန်', req: [] },
-  { label: 'အပြီးသတ်', sub: 'Audio & SRT', req: [3] },
-  { label: 'မှတ်တမ်း', sub: 'အသံ → စာသား', req: [] },
+  { label: 'ဖန်တီးရန်' },
+  { label: 'အသံ', req: [] },
+  { label: 'ဖန်တီးနေသည်', req: [] },
+  { label: 'အပြီးသတ်', req: [3] },
+  { label: 'မှတ်တမ်း', req: [] },
 ];
 
 const STEP1_HTML = `

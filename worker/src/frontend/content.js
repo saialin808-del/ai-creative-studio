@@ -7,12 +7,12 @@
 import { renderSidebar, sidebarScript, renderStudioShell } from './shared.js';
 
 const STEPS = [
-  { label: 'ဖန်တီးရန်', sub: 'အကြောင်းအရာ' },
-  { label: 'အကြောင်းအရာ', sub: 'AI ရလဒ်', req: [1] },
-  { label: 'ပြင်ဆင်ရန်', sub: 'ပြန်ရေးပြင်ရန်', req: [2] },
-  { label: 'အသံ/ပုံစံ', sub: 'TTS · SRT', req: [2] },
-  { label: 'ဗီဒီယာ', sub: 'မြင်ကွင်းများ', req: [1] },
-  { label: 'အပြီးသတ်', sub: 'နောက်ဆုံးရလဒ်', req: [2] },
+  { label: 'ဖန်တီးရန်' },
+  { label: 'အကြောင်းအရာ', req: [1] },
+  { label: 'ပြင်ဆင်ရန်', req: [2] },
+  { label: 'အသံ/ပုံစံ', req: [2] },
+  { label: 'ဗီဒီယာ', req: [1] },
+  { label: 'အပြီးသတ်', req: [2] },
 ];
 
 const STEP1_HTML = `
