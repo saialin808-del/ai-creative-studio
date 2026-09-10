@@ -8,7 +8,7 @@ import { renderSidebar, sidebarScript, renderStudioShell } from './shared.js';
 
 const STEPS = [
   { label: 'ဖန်တီးရန်', sub: 'အကြံအစည်' },
-  { label: 'ဇာတ်ကောင်', sub: 'ဇာတ်ကောင်များ ထည့်ရန် },
+  { label: 'ဇာတ်ကောင်', sub: 'ဇာတ်ကောင်များ ထည့်ရန်', req: [1] },
   { label: 'ဇာတ်လမ်း', sub: 'ဇာတ်လမ်းရေးရန်', req: [1] },
   { label: 'မြင်ကွင်း', sub: 'မြင်ကွင်းဖန်တီးရန်', req: [2] },
   { label: 'အပြီးသတ်', sub: 'နောက်ဆုံးရလဒ်', req: [4] },
@@ -47,9 +47,10 @@ const STEP1_HTML = `
 </div>
 <div class="form-group">
 <label>ဇာတ်လမ်းအကြောင်း *</label>
-<textarea id="field_0" placeholder="ဥပမာ — ရန်ကုန်မှာ အောင်မြင်မှုရဖို့ ကြိုးစားနေတဲ့ လူငယ်တစ်ယောက်ရဲ့ ခရီး..." style="min-height:110px;"></textarea>
+<textarea id="field_0" placeholder="ဥပမာ — ရန်ကုန်မှာ အောင်မြင်မှုရဖို့ ကြိုးစားနေတဲ့ လူငယ်တစ်ယောက်ရဲ့ ခရီး..." style="min-height:110px;resize:vertical;"></textarea>
 </div>
-<div id="ideaFields" class="adv-grid" style="margin-top:16px;"></div>
+<button type="button" id="advToggle" onclick="document.getElementById('ideaFields').style.display=(document.getElementById('ideaFields').style.display==='none'?'grid':'none');this.querySelector('span').textContent=document.getElementById('ideaFields').style.display==='none'?'ထပ်ဖြည့်ရန် ▼':'ချုံ့ရန် ▲'" style="width:100%;padding:11px;border-radius:14px;background:rgba(0,229,255,.08);border:1px solid rgba(0,229,255,.25);color:#00e5ff;font-size:13px;font-weight:600;cursor:pointer;margin-bottom:12px;"><span>ထပ်ဖြည့်ရန် ▼</span></button>
+<div id="ideaFields" class="adv-grid" style="margin-top:4px;display:none;"></div>
 <div class="loading" id="genLoading"><div class="spinner"></div> AI ဇာတ်လမ်းရေးသားနေပါသည်...</div>
 <div class="error-box" id="genError"></div>
 </div>
@@ -164,14 +165,8 @@ select option{background:var(--bg-card);color:var(--text)}
 .form-group{margin-bottom:16px}
 .adv-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
 .adv-grid .form-group{margin-bottom:0;}
-#typeSel,#audSel,#toneSel,#langSel{border-radius:16px;padding:12px 16px;background:rgba(0,229,255,.06);border:1px solid rgba(0,229,255,.18);color:#e8ecf4;min-height:48px;}
-#typeSel:hover,#audSel:hover,#toneSel:hover,#langSel:hover{background:rgba(0,229,255,.12);border-color:rgba(0,229,255,.35);}
-#audSel{background:rgba(123,92,255,.06);border-color:rgba(123,92,255,.18);}
-#audSel:hover{background:rgba(123,92,255,.12);border-color:rgba(123,92,255,.35);}
-#toneSel{background:rgba(74,222,128,.06);border-color:rgba(74,222,128,.18);}
-#toneSel:hover{background:rgba(74,222,128,.12);border-color:rgba(74,222,128,.35);}
-#langSel{background:rgba(255,159,43,.06);border-color:rgba(255,159,43,.18);}
-#langSel:hover{background:rgba(255,159,43,.12);border-color:rgba(255,159,43,.35);}
+#typeSel,#audSel,#toneSel,#langSel{border-radius:20px;padding:13px 18px;background:rgba(0,229,255,.08);border:1px solid rgba(0,229,255,.22);color:#e8ecf4;min-height:50px;}
+#typeSel:hover,#audSel:hover,#toneSel:hover,#langSel:hover{background:rgba(0,229,255,.14);border-color:rgba(0,229,255,.4);}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:12px 24px;border-radius:8px;border:none;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .2s;min-height:44px;min-width:44px}
 .btn-primary{background:linear-gradient(135deg,var(--cyan),#00b8d4);color:#080c18}
 .btn-primary:hover{opacity:.9;transform:translateY(-1px)}
@@ -296,6 +291,8 @@ var FIELD_CONFIG=[
   var _pb=document.getElementById('planBadge');if(_pb)_pb.textContent=userPlan||'FREE';
   buildTypeChips('videoTypeChips',VIDEO_TYPES,'video');
   buildIdeaFields();
+  var _ta=document.getElementById('field_0');
+  if(_ta){_ta.addEventListener('input',function(){this.style.height='auto';this.style.height=(this.scrollHeight)+'px';});}
 })();
 
 function apiCall(url,body){var s=document.getElementById('aiModelSel');if(s&&s.value)body.model=s.value;return fetch(url,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify(body)}).then(function(res){return res.json().then(function(data){if(!res.ok)throw new Error(data.detail||data.error||'Request failed');return data;});});}

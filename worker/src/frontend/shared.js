@@ -469,17 +469,15 @@ function aicsShellCss() {
     '.aics-main{max-width:1280px;margin:0 auto;width:100%;padding:20px 24px;}\n' +
     '.aics-stepper{margin-bottom:18px;background:#0d1424;border:1px solid rgba(0,229,255,.12);border-radius:14px;padding:10px 12px;overflow-x:auto;}\n' +
     '.aics-stepper-inner{display:flex;align-items:center;gap:6px;min-width:max-content;}\n' +
-    '.aics-step-btn{display:flex;align-items:center;gap:9px;background:none;border:none;color:#5a6478;padding:8px 12px;border-radius:10px;cursor:pointer;font-family:inherit;font-size:13px;white-space:nowrap;transition:all .2s;}\n' +
-    '.aics-step-btn .aics-step-num{width:23px;height:23px;border-radius:50%;background:#1a2138;color:#94a3b8;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;border:1px solid transparent;}\n' +
-    '.aics-step-btn .aics-step-label{font-weight:600;color:#94a3b8;}\n' +
+    '.aics-step-btn{display:flex;flex-direction:column;align-items:flex-start;gap:2px;background:none;border:1px solid transparent;color:#5a6478;padding:8px 14px;border-radius:10px;cursor:pointer;font-family:inherit;font-size:13px;white-space:nowrap;transition:all .2s;}\n' +
+    '.aics-step-btn .aics-step-label{font-weight:600;color:#94a3b8;font-size:13.5px;}\n' +
     '.aics-step-btn .aics-step-sub{display:block;font-size:10.5px;color:#5a6478;font-weight:400;}\n' +
     '.aics-step-btn:hover .aics-step-label{color:#e8ecf4;}\n' +
     '.aics-step-btn.active{background:linear-gradient(90deg,rgba(123,92,255,.18),rgba(0,229,255,.08));border:1px solid rgba(123,92,255,.55);box-shadow:0 0 14px rgba(123,92,255,.25);}\n' +
-    '.aics-step-btn.active .aics-step-num{background:linear-gradient(135deg,#7b5cff,#00e5ff);color:#041018;border-color:transparent;}\n' +
     '.aics-step-btn.active .aics-step-label{color:#fff;}\n' +
-    '.aics-step-btn.done .aics-step-num{background:rgba(74,222,128,.15);border-color:rgba(74,222,128,.55);color:#4ade80;}\n' +
+    '.aics-step-btn.done{opacity:.7;}\n' +
     '.aics-step-btn.done .aics-step-label{color:#4ade80;}\n' +
-    '.aics-step-btn.todo{cursor:not-allowed;opacity:.5;}\n' +
+    '.aics-step-btn.todo{cursor:not-allowed;opacity:.4;}\n' +
     '.aics-step-link{width:20px;height:1px;background:rgba(0,229,255,.22);flex-shrink:0;}\n' +
     '.aics-grid{display:grid;grid-template-columns:minmax(0,3fr) minmax(0,2fr);gap:18px;align-items:start;}\n' +
     '.aics-work{min-width:0;}\n' +
@@ -621,8 +619,7 @@ export function renderStudioShell(opts) {
     '    for (var i = 0; i < STEPS.length; i++) {\n' +
     '      var s = STEPS[i];\n' +
     '      html += \'<button class="aics-step-btn" data-step="\' + s.n + \'" onclick="studioGoStep(\' + s.n + \')">\' +\n' +
-    '        \'<span class="aics-step-num">\' + s.n + \'</span>\' +\n' +
-    '        \'<span class="aics-step-txt"><span class="aics-step-label">\' + s.label + \'</span>\' + (s.sub ? \'<span class="aics-step-sub">\' + s.sub + \'</span>\' : \'\') + \'</span></button>\';\n' +
+    '        \'<span class="aics-step-txt"><span class="aics-step-label">\' + s.label + \'</span>\' + (s.sub ? \'<span class="aics-step-sub" data-orig-sub="\' + s.sub + \'">\' + s.sub + \'</span>\' : \'\') + \'</span></button>\';\n' +
     '      if (i < STEPS.length - 1) html += \'<span class="aics-step-link"></span>\';\n' +
     '    }\n' +
     '    html += \'</div>\';\n' +
@@ -659,13 +656,14 @@ export function renderStudioShell(opts) {
     '  };\n' +
     '  window.studioCur = function () { return cur; };\n' +
     '  window.studioSetLoading = function (on) {\n' +
-    '    var btn = document.querySelector(\'.aics-step-btn.active .aics-step-label\');\n' +
-    '    if (!btn) return;\n' +
+    '    var sub = document.querySelector(\'.aics-step-btn.active .aics-step-sub\');\n' +
+    '    if (!sub) return;\n' +
     '    if (on) {\n' +
-    '      if (!btn.dataset.origLabel) btn.dataset.origLabel = btn.textContent;\n' +
-    '      btn.textContent = \'ဖန်တီးနေသည်...\';\n' +
+    '      if (!sub.dataset.origSub) sub.dataset.origSub = sub.textContent;\n' +
+    '      sub.textContent = \'ဖန်တီးနေသည်...\';\n' +
+    '      sub.style.color = \'#00e5ff\';\n' +
     '    } else {\n' +
-    '      if (btn.dataset.origLabel) { btn.textContent = btn.dataset.origLabel; delete btn.dataset.origLabel; }\n' +
+    '      if (sub.dataset.origSub) { sub.textContent = sub.dataset.origSub; delete sub.dataset.origSub; sub.style.color = \'\'; }\n' +
     '    }\n' +
     '  };\n' +
     '  window.aichAudChoices = [\'လူတိုင်း\', \'လူငယ်\', \'လူကြီး\', \'ကလေး\'];\n' +
