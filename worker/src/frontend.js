@@ -20,10 +20,10 @@ export const APP_HTML = `<!DOCTYPE html>
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:'Noto Sans Myanmar','Roboto','Segoe UI',Arial,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line-height:1.6;}
 a{color:var(--cyan);text-decoration:none;}
-.hamburger{display:none;position:fixed;top:14px;left:14px;z-index:200;background:var(--card);border:1px solid #333;color:#fff;font-size:18px;width:42px;height:42px;border-radius:10px;cursor:pointer;}
+.hamburger{display:none;}
 .backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:99;}
 .backdrop.show{display:block;}
-.sidebar{position:fixed;left:14px;top:14px;width:220px;height:calc(100vh - 28px);background:#0d1425;border-radius:16px;padding:22px 14px;overflow-y:auto;z-index:100;transition:transform 0.3s,left 0.3s;}
+.sidebar{position:fixed;left:14px;top:78px;width:220px;height:calc(100vh - 92px);background:#0d1425;border-radius:16px;padding:22px 14px;overflow-y:auto;z-index:100;transition:transform 0.3s,left 0.3s;}
 .brand{margin-bottom:22px;}
 .brand-title{font-weight:800;font-size:18px;letter-spacing:0.5px;background:linear-gradient(90deg,var(--purple),var(--cyan));-webkit-background-clip:text;background-clip:text;color:transparent;}
 .nav-label{font-size:11px;color:var(--text3);letter-spacing:1.5px;margin:18px 0 8px 10px;text-transform:uppercase;}
@@ -42,6 +42,13 @@ a{color:var(--cyan);text-decoration:none;}
 .api-pill:hover{background:rgba(0,229,255,0.16);}
 .topbar h1{font-size:26px;margin-bottom:6px;}
 .topbar .subtitle{color:var(--text2);}
+.aics-header{display:flex;align-items:center;gap:14px;padding:10px 20px;background:linear-gradient(135deg,#0a1628,#0d1f3c);border-bottom:1px solid rgba(0,229,255,.12);position:sticky;top:0;z-index:150;}
+.aics-menu-btn{display:inline-flex;align-items:center;justify-content:center;width:42px;height:42px;border-radius:12px;background:rgba(255,255,255,.06);border:1px solid rgba(0,229,255,.2);color:#00e5ff;font-size:19px;cursor:pointer;flex-shrink:0;padding:0;}
+.aics-menu-btn:hover{background:rgba(0,229,255,.14);}
+.aics-brand{display:flex;align-items:center;gap:10px;flex:1;min-width:0;}
+.aics-brand-icon{font-size:20px;flex-shrink:0;}
+.aics-title{font-size:17px;font-weight:800;letter-spacing:.3px;background:linear-gradient(90deg,#00e5ff,#7b5cff);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;white-space:nowrap;}
+.aics-pro{padding:6px 16px;border-radius:999px;background:linear-gradient(135deg,#7b5cff,#00e5ff);color:#fff;font-size:12px;font-weight:700;letter-spacing:.5px;flex-shrink:0;box-shadow:0 2px 12px rgba(123,92,255,.35);}
 .api-pill{display:flex;align-items:center;gap:6px;background:var(--card);border:1px solid var(--border);color:#ccc;padding:9px 14px;border-radius:20px;cursor:pointer;font-size:13px;white-space:nowrap;transition:border-color 0.2s;flex-shrink:0;}
 .api-pill:hover{border-color:var(--cyan);}
 /* Phase 8 — အခမဲ့ API Key ခလုတ် (Sparkle) + လမ်းညွှန် Modal */
@@ -99,15 +106,23 @@ a{color:var(--cyan);text-decoration:none;}
 .toast.success{border-color:var(--success);}
 .toast.error{border-color:var(--error);}
 @media(max-width:768px){
-  .sidebar{transform:translateX(-130%);}
+  .sidebar{transform:translateX(-130%);top:62px;height:calc(100vh - 62px);}
   .sidebar.open{transform:translateX(0);}
-  .hamburger{display:block;}
-  .main-content{margin-left:0;padding:70px 16px 24px 16px;}
+  .main-content{margin-left:0;padding:16px;}
   .topbar h1{font-size:21px;}
+  .aics-header{padding:8px 12px;gap:10px;}
+  .aics-title{font-size:15px;}
+  .aics-brand-icon{font-size:17px;}
+  .aics-pro{padding:5px 12px;font-size:11px;}
 }
 </style>
 </head>
 <body>
+<header class="aics-header">
+<button class="aics-menu-btn" onclick="toggleSidebar()">&#9776;</button>
+<div class="aics-brand"><span class="aics-brand-icon">🎨</span><span class="aics-title">AI Creative Studio</span></div>
+<div class="aics-pro" id="sidePlan">FREE</div>
+</header>
 ${renderSidebar('home')}
 <main class="main-content">
   <div class="topbar">
