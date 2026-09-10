@@ -241,7 +241,7 @@ input[type="file"]{padding:10px;cursor:pointer;font-size:13px}
 .btn-sm{padding:8px 16px;font-size:12.5px;min-height:36px}
 .btn-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
 .hint{font-size:12.5px;color:var(--text2);margin-bottom:14px;line-height:1.5}
-.loading{display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);align-items:center;gap:12px;color:#00e5ff;font-size:15px;font-weight:600;padding:16px 28px;border-radius:16px;background:rgba(8,12,24,.95);border:1px solid rgba(0,229,255,.4);box-shadow:0 8px 40px rgba(0,229,255,.3);z-index:99999;backdrop-filter:blur(12px);white-space:nowrap}
+.loading{display:none !important;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);align-items:center;gap:12px;color:#00e5ff;font-size:15px;font-weight:600;padding:16px 28px;border-radius:16px;background:rgba(8,12,24,.95);border:1px solid rgba(0,229,255,.4);box-shadow:0 8px 40px rgba(0,229,255,.3);z-index:99999;backdrop-filter:blur(12px);white-space:nowrap}
 .loading.show{display:flex}
 .result-box{background:var(--bg-input);border:1px solid var(--border);border-radius:8px;padding:14px;margin-top:12px;white-space:pre-wrap;line-height:1.6;font-size:13.5px;min-height:40px}
 .srt-editable{width:100%;background:var(--bg-input);border:1px solid var(--border);border-radius:8px;padding:14px;color:var(--text);font-family:'Courier New',monospace;font-size:12.5px;line-height:1.6;resize:vertical;min-height:130px;margin-top:8px;box-sizing:border-box}
