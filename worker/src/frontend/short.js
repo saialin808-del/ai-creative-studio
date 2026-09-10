@@ -32,7 +32,11 @@ const STEP1_HTML = `
 </div>
 <div class="form-group" style="flex:1;min-width:170px;margin-bottom:0;">
 <label>ဘယ်သူအတွက်</label>
-<select id="audSel" onchange="window.aichAud=this.value;"><option>လူတိုင်း</option><option>လူငယ်</option><option>လူကြီး</option><option>ကလေး</option></select>
+<select id="audSel" onchange="window.aichAud=this.value;">
+<option>လူတိုင်း</option>
+<option>လူငယ်</option>
+<option>လူကြီး</option>
+<option>ကလေး</option></select>
 </div>
 </div>
 <div id="ideaFields"></div>
