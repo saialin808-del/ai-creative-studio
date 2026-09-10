@@ -30,9 +30,7 @@ function myWorkLinks(activeId) {
   const setActive = activeId === 'settings' ? ' active' : '';
   return (
     '<a class="nav-item' + creActive + '" href="/app/creations"><span class="nav-icon-circle">📁</span> ဖန်တီးမှုများ</a>\n' +
-    '  <a class="nav-item' + favActive + '" href="/app/creations?fav=1"><span class="nav-icon-circle">⭐</span> အနှစ်သက်ဆုံး</a>\n' +
-    '  <div class="nav-label">SETTINGS</div>\n' +
-    '  <a class="nav-item' + setActive + '" href="/app/settings"><span class="nav-icon-circle">🛠️</span> ဆက်တင်များ</a>'
+    '  <a class="nav-item' + favActive + '" href="/app/creations?fav=1"><span class="nav-icon-circle">⭐</span> အနှစ်သက်ဆုံး</a>'
   );
 }
 
@@ -50,6 +48,8 @@ function appShellSidebar(activeId) {
     '  ' + myWorkLinks(activeId) + '\n' +
     '  </div>\n' +
     '  <div class="sidebar-bottom">\n' +
+    '    <div class="nav-label">SETTINGS</div>\n' +
+    '    <a class="side-btn' + (activeId === 'settings' ? ' active' : '') + '" href="/app/settings">🛠️ ဆက်တင်များ</a>\n' +
     '    <button class="side-btn" onclick="setApiKey()">🔑 API Key Setting</button>\n' +
     '    <a class="side-btn" id="adminLink" href="/admin" style="display:none;">⚙️ Admin Panel</a>\n' +
     '    <a class="side-btn" id="tgLink" href="' + SITE_LINKS.telegram + '" target="_blank">📨 Telegram</a>\n' +
