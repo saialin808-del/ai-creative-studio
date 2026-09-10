@@ -43,7 +43,6 @@ function appShellSidebar(activeId) {
     '<div class="backdrop" id="backdrop" onclick="toggleSidebar()"></div>\n' +
     '<nav class="sidebar" id="sidebar">\n' +
     '  <div class="sidebar-nav">\n' +
-    '  <div class="brand"><div class="brand-title">🎨 AI Creative Studio</div></div>\n' +
     '  <a class="nav-item' + homeActive + '" href="/app"><span class="nav-icon-circle">🏠</span> ပင်မ</a>\n' +
     '  <div class="nav-label">STUDIOS</div>\n' +
     '  ' + studioLinks(activeId) + '\n' +
@@ -434,8 +433,8 @@ function aicsShellCss() {
     '.aics-login-box h2{color:#00e5ff;margin-bottom:10px;font-size:18px;}\n' +
     '.aics-login-box p{color:#94a3b8;font-size:13.5px;margin-bottom:22px;}\n' +
     '.aics-header{display:flex;align-items:center;gap:14px;padding:10px 20px;background:linear-gradient(135deg,#0a1628,#0d1f3c);border-bottom:1px solid rgba(0,229,255,.12);position:sticky;top:0;z-index:100;width:100%;box-sizing:border-box;}\n' +
-    '.aics-header .menu-btn{display:inline-flex;position:static;align-items:center;justify-content:center;width:42px;height:42px;border-radius:12px;background:rgba(255,255,255,.06);border:1px solid rgba(0,229,255,.2);color:#00e5ff;font-size:19px;cursor:pointer;flex-shrink:0;transition:all .2s;padding:0;box-shadow:none;}\n' +
-    '.aics-header .menu-btn:hover{background:rgba(0,229,255,.14);}\n' +
+    '.aics-menu-btn{display:inline-flex;align-items:center;justify-content:center;width:42px;height:42px;border-radius:12px;background:rgba(255,255,255,.06);border:1px solid rgba(0,229,255,.2);color:#00e5ff;font-size:19px;cursor:pointer;flex-shrink:0;transition:all .2s;padding:0;box-shadow:none;}\n' +
+    '.aics-menu-btn:hover{background:rgba(0,229,255,.14);}\n' +
     '.aics-brand{display:flex;align-items:center;gap:10px;flex:1;min-width:0;}\n' +
     '.aics-brand-icon{font-size:20px;flex-shrink:0;}\n' +
     '.aics-title{font-size:17px;font-weight:800;letter-spacing:.3px;background:linear-gradient(90deg,#00e5ff,#7b5cff);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}\n' +
@@ -505,8 +504,8 @@ function aicsShellCss() {
     '.aics-actions-inner{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:space-between;}\n' +
     '.aics-actions-model{display:flex;align-items:center;gap:8px;flex-shrink:0;}\n' +
     '.aics-actions-model-label{font-size:11.5px;color:#94a3b8;font-weight:700;white-space:nowrap;letter-spacing:.4px;}\n' +
-    '.aics-actions-model select{min-width:130px;max-width:200px;padding:9px 10px;background:rgba(255,255,255,.04);border:1px solid rgba(148,163,184,.3);color:#e8ecf4;border-radius:12px;font-size:13px;font-family:inherit;}\n' +
-    '.aics-actions-model select:hover{border-color:rgba(0,229,255,.4);}\n' +
+    '.aics-actions-model select{min-width:130px;max-width:200px;padding:9px 10px;background:rgba(123,92,255,.12);border:1px solid rgba(123,92,255,.4);color:#c4b5fd;border-radius:12px;font-size:13px;font-family:inherit;}\n' +
+    '.aics-actions-model select:hover{border-color:rgba(123,92,255,.7);background:rgba(123,92,255,.18);}\n' +
     '.aics-actions-inner{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end;}\n' +
     '.aics-act{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:11px 22px;border-radius:12px;border:none;font-size:13.5px;font-weight:600;cursor:pointer;font-family:inherit;min-height:44px;transition:all .2s;}\n' +
     '.aics-act.primary{background:linear-gradient(135deg,#00e5ff,#00b8d4);color:#080c18;box-shadow:0 2px 14px rgba(0,229,255,.3);}\n' +
@@ -515,7 +514,7 @@ function aicsShellCss() {
     '.aics-act.success:hover{opacity:.92;transform:translateY(-1px);}\n' +
     '.aics-act.purple{background:linear-gradient(135deg,#7b5cff,#9c7cff);color:#fff;box-shadow:0 2px 14px rgba(123,92,255,.3);}\n' +
     '.aics-act.purple:hover{opacity:.92;transform:translateY(-1px);}\n' +
-    '.aics-act.secondary{background:rgba(0,229,255,.08);color:#00e5ff;border:1px solid rgba(0,229,255,.3);}\n' +
+    '.aics-act.secondary{background:rgba(255,159,43,.1);color:#ffb84d;border:1px solid rgba(255,159,43,.35);}\n' +
     '.aics-act.secondary:hover{background:rgba(0,229,255,.16);}\n' +
     '.aics-act.ghost{background:rgba(255,255,255,.04);color:#94a3b8;border:1px solid rgba(148,163,184,.25);}\n' +
     '.aics-act.ghost:hover{color:#00e5ff;border-color:rgba(0,229,255,.4);background:rgba(0,229,255,.06);}\n' +
@@ -564,7 +563,7 @@ export function renderStudioShell(opts) {
     aicsShellCss() +
     '<div class="aics-app" id="aicsApp">\n' +
     '<header class="header aics-header">\n' +
-    '<button class="menu-btn" onclick="toggleSidebar()">&#9776;</button>\n' +
+    '<button class="aics-menu-btn" onclick="toggleSidebar()">&#9776;</button>\n' +
     '<div class="aics-brand"><span class="aics-brand-icon">' + icon + '</span><span class="aics-title">' + nameMy + '</span></div>\n' +
     '<div class="aics-pro" id="sidePlan">FREE</div>\n' +
     '</header>\n' +
