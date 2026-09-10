@@ -32,7 +32,7 @@ const STEP1_HTML = `
 </div>
 <div class="form-group" style="flex:1;min-width:170px;margin-bottom:0;">
 <label>ဘယ်သူအတွက်</label>
-<select id="audSel" onchange="window.aichAud=this.value;"><option>လူတိုင်း</option><option>လူငယ်</option><option>လူလတ်</option><option>လူကြီး</option><option>ကလေး</option></select>
+<select id="audSel" onchange="window.aichAud=this.value;"><option>လူတိုင်း</option><option>လူငယ်</option><option>လူကြီး</option><option>ကလေး</option></select>
 </div>
 </div>
 <div class="form-group">
@@ -46,17 +46,10 @@ const STEP1_HTML = `
 </div>
 <div class="form-group" style="flex:1;min-width:170px;margin-bottom:0;">
 <label>Language</label>
-<select id="langSel"><option>မြန်မာဘာသာ</option><option>တရုတ်ဘာသာ</option><option>မြန်မာ + တရုတ်</option></select>
+<select id="langSel"><option>မြန်မာ (ဘာသာ)</option><option>English</option><option>မြန်မာ + English</option></select>
 </div>
 </div>
-<div class="form-group">
-<label>Quick Templates</label>
-<div id="quickTemplates" class="type-chips" style="margin-bottom:0;"></div>
-</div>
-<details class="aics-advanced">
-<summary>&#9881; Advanced Settings</summary>
-<div id="ideaFields" style="margin-top:12px;"></div>
-</details>
+<div id="ideaFields" class="adv-grid" style="margin-top:16px;"></div>
 <div class="loading" id="genLoading"><div class="spinner"></div> AI ဇာတ်လမ်းရေးသားနေပါသည်...</div>
 <div class="error-box" id="genError"></div>
 </div>
@@ -163,12 +156,15 @@ a{color:var(--cyan);text-decoration:none}
 .card{background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px}
 .card-title{font-size:15px;font-weight:600;color:var(--cyan);margin-bottom:14px;display:flex;align-items:center;gap:8px}
 label{display:block;font-size:12.5px;color:var(--text2);margin-bottom:6px;font-weight:500}
-input,textarea,select{width:100%;background:var(--bg-input);border:1px solid var(--border);border-radius:8px;padding:11px 14px;color:var(--text);font-size:14px;font-family:inherit;transition:border-color .2s;box-sizing:border-box}
+input,textarea,select{width:100%;background:var(--bg-input);border:1px solid var(--border);border-radius:14px;padding:11px 14px;color:var(--text);font-size:14px;font-family:inherit;transition:border-color .2s;box-sizing:border-box}
 input:focus,textarea:focus,select:focus{outline:none;border-color:var(--cyan);box-shadow:0 0 0 2px rgba(0,229,255,.1)}
 textarea{resize:vertical;min-height:90px}
 select{cursor:pointer}
 select option{background:var(--bg-card);color:var(--text)}
 .form-group{margin-bottom:16px}
+.adv-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.adv-grid .form-group{margin-bottom:0;}
+@media(max-width:640px){.adv-grid{grid-template-columns:1fr;}}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:12px 24px;border-radius:8px;border:none;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .2s;min-height:44px;min-width:44px}
 .btn-primary{background:linear-gradient(135deg,var(--cyan),#00b8d4);color:#080c18}
 .btn-primary:hover{opacity:.9;transform:translateY(-1px)}
@@ -293,7 +289,6 @@ var FIELD_CONFIG=[
   var _pb=document.getElementById('planBadge');if(_pb)_pb.textContent=userPlan||'FREE';
   buildTypeChips('videoTypeChips',VIDEO_TYPES,'video');
   buildIdeaFields();
-  buildQuickTemplates();
 })();
 
 function apiCall(url,body){var s=document.getElementById('aiModelSel');if(s&&s.value)body.model=s.value;return fetch(url,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify(body)}).then(function(res){return res.json().then(function(data){if(!res.ok)throw new Error(data.detail||data.error||'Request failed');return data;});});}
@@ -689,7 +684,7 @@ function renderCombinedPreview(){
 
 function bBack(){return {label:'&#8592; Back',cls:'ghost',fn:function(){studioGoStep(studioCur()-1);}};}
 function bReset(){return {label:'Reset',cls:'ghost',fn:studioReset};}
-function bSave(){return {label:'&#128190; Save Draft',cls:'ghost',fn:studioSaveDraft};}
+function bSave(){return null;}
 function bNext(n){return {label:'Next &#8594;',cls:'primary',fn:function(){studioGoStep(n);}};}
 
 function studioOnStep(n){

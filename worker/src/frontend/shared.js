@@ -52,9 +52,6 @@ function appShellSidebar(activeId) {
     '  ' + myWorkLinks(activeId) + '\n' +
     '  </div>\n' +
     '  <div class="sidebar-bottom">\n' +
-    '    <div class="side-user"><div class="avatar" id="sideAvatar">👤</div><div class="side-name" id="sideName">—</div></div>\n' +
-    '    <div class="license-badge" id="licenseBadge">Checking plan...</div>\n' +
-    '    <div class="side-email" id="sideEmail" style="font-size:11.5px;color:var(--text3);margin-bottom:8px;word-break:break-all;">—</div>\n' +
     '    <button class="side-btn" onclick="setApiKey()">🔑 API Key Setting</button>\n' +
     '    <a class="side-btn" id="adminLink" href="/admin" style="display:none;">⚙️ Admin Panel</a>\n' +
     '    <a class="side-btn" id="tgLink" href="' + SITE_LINKS.telegram + '" target="_blank">📨 Telegram</a>\n' +
@@ -499,10 +496,11 @@ function aicsShellCss() {
     '.aics-pv-card p{margin:0 0 6px;color:#e8ecf4;font-size:12.5px;line-height:1.6;white-space:pre-wrap;word-break:break-word;}\n' +
     '.aics-pv-card .aics-pv-sub{color:#8b95a8;font-size:11.5px;}\n' +
     '.aics-pv-img{max-width:100%;border-radius:8px;border:1px solid rgba(0,229,255,.15);margin-top:6px;}\n' +
-    '.aics-actions{position:sticky;bottom:10px;margin-top:18px;background:rgba(13,20,36,.94);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid rgba(0,229,255,.16);border-radius:14px;padding:12px 16px;z-index:50;box-shadow:0 6px 24px rgba(0,0,0,.4);display:flex;align-items:center;gap:14px;justify-content:space-between;flex-wrap:wrap;}\n' +
+    '.aics-actions{position:sticky;bottom:10px;margin-top:18px;background:rgba(13,20,36,.94);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid rgba(0,229,255,.16);border-radius:14px;padding:12px 16px;z-index:50;box-shadow:0 6px 24px rgba(0,0,0,.4);}\n' +
+    '.aics-actions-inner{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:space-between;}\n' +
     '.aics-actions-model{display:flex;align-items:center;gap:8px;flex-shrink:0;}\n' +
     '.aics-actions-model-label{font-size:11.5px;color:#8b95a8;font-weight:700;white-space:nowrap;letter-spacing:.4px;}\n' +
-    '.aics-actions-model select{min-width:150px;max-width:230px;padding:9px 10px;background:#0d1424;border:1px solid #26324a;color:#fff;border-radius:10px;font-size:13px;font-family:inherit;}\n' +
+    '.aics-actions-model select{min-width:130px;max-width:200px;padding:9px 10px;background:#0d1424;border:1px solid #26324a;color:#fff;border-radius:10px;font-size:13px;font-family:inherit;}\n' +
     '.aics-actions-inner{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end;}\n' +
     '.aics-act{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:11px 22px;border-radius:10px;border:none;font-size:13.5px;font-weight:600;cursor:pointer;font-family:inherit;min-height:44px;transition:all .2s;}\n' +
     '.aics-act.primary{background:linear-gradient(135deg,#00e5ff,#00b8d4);color:#080c18;}\n' +
@@ -527,11 +525,12 @@ function aicsShellCss() {
     '  .aics-grid{grid-template-columns:1fr;}\n' +
     '  .aics-panel{position:static;max-height:none;min-height:0;}\n' +
     '  .aics-main{padding:14px;}\n' +
-    '  .aics-actions{position:sticky;bottom:8px;padding:10px 12px;flex-direction:column;align-items:stretch;gap:8px;}\n' +
-    '  .aics-actions-model{width:100%;}\n' +
-    '  .aics-actions-model select{max-width:none;width:100%;}\n' +
-    '  .aics-actions-inner{justify-content:stretch;}\n' +
-    '  .aics-act{flex:1;padding:11px 10px;font-size:13px;}\n' +
+    '  .aics-actions{position:sticky;bottom:8px;padding:10px 12px;}\n' +
+    '  .aics-actions-inner{justify-content:flex-end;gap:8px;}\n' +
+    '  .aics-actions-model{flex:0 0 auto;}\n' +
+    '  .aics-actions-model select{min-width:0;max-width:130px;padding:8px;font-size:12px;}\n' +
+    '  .aics-actions-model-label{font-size:10.5px;}\n' +
+    '  .aics-act{flex:1;padding:10px 8px;font-size:12.5px;min-height:42px;}\n' +
     '  .aics-stepper{padding:8px;}\n' +
     '}\n' +
     '</style>'
@@ -580,8 +579,7 @@ export function renderStudioShell(opts) {
     '</aside>\n' +
     '</div>\n' +
     '<div class="aics-actions">\n' +
-    '<div class="aics-actions-model"><span class="aics-actions-model-label">&#129302; AI မော်ဒယ်</span><select id="aiModelSel" data-category="' + modelCat + '"></select></div>\n' +
-    '<div class="aics-actions-inner" id="aicsActionsInner"></div>\n' +
+    '<div class="aics-actions-inner" id="aicsActionsInner"><div class="aics-actions-model"><span class="aics-actions-model-label">&#129302; AI မော်ဒယ်</span><select id="aiModelSel" data-category="' + modelCat + '"></select></div></div>\n' +
     '</div>\n' +
     '</main>\n' +
     '</div>\n' +
@@ -672,13 +670,17 @@ export function renderStudioShell(opts) {
     '  };\n' +
     '  window.studioSetActions = function (list) {\n' +
     '    var c = el("aicsActionsInner"); if (!c) return;\n' +
+    '    var model = c.querySelector(".aics-actions-model");\n' +
+    '    var acts = (list || []).filter(function(a){ return a && a.label; });\n' +
     '    var html = \'\';\n' +
-    '    for (var i = 0; i < (list || []).length; i++) {\n' +
-    '      var a = list[i];\n' +
+    '    for (var i = 0; i < acts.length; i++) {\n' +
+    '      var a = acts[i];\n' +
     '      html += \'<button class="aics-act \' + (a.cls || "secondary") + \'" onclick="studioAct(\' + i + \')">\' + a.label + \'</button>\';\n' +
     '    }\n' +
-    '    c.innerHTML = html;\n' +
-    '    window.__studioActions = list || [];\n' +
+    '    c.innerHTML = \'\';\n' +
+    '    if (model) c.appendChild(model);\n' +
+    '    c.insertAdjacentHTML("beforeend", html);\n' +
+    '    window.__studioActions = acts;\n' +
     '  };\n' +
     '  window.studioAct = function (i) {\n' +
     '    var list = window.__studioActions || [];\n' +

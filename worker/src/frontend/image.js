@@ -168,7 +168,7 @@ a{color:var(--cyan);text-decoration:none}
 .card{background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px}
 .card-title{font-size:15px;font-weight:600;color:var(--cyan);margin-bottom:14px;display:flex;align-items:center;gap:8px}
 label{display:block;font-size:12.5px;color:var(--text2);margin-bottom:6px;font-weight:500}
-input,textarea,select{width:100%;background:var(--bg-input);border:1px solid var(--border);border-radius:8px;padding:11px 14px;color:var(--text);font-size:14px;font-family:inherit;transition:border-color .2s;box-sizing:border-box}
+input,textarea,select{width:100%;background:var(--bg-input);border:1px solid var(--border);border-radius:14px;padding:11px 14px;color:var(--text);font-size:14px;font-family:inherit;transition:border-color .2s;box-sizing:border-box}
 input:focus,textarea:focus,select:focus{outline:none;border-color:var(--cyan);box-shadow:0 0 0 2px rgba(0,229,255,.1)}
 textarea{resize:vertical;min-height:70px}
 select{cursor:pointer}
@@ -584,7 +584,7 @@ function renderAdPreview(){
 // ===== Studio shell hooks =====
 function bBack(){return {label:'&#8592; Back',cls:'ghost',fn:function(){studioGoStep(studioCur()-1);}};}
 function bReset(){return {label:'Reset',cls:'ghost',fn:studioReset};}
-function bSave(){return {label:'&#128190; Save Draft',cls:'ghost',fn:studioSaveDraft};}
+function bSave(){return null;}
 function bNext(n){return {label:'Next &#8594;',cls:'primary',fn:function(){studioGoStep(n);}};}
 
 function studioOnStep(n){
