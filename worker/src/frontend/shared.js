@@ -40,7 +40,6 @@ function myWorkLinks(activeId) {
 function appShellSidebar(activeId) {
   const homeActive = activeId === 'home' ? ' active' : '';
   return (
-    '<button class="hamburger" onclick="toggleSidebar()">☰</button>\n' +
     '<div class="backdrop" id="backdrop" onclick="toggleSidebar()"></div>\n' +
     '<nav class="sidebar" id="sidebar">\n' +
     '  <div class="sidebar-nav">\n' +
@@ -435,7 +434,7 @@ function aicsShellCss() {
     '.aics-login-box h2{color:#00e5ff;margin-bottom:10px;font-size:18px;}\n' +
     '.aics-login-box p{color:#94a3b8;font-size:13.5px;margin-bottom:22px;}\n' +
     '.aics-header{display:flex;align-items:center;gap:14px;padding:10px 20px;background:linear-gradient(135deg,#0a1628,#0d1f3c);border-bottom:1px solid rgba(0,229,255,.12);position:sticky;top:0;z-index:100;}\n' +
-    '.aics-header .menu-btn{display:inline-flex;align-items:center;justify-content:center;width:42px;height:42px;border-radius:12px;background:rgba(255,255,255,.06);border:1px solid rgba(0,229,255,.2);color:#00e5ff;font-size:19px;cursor:pointer;flex-shrink:0;transition:all .2s;padding:0;}\n' +
+    '.aics-header .menu-btn{display:inline-flex;position:static;align-items:center;justify-content:center;width:42px;height:42px;border-radius:12px;background:rgba(255,255,255,.06);border:1px solid rgba(0,229,255,.2);color:#00e5ff;font-size:19px;cursor:pointer;flex-shrink:0;transition:all .2s;padding:0;box-shadow:none;}\n' +
     '.aics-header .menu-btn:hover{background:rgba(0,229,255,.14);}\n' +
     '.aics-brand{display:flex;align-items:center;gap:10px;flex:1;min-width:0;}\n' +
     '.aics-brand-icon{font-size:20px;flex-shrink:0;}\n' +
