@@ -103,6 +103,23 @@ export function renderSidebar(activeId, opts) {
 function responsiveStyles() {
   return '<style>\n' +
     '/* ===== AI Creative Studio — Shared Responsive (Phase 6 + 8 — Rule 7) ===== */\n' +
+    '/* ===== FIX — Shared Studio Shell base layout ===== */\n' +
+    'html,body{margin:0;padding:0;min-height:100%;}\n' +
+    'body{overflow-x:hidden;}\n' +
+    '.aics-app{min-height:100vh;background:#080c18;}\n' +
+    '.aics-app .layout{display:flex;align-items:stretch;min-height:calc(100vh - 63px);width:100%;}\n' +
+    '.aics-app .layout > .sidebar{width:220px;flex:0 0 220px;background:#0d1425;border:1px solid rgba(0,229,255,.10);border-radius:16px;margin:14px 12px;padding:14px 12px;box-sizing:border-box;min-height:calc(100vh - 91px);position:sticky;top:77px;z-index:90;overflow:hidden;}\n' +
+    '.aics-app .layout > .sidebar .sidebar-nav{width:100%;box-sizing:border-box;}\n' +
+    '.aics-app .nav-label{font-size:11px;color:#5a6478;letter-spacing:1.5px;margin:16px 0 6px 8px;text-transform:uppercase;}\n' +
+    '.aics-app .nav-item{display:flex;align-items:center;gap:10px;width:100%;padding:9px 10px;box-sizing:border-box;border-radius:10px;color:#c6cede;text-decoration:none;cursor:pointer;font-size:13.5px;margin-bottom:2px;border:1px solid transparent;transition:all .2s;line-height:1.35;}\n' +
+    '.aics-app .nav-item:hover{background:#161d30;color:#fff;}\n' +
+    '.aics-app .nav-item.active{background:linear-gradient(90deg,rgba(123,92,255,.18),rgba(0,229,255,.08));color:#fff;border-color:#7b5cff;box-shadow:0 0 14px rgba(123,92,255,.22);}\n' +
+    '.aics-app .nav-icon-circle{width:30px;height:30px;min-width:30px;border-radius:9px;background:#1a2138;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;}\n' +
+    '.aics-app .sidebar-bottom{margin-top:auto;padding-top:14px;border-top:1px solid rgba(0,229,255,.15);width:100%;box-sizing:border-box;}\n' +
+    '.aics-app .side-btn{display:flex;align-items:center;gap:8px;width:100%;box-sizing:border-box;text-align:left;padding:8px 10px;min-height:38px;border-radius:10px;background:#161d30;color:#c6cede;border:1px solid rgba(0,229,255,.12);font-size:12.5px;cursor:pointer;margin-bottom:5px;text-decoration:none;transition:all .2s;font-family:inherit;}\n' +
+    '.aics-app .side-btn:hover{background:#1e2740;border-color:#00e5ff;color:#fff;}\n' +
+    '.aics-app .layout > .aics-main{flex:1 1 auto;min-width:0;max-width:none;margin:0;padding:20px 24px;box-sizing:border-box;}\n' +
+    '.aics-app .aics-menu-btn{display:none;}\n' +
     '/* Sidebar ကို Flex Column ဖြစ်စေပြီး Nav အလယ်တွင် Scroll လုပ်နိုင်၊ အောက်ခလုတ်များ အမြဲမြင်ရအောင် (Phase 8) */\n' +
     '.sidebar{display:flex;flex-direction:column;}\n' +
     '.sidebar-nav{flex:1 1 auto;overflow-y:auto;min-height:0;}\n' +
@@ -145,6 +162,10 @@ function responsiveStyles() {
     '/* Phone ≤768px — Topbar + Drawer Sidebar + Touch-friendly */\n' +
     '@media (max-width:768px){\n' +
     '  .sidebar{width:220px;}\n' +
+    '  .aics-app .layout{display:block;min-height:calc(100vh - 58px);}\n' +
+    '  .aics-app .layout > .sidebar{display:flex !important;position:fixed;left:-280px;top:57px;bottom:0;width:256px;max-width:82vw;height:auto;min-height:0;flex:0 0 auto;margin:0;border-radius:0 16px 16px 0;padding:16px 14px;z-index:99;overflow:hidden;transition:left .3s;box-shadow:4px 0 20px rgba(0,0,0,.5);}\n' +
+    '  .aics-app .layout > .aics-main{width:100%;max-width:none;margin:0;padding:14px;}\n' +
+    '  .aics-app .aics-menu-btn{display:inline-flex;}\n' +
     '  /* Voice/Shop မူလ CSS တွင် Sidebar ကို ဖျောက်ထားသော Bug ကို ပြင် → Drawer ပြုလုပ်သည် */\n' +
     '  .layout > .sidebar{display:flex !important;}\n' +
     '  .layout > .sidebar{position:fixed;left:-280px;top:57px;bottom:0;z-index:99;width:256px;max-width:82vw;margin:0;border-radius:0 16px 16px 0;padding:16px 14px;transition:left .3s;box-shadow:4px 0 20px rgba(0,0,0,.5);}\n' +
