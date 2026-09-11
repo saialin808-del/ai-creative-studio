@@ -680,6 +680,9 @@ export default {
         if (!payload) return json({ error: 'invalid_token' }, 401, cors);
         const body = await request.json().catch(() => null);
         if (!body || !body.text) return json({ error: 'missing_text' }, 400, cors);
+        const plan = await resolvePlan(env, payload);
+        const reqType = String(body.type || '1');
+        { const denied = await requireFeature(env, 'content.tts', plan, reqType); if (denied) return denied; }
         try {
           let apiKey = body.apiKey;
           if (!apiKey) apiKey = await getUserApiKey(env, payload.sub);
@@ -1051,6 +1054,9 @@ export default {
         if (!payload) return json({ error: 'invalid_token' }, 401, cors);
         const body = await request.json().catch(() => null);
         if (!body || !body.text) return json({ error: 'missing_text' }, 400, cors);
+        const plan = await resolvePlan(env, payload);
+        const reqType = String(body.type || '1');
+        { const denied = await requireFeature(env, 'voice.tts', plan, reqType); if (denied) return denied; }
         try {
           let apiKey = body.apiKey;
           if (!apiKey) apiKey = await getUserApiKey(env, payload.sub);
