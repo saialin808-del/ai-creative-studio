@@ -27,10 +27,6 @@ const STEP1_HTML = `
 <p style="color:var(--text2);font-size:13px;margin-bottom:14px;">သင့် အကြံ / အကြောင်းအရာကို ထည့်ပြီး Generate နှိပ်ပါ — AI က Content + Speaking Style + Voice Style သုံးမျိုး ရေးပေးပါမယ်။</p>
 <div class="adv-grid">
 <div class="form-group">
-<label>ဘယ်သူအတွက်</label>
-<select id="audSel"><option>လူတိုင်း</option><option>လူငယ်</option><option>လူကြီး</option><option>ကလေး</option></select>
-</div>
-<div class="form-group">
 <label>အမျိုးအစား (Type 1-5)</label>
 <select id="typeSelect">
 <option value="1">Type 1 — Basic (FREE)</option>
@@ -39,6 +35,10 @@ const STEP1_HTML = `
 <option value="4">Type 4 — Premium (PRO)</option>
 <option value="5">Type 5 — Ultimate (PRO)</option>
 </select>
+</div>
+<div class="form-group">
+<label>ဘယ်သူအတွက်</label>
+<select id="audSel"><option>လူတိုင်း</option><option>လူငယ်</option><option>လူကြီး</option><option>ကလေး</option></select>
 </div>
 </div>
 <div class="form-group" style="margin-top:4px;">
@@ -56,10 +56,15 @@ const STEP1_HTML = `
 // ============================================================
 const STEP2_HTML = `
 <div class="aics-step" data-step="2">
-<div class="card aics-process-screen">
-<div class="aics-process-spinner"></div>
-<div class="aics-process-title">&#10024; AI ရေးသားနေသည်...</div>
-<div class="aics-process-sub">သင့် Content ကို ဖန်တီးနေပါသည် — ခဏစောင့်ပါ...</div>
+<div class="card">
+<div class="loading-card">
+<div class="spinner"></div>
+<div class="loading-title">&#10024; AI ရေးသားနေသည်...</div>
+<div class="status-list" id="contentStatus">
+<div class="st-line" data-idx="0"><span class="st-marker">○</span><span>အချက်အလက်များကို ဖတ်နေသည်</span></div>
+<div class="st-line" data-idx="1"><span class="st-marker">○</span><span>AI က Content ရေးသားနေသည်</span></div>
+<div class="st-line" data-idx="2"><span class="st-marker">○</span><span>Content ကို စစ်ဆေးနေသည်</span></div>
+</div>
 <div class="error-box" id="genError2"></div>
 <div class="btn-row" id="genRetryRow" style="display:none;justify-content:center;">
 <button class="btn btn-secondary" onclick="csNav(1)">&#8592; ပြန်ပြင်ရန်</button>
@@ -161,6 +166,7 @@ const STEP12_HTML = `
 <details class="aics-advanced">
 <summary>&#9881; Advanced Settings</summary>
 <div style="margin-top:12px;">
+<div class="adv-grid">
 <div class="form-group">
 <label>အမျိုးအစား (Type 1-5)</label>
 <select id="videoTypeSelect">
@@ -170,10 +176,6 @@ const STEP12_HTML = `
 <option value="4">Type 4 — Premium (PRO)</option>
 <option value="5">Type 5 — Ultimate (PRO)</option>
 </select>
-</div>
-<div class="form-group">
-<label>Gemini API Key (ရွေးစရာ — BYOK)</label>
-<input type="password" id="videoByokInput" placeholder="ထည့်လိုပါက သင့် Key ကိုထည့်ပါ">
 </div>
 </div>
 </details>
@@ -185,10 +187,16 @@ const STEP12_HTML = `
 
 const STEP13_HTML = `
 <div class="aics-step" data-step="13">
-<div class="card aics-process-screen">
-<div class="aics-process-spinner"></div>
-<div class="aics-process-title">&#127916; AI က Video အတွက် ပြင်ဆင်နေသည်...</div>
-<div class="aics-process-sub">Video အစီအစဉ်ကို ရေးဆွဲနေပါသည် — ခဏစောင့်ပါ...</div>
+<div class="card">
+<div class="loading-card">
+<div class="spinner"></div>
+<div class="loading-title">&#127916; AI က Video အတွက် ပြင်ဆင်နေသည်...</div>
+<div class="status-list" id="videoStatus">
+<div class="st-line" data-idx="0"><span class="st-marker">○</span><span>Content ကို ဖတ်နေသည်</span></div>
+<div class="st-line" data-idx="1"><span class="st-marker">○</span><span>ဇာတ်ကောင်များ ခွဲခြားနေသည်</span></div>
+<div class="st-line" data-idx="2"><span class="st-marker">○</span><span>Scene များ ခွဲခြားနေသည်</span></div>
+<div class="st-line" data-idx="3"><span class="st-marker">○</span><span>Video Prompt များ ရေးနေသည်</span></div>
+</div>
 <div class="error-box" id="videoError2"></div>
 <div class="btn-row" id="videoRetryRow" style="display:none;justify-content:center;">
 <button class="btn btn-secondary" onclick="csNav(12)">&#8592; ပြန်ပြင်ရန်</button>
@@ -287,10 +295,15 @@ const STEP22_HTML = `
 
 const STEP23_HTML = `
 <div class="aics-step" data-step="23">
-<div class="card aics-process-screen">
-<div class="aics-process-spinner"></div>
-<div class="aics-process-title">&#128266; AI က အသံအတွက် ပြင်ဆင်နေသည်...</div>
-<div class="aics-process-sub">အသံဖန်တီးနေပါသည် — ခဏစောင့်ပါ...</div>
+<div class="card">
+<div class="loading-card">
+<div class="spinner"></div>
+<div class="loading-title">&#128266; AI က အသံအတွက် ပြင်ဆင်နေသည်...</div>
+<div class="status-list" id="voiceStatus">
+<div class="st-line" data-idx="0"><span class="st-marker">○</span><span>Content ကို ဖတ်နေသည်</span></div>
+<div class="st-line" data-idx="1"><span class="st-marker">○</span><span>အသံ ပုံစံ ရွေးချယ်နေသည်</span></div>
+<div class="st-line" data-idx="2"><span class="st-marker">○</span><span>အသံ ဖန်တီးနေသည်</span></div>
+</div>
 <div class="error-box" id="voiceError2"></div>
 <div class="btn-row" id="voiceRetryRow" style="display:none;justify-content:center;">
 <button class="btn btn-secondary" onclick="csNav(22)">&#8592; ပြန်ပြင်ရန်</button>
@@ -394,6 +407,27 @@ select option{background:var(--bg-card);color:var(--text)}
 .aics-step-btn.cs-busy{border-color:rgba(0,229,255,.6)!important;box-shadow:0 0 18px rgba(0,229,255,.4)!important;}
 .aics-step-btn.cs-busy .aics-step-label{color:#00e5ff!important;}
 .aics-step-btn.cs-busy .aics-step-loading{display:flex!important;}
+/* Loading checklist (Story Studio ပုံစံ) */
+.loading-card{text-align:center;padding:40px 16px;}
+.loading-card .spinner{width:38px;height:38px;border-width:4px;margin:0 auto 18px;}
+.loading-title{font-size:18px;font-weight:700;color:var(--cyan);margin-bottom:20px;}
+.status-list{max-width:440px;margin:0 auto;text-align:left;}
+.st-line{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:10px;color:var(--text2);font-size:14px;opacity:.5;transition:all .2s;}
+.st-line .st-marker{width:22px;text-align:center;flex-shrink:0;font-weight:700;color:var(--text3);}
+.st-line.active{opacity:1;color:var(--text);background:rgba(0,229,255,.06);}
+.st-line.active .st-marker{color:var(--cyan);}
+.st-line.done{opacity:1;color:var(--text);}
+.st-line.done .st-marker{color:var(--success);}
+/* Video result boxes (Story Studio ပုံစံ) */
+.final-char-card{background:var(--bg-card2,#0e1626);border:1px solid var(--border,#26324a);border-radius:12px;padding:16px;margin-bottom:12px;}
+.final-char-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+.final-char-name{font-weight:700;color:var(--purple,#b7a8ff);font-size:14.5px;}
+.final-prompt-label{font-size:11.5px;color:var(--cyan);font-weight:700;letter-spacing:.5px;margin:10px 0 4px;text-transform:uppercase;}
+.final-prompt-text{font-size:13px;color:var(--text);line-height:1.6;white-space:pre-wrap;word-break:break-word;background:var(--bg-input,#0a1020);padding:10px 12px;border-radius:8px;min-height:20px;}
+.final-scene-card{background:var(--bg-card2,#0e1626);border:1px solid var(--border,#26324a);border-radius:12px;padding:16px;margin-bottom:14px;}
+.final-scene-title{font-weight:700;color:var(--purple,#b7a8ff);font-size:14.5px;padding-bottom:10px;margin-bottom:12px;border-bottom:1px solid var(--border,#26324a);}
+.final-scene-box{margin-bottom:12px;}
+.final-box-label{font-size:11.5px;color:var(--cyan);font-weight:700;letter-spacing:.5px;margin-bottom:4px;text-transform:uppercase;}
 .form-row{display:flex;gap:14px;flex-wrap:wrap}
 .form-row .form-group{flex:1;min-width:200px}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:12px 24px;border-radius:8px;border:none;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .2s;min-height:44px;min-width:44px}
@@ -644,12 +678,18 @@ function openBranch(kind){
     csMarkDone(11);
     csGoForce(12);
   }else if(kind==='audio'){
-    audioState.content=content;
-    var at=document.getElementById('ttsText'); if(at){at.value=content;autoGrow(at);}
-    var ap=document.getElementById('audioContentPreview'); if(ap)ap.textContent=content;
-    csSetMode('audio');
-    csMarkDone(21);
-    csGoForce(22);
+    // Voice output is now handled by the dedicated Voice Studio.
+    // Transfer the latest edited Content without requiring copy/paste.
+    try{
+      localStorage.setItem('aics_voice_transfer',JSON.stringify({
+        source:'content',
+        text:content,
+        speakingStyle:(lastResult&&lastResult.speakingStyle)||'',
+        voiceStyle:(lastResult&&lastResult.voiceStyle)||'',
+        transferredAt:new Date().toISOString()
+      }));
+    }catch(e){}
+    window.location.href='/app/voice?source=content';
   }
 }
 function backToContentResult(){
@@ -674,6 +714,35 @@ function setLoading(id,show){
     if(n===csCur){
       if(show)btns[i].classList.add('cs-busy');
       else btns[i].classList.remove('cs-busy');
+    }
+  }
+}
+// ===== Loading checklist animation (Story Studio ပုံစံ) =====
+var statusTimers={};
+function startStatusAnim(id){
+  stopStatusAnim(id,false);
+  var box=document.getElementById(id);if(!box)return;
+  var lines=box.querySelectorAll('.st-line');
+  var cur=0,started=false;
+  for(var k=0;k<lines.length;k++){lines[k].className='st-line';var m=lines[k].querySelector('.st-marker');if(m)m.textContent='○';}
+  statusTimers[id]=setInterval(function(){
+    if(!started){lines[0].className='st-line active';var m0=lines[0].querySelector('.st-marker');if(m0)m0.textContent='●';started=true;return;}
+    if(cur<lines.length){
+      lines[cur].className='st-line done';
+      var md=lines[cur].querySelector('.st-marker');if(md)md.textContent='✓';
+      cur++;
+      if(cur<lines.length){lines[cur].className='st-line active';var ma=lines[cur].querySelector('.st-marker');if(ma)ma.textContent='●';}
+    }
+  },1100);
+}
+function stopStatusAnim(id,allDone){
+  if(statusTimers[id]){clearInterval(statusTimers[id]);delete statusTimers[id];}
+  var box=document.getElementById(id);if(!box)return;
+  var lines=box.querySelectorAll('.st-line');
+  if(allDone){
+    for(var k=0;k<lines.length;k++){
+      lines[k].className='st-line done';
+      var m=lines[k].querySelector('.st-marker');if(m)m.textContent='✓';
     }
   }
 }
@@ -741,6 +810,7 @@ function generateContent(){
   csMarkDone(1);
   csGoForce(2);
   setLoading('genLoading',true);
+  startStatusAnim('contentStatus');
   var body={idea:idea,type:type};
   if(byok)body.apiKey=byok;
   apiCall('/api/studio/content/generate',body)
@@ -750,6 +820,7 @@ function generateContent(){
       contentState.status='done';
       renderContentResult();
       document.getElementById('ttsText').value=data.content||'';
+      stopStatusAnim('contentStatus',true);
       csMarkDone(1);
       csMarkDone(2);
       showToastMsg('&#10004; Content ပြီးပါပြီ');
@@ -758,6 +829,7 @@ function generateContent(){
     .catch(function(err){
       console.error(err);
       contentState.status='error';
+      stopStatusAnim('contentStatus',false);
       showError('genError2','Content ဖန်တီးရာတွင် အခက်အခဲရှိနေပါသည်။ ခဏစောင့်ပြီး ပြန်ကြိုးစားပါ။');
       document.getElementById('genRetryRow').style.display='flex';
     })
@@ -830,7 +902,7 @@ function generateVideo(){
   if(csBusy)return;
   var content=(document.getElementById('videoContentText').value||'').trim();
   var type=document.getElementById('videoTypeSelect').value;
-  var byok=document.getElementById('videoByokInput').value.trim();
+  var byok=(document.getElementById('videoByokInput')||{value:''}).value.trim();
   if(!content){showError('videoError','Content မရှိသေးပါ — Content ကို အရင်ဖန်တီးပါ။');return;}
   hideError('videoError'); hideError('videoError2');
   document.getElementById('videoRetryRow').style.display='none';
@@ -842,6 +914,7 @@ function generateVideo(){
   csMarkDone(12);
   csGoForce(13);
   setLoading('videoLoading',true);
+  startStatusAnim('videoStatus');
   var body={idea:content,type:type};
   if(byok)body.apiKey=byok;
   apiCall('/api/studio/content/video',body)
@@ -851,6 +924,7 @@ function generateVideo(){
       videoState.status='done';
       renderVideoPlan(data);
       document.getElementById('videoResult').style.display='block';
+      stopStatusAnim('videoStatus',true);
       csMarkDone(13);
       showToastMsg('&#10004; Video Plan ပြီးပါပြီ');
       csGoForce(14);
@@ -858,6 +932,7 @@ function generateVideo(){
     .catch(function(err){
       console.error(err);
       videoState.status='error';
+      stopStatusAnim('videoStatus',false);
       showError('videoError2','Video ဖန်တီးရာတွင် အခက်အခဲရှိနေပါသည်။ ပြန်ကြိုးစားပါ။');
       document.getElementById('videoRetryRow').style.display='flex';
     })
@@ -872,9 +947,10 @@ function renderVideoPlan(data){
     for(var i=0;i<data.characters.length;i++){
       var c=data.characters[i];
       var div=document.createElement('div');
-      div.className='character-chip';
-      div.innerHTML='<div class="character-name">'+escapeHtml(c.name||'Character '+(i+1))+'</div>'+
-                    '<div class="character-desc">'+escapeHtml(c.description||'')+'</div>';
+      div.className='final-char-card';
+      div.innerHTML='<div class="final-char-head"><span class="final-char-name">&#128100; '+escapeHtml(c.name||('Character '+(i+1)))+'</span></div>'+
+                    '<div class="final-prompt-label">Character Reference</div>'+
+                    '<div class="final-prompt-text">'+escapeHtml(c.description||'')+'</div>';
       charsList.appendChild(div);
     }
   }else{
@@ -887,23 +963,20 @@ function renderVideoPlan(data){
       (function(idx){
         var s=data.scenes[idx];
         var item=document.createElement('div');
-        item.className='scene-item';
-        var html='<div class="scene-header">'+
-          '<span class="scene-num">Scene '+(s.number||(idx+1))+'</span>'+
-          (s.duration?'<span class="scene-duration">'+escapeHtml(s.duration)+'</span>':'')+
-          '</div>';
-        if(s.description){
-          html+='<div class="scene-field"><div class="scene-field-label">ဖော်ပြချက် (Description)</div>'+
-                '<div class="scene-field-text">'+escapeHtml(s.description)+'</div></div>';
-        }
+        item.className='final-scene-card';
+        var html='<div class="final-scene-title">&#127916; SCENE '+(s.number||(idx+1))+(s.duration?' <span style="color:var(--text2,#8b95a8);font-weight:400;">&#9201; '+escapeHtml(s.duration)+'</span>':'')+'</div>';
         if(s.visualPrompt){
-          html+='<div class="scene-field"><div class="scene-field-label">'+
-                'ရုပ်ပုံ Prompt <button class="btn-ghost" onclick="copySceneText('+idx+')">&#128203; Copy</button></div>'+
-                '<div class="scene-field-text" id="sceneVP_'+idx+'">'+escapeHtml(s.visualPrompt)+'</div></div>';
+          html+='<div class="final-scene-box"><div class="final-box-label">&#127916; Video Prompt</div>'+
+                '<div class="final-prompt-text" id="sceneVP_'+idx+'">'+escapeHtml(s.visualPrompt)+'</div>'+
+                '<div class="btn-row"><button class="btn-ghost" onclick="copySceneText('+idx+')">&#128203; Copy Video Prompt</button></div></div>';
+        }
+        if(s.description){
+          html+='<div class="final-scene-box"><div class="final-box-label">&#127757; Environment Reference</div>'+
+                '<div class="final-prompt-text">'+escapeHtml(s.description)+'</div></div>';
         }
         if(s.dialogue){
-          html+='<div class="scene-field"><div class="scene-field-label">စကားပြော (Dialogue)</div>'+
-                '<div class="scene-field-text">'+escapeHtml(s.dialogue)+'</div></div>';
+          html+='<div class="final-scene-box"><div class="final-box-label">&#128172; Dialogue</div>'+
+                '<div class="final-prompt-text">'+escapeHtml(s.dialogue)+'</div></div>';
         }
         html+='<div class="scene-image-area" id="sceneImg_'+idx+'">'+
               (imgCache['scene_'+idx]?'<img src="'+imgCache['scene_'+idx]+'"><div style="margin-top:8px;"><button class="btn-ghost" onclick="generateSceneImage('+idx+')">&#128260; ပြန်ဖန်တီးပါ</button></div>':'<button class="btn btn-secondary" onclick="generateSceneImage('+idx+')">&#128444; ဤဖြစ်စဉ်၏ ရုပ်ပုံဖန်တီးပါ</button>')+
@@ -930,7 +1003,7 @@ function generateSceneImage(idx){
   var area=document.getElementById('sceneImg_'+idx);
   if(!area)return;
   area.innerHTML='<div class="loading show" style="justify-content:center;position:static;transform:none;display:flex;"><div class="spinner"></div> ရုပ်ပုံဖန်တီးနေပါသည်...</div>';
-  var byok=document.getElementById('videoByokInput').value.trim();
+  var byok=(document.getElementById('videoByokInput')||{value:''}).value.trim();
   var body={prompt:prompt};
   if(byok)body.apiKey=byok;
   apiCall('/api/studio/content/video-image',body)
@@ -968,6 +1041,7 @@ function generateVoice(){
   csMarkDone(22);
   csGoForce(23);
   setLoading('voiceLoading',true);
+  startStatusAnim('voiceStatus');
   document.getElementById('voiceBtn').disabled=true;
   var body={text:text,voiceName:voiceName};
   if(byok)body.apiKey=byok;
@@ -980,6 +1054,7 @@ function generateVoice(){
       var container=document.getElementById('audioContainer');
       container.innerHTML='<audio controls src="'+audioUrl+'"></audio>'+
         '<div class="btn-row"><button class="btn-ghost" onclick="downloadAudio()">&#128190; Save Audio</button></div>';
+      stopStatusAnim('voiceStatus',true);
       csMarkDone(23);
       showToastMsg('&#10004; အသံပြီးပါပြီ');
       csGoForce(24);
@@ -987,6 +1062,7 @@ function generateVoice(){
     .catch(function(err){
       console.error(err);
       audioState.status='error';
+      stopStatusAnim('voiceStatus',false);
       showError('voiceError2','အသံဖန်တီးရာတွင် အခက်အခဲရှိနေပါသည်။ ပြန်ကြိုးစားပါ။');
       document.getElementById('voiceRetryRow').style.display='flex';
     })
@@ -1185,7 +1261,7 @@ function studioRestoreDraft(d){
   if(d.byok&&document.getElementById('byokInput'))document.getElementById('byokInput').value=d.byok;
   if(d.videoContent)document.getElementById('videoContentText').value=d.videoContent;
   if(d.videoType)document.getElementById('videoTypeSelect').value=d.videoType;
-  if(d.videoByok)document.getElementById('videoByokInput').value=d.videoByok;
+  if(d.videoByok&&document.getElementById('videoByokInput'))document.getElementById('videoByokInput').value=d.videoByok;
   if(d.ttsText)document.getElementById('ttsText').value=d.ttsText;
   if(d.voiceName)document.getElementById('voiceNameSelect').value=d.voiceName;
   if(d.srt)document.getElementById('resultSrt').value=d.srt;
