@@ -547,7 +547,7 @@ export function renderStudioShell(opts) {
   const steps = opts.steps || [];
   const content = opts.content || '';
   const stepsJson = JSON.stringify(steps.map(function (s, i) {
-    return { n: i + 1, label: s.label || 'Step ' + (i + 1), sub: s.sub || '', req: s.req || (i === 0 ? [] : [i]) };
+    return { n: i + 1, label: s.label || 'Step ' + (i + 1), sub: s.sub || '', req: s.req || (i === 0 ? [] : [i]), lock: !!s.lock };
   }));
 
   return (
@@ -600,7 +600,7 @@ export function renderStudioShell(opts) {
     '    var html = \'<div class="aics-stepper-inner">\';\n' +
     '    for (var i = 0; i < STEPS.length; i++) {\n' +
     '      var s = STEPS[i];\n' +
-    '      html += \'<button class="aics-step-btn" data-step="\' + s.n + \'" onclick="studioGoStep(\' + s.n + \')">\' +\n' +
+    '      html += \'<button class="aics-step-btn" data-step="\' + s.n + \'"\' + (s.lock ? \' data-lock="1"\' : \'\') + \' onclick="studioGoStep(\' + s.n + \')">\' +\n' +
     '        \'<span class="aics-step-txt"><span class="aics-step-label">\' + s.label + \'</span></span>\' +\n' +
     '        \'<span class="aics-step-loading"><span class="aics-step-spinner"></span>ဖန်တီးနေသည်...</span></button>\';\n' +
     '      if (i < STEPS.length - 1) html += \'<span class="aics-step-link"></span>\';\n' +
@@ -608,14 +608,19 @@ export function renderStudioShell(opts) {
     '    html += \'</div>\';\n' +
     '    c.innerHTML = html;\n' +
     '  }\n' +
+    '  function stepMeta(n) {\n' +
+    '    for (var k = 0; k < STEPS.length; k++) if (STEPS[k].n === n) return STEPS[k];\n' +
+    '    return null;\n' +
+    '  }\n' +
     '  function updateStepper() {\n' +
     '    var btns = document.querySelectorAll(".aics-step-btn");\n' +
     '    for (var i = 0; i < btns.length; i++) {\n' +
     '      var n = parseInt(btns[i].getAttribute("data-step"), 10);\n' +
+    '      var sm = stepMeta(n);\n' +
     '      btns[i].classList.remove("active", "done", "todo");\n' +
     '      if (n === cur) btns[i].classList.add("active");\n' +
     '      else if (doneMap[n]) btns[i].classList.add("done");\n' +
-    '      else if (!allowed(n)) btns[i].classList.add("todo");\n' +
+    '      else if (!allowed(n) || (sm && sm.lock)) btns[i].classList.add("todo");\n' +
     '    }\n' +
     '  }\n' +
     '  function showStep(n) {\n' +
@@ -628,10 +633,20 @@ export function renderStudioShell(opts) {
     '    updateStepper();\n' +
     '    if (window.studioOnStep) { try { window.studioOnStep(n); } catch (e) {} }\n' +
     '  }\n' +
+    '  var lockNav = false;\n' +
     '  window.studioGoStep = function (n) {\n' +
-    '    if (!allowed(n)) return;\n' +
+    '    if (!lockNav) {\n' +
+    '      if (!allowed(n)) return;\n' +
+    '      var sm = stepMeta(n);\n' +
+    '      if (sm && sm.lock) { toast("ဤအဆင့်သည် AI ဆောင်ရွက်နေချိန် အဆင့်ဖြစ်ပြီး ကိုယ်တိုင် ရွေးချယ်၍ မရပါ"); return; }\n' +
+    '    }\n' +
     '    cur = n;\n' +
     '    showStep(n);\n' +
+    '  };\n' +
+    '  // AI Processing Step (lock) သို့ ကိုယ်တိုင်နှိပ်ခြင်း မလိုဘဲ Program အလိုအလျောက် သွားရန် (Story Studio 02/05)\n' +
+    '  window.studioForceGoStep = function (n) {\n' +
+    '    lockNav = true;\n' +
+    '    try { window.studioGoStep(n); } finally { lockNav = false; }\n' +
     '  };\n' +
     '  window.studioMarkDone = function (n) {\n' +
     '    doneMap[n] = true;\n' +
