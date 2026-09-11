@@ -192,7 +192,7 @@ function renderTextInput(){
   document.getElementById('voiceWorkflowBody').innerHTML=workflowTop('📝 စာသား → အသံ')+\`
   <div class="vcard">
     <div class="vtitle">📝 စာသား</div><p class="hint">Voice အဖြစ် ဖန်တီးလိုသော စာသားနှင့် စကားပြောပုံစံကို ထည့်ပါ။</p>
-    ${VOICE_STATE.source?'<div class="source-note">Content Studio မှ နောက်ဆုံးပြင်ထားသော Content ကို အလိုအလျောက် ထည့်ပေးထားပါသည်။</div>':''}
+    \${VOICE_STATE.source?'<div class="source-note">Content Studio မှ နောက်ဆုံးပြင်ထားသော Content ကို အလိုအလျောက် ထည့်ပေးထားပါသည်။</div>':''}
     <div class="form-group"><label>စာသားအကြောင်းအရာ *</label><textarea id="ttsText" placeholder="Voice ပြောင်းလိုသော Text ကို ထည့်ပါ" oninput="autoGrow(this)"></textarea></div>
     <div class="form-group"><label>Speaking Style</label><textarea id="speakingStyle" placeholder="ဥပမာ - နူးညံ့စွာ၊ တက်ကြွစွာ၊ သဘာဝကျစွာ ပြောပါ" oninput="autoGrow(this)"></textarea></div>
     <div class="form-group"><label>Voice Style</label><select id="voiceName">${voiceOptions()}</select></div>
@@ -297,8 +297,8 @@ function renderTranslationInput(source){
   document.getElementById('voiceWorkflowBody').innerHTML=workflowTop('🌐 ဘာသာပြန်')+\`
   <div class="vcard"><div class="vtitle">🌐 ဘာသာပြန်</div>
     <div class="form-group"><label>ဘာသာပြန်ဦးတည်ချက်</label><select id="translationDirection" onchange="VOICE_STATE.translationDirection=this.value">
-      <option value="MY_TO_CN"${VOICE_STATE.translationDirection==='MY_TO_CN'?' selected':''}>မြန်မာ → တရုတ်</option>
-      <option value="CN_TO_MY"${VOICE_STATE.translationDirection==='CN_TO_MY'?' selected':''}>တရုတ် → မြန်မာ</option>
+      <option value="MY_TO_CN"\${VOICE_STATE.translationDirection==='MY_TO_CN'?' selected':''}>မြန်မာ → တရုတ်</option>
+      <option value="CN_TO_MY"\${VOICE_STATE.translationDirection==='CN_TO_MY'?' selected':''}>တရုတ် → မြန်မာ</option>
     </select></div>
     <div class="btn-row"><button class="btn primary" onclick="submitTranslation('${source}')">ဘာသာပြန်ဖန်တီးရန် →</button><button class="btn ghost" onclick="renderSrtResult('${source}')">← SRT ရလဒ်</button></div>
   </div>\`;
