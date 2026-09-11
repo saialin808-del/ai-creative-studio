@@ -25,15 +25,11 @@ const STEP1_HTML = `
 <div class="card">
 <div class="card-title">&#9997; Create Content</div>
 <p style="color:var(--text2);font-size:13px;margin-bottom:14px;">သင့် အကြံ / အကြောင်းအရာကို ထည့်ပြီး Generate နှိပ်ပါ — AI က Content + Speaking Style + Voice Style သုံးမျိုး ရေးပေးပါမယ်။</p>
+<div class="adv-grid">
 <div class="form-group">
-<label>သင့် အကြံ / အကြောင်းအရာ (User Idea) *</label>
-<textarea id="ideaInput" placeholder="ဥပမာ — ကော်ဖီဆိုင်တစ်ဆင်အတွက် social media content ရေးပါ..." style="min-height:130px;"></textarea>
-</div>
-<div class="form-group" style="margin-bottom:16px;">
 <label>ဘယ်သူအတွက်</label>
 <select id="audSel"><option>လူတိုင်း</option><option>လူငယ်</option><option>လူကြီး</option><option>ကလေး</option></select>
 </div>
-<div class="adv-grid" style="margin-top:16px;">
 <div class="form-group">
 <label>အမျိုးအစား (Type 1-5)</label>
 <select id="typeSelect">
@@ -44,10 +40,10 @@ const STEP1_HTML = `
 <option value="5">Type 5 — Ultimate (PRO)</option>
 </select>
 </div>
-<div class="form-group">
-<label>Gemini API Key (ရွေးစရာ — BYOK)</label>
-<input type="password" id="byokInput" placeholder="ထည့်လိုပါက သင့် Key ကိုထည့်ပါ">
 </div>
+<div class="form-group" style="margin-top:4px;">
+<label>သင့် အကြံ / အကြောင်းအရာ (User Idea) *</label>
+<textarea id="ideaInput" placeholder="ဥပမာ — ကော်ဖီဆိုင်တစ်ဆင်အတွက် social media content ရေးပါ..." style="min-height:130px;"></textarea>
 </div>
 <button class="btn btn-primary" id="genBtn" onclick="generateContent()" style="margin-top:4px;">&#10024; Generate Content</button>
 <div class="loading" id="genLoading"><div class="spinner"></div> AI က ရေးနေပါသည်...</div>
@@ -394,6 +390,10 @@ select option{background:var(--bg-card);color:var(--text)}
 .form-group{margin-bottom:16px}
 .adv-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
 .adv-grid .form-group{margin-bottom:0;}
+/* Stepper loading — global .loading{display:none!important} နဲ့ မတိုက်အောင် cs-busy သုံး */
+.aics-step-btn.cs-busy{border-color:rgba(0,229,255,.6)!important;box-shadow:0 0 18px rgba(0,229,255,.4)!important;}
+.aics-step-btn.cs-busy .aics-step-label{color:#00e5ff!important;}
+.aics-step-btn.cs-busy .aics-step-loading{display:flex!important;}
 .form-row{display:flex;gap:14px;flex-wrap:wrap}
 .form-row .form-group{flex:1;min-width:200px}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:12px 24px;border-radius:8px;border:none;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .2s;min-height:44px;min-width:44px}
@@ -602,7 +602,7 @@ function csUpdateStepper(){
   for(var i=0;i<btns.length;i++){
     var n=parseInt(btns[i].getAttribute('data-step'),10);
     var m=csMeta(n);
-    btns[i].classList.remove('active','done','todo');
+    btns[i].classList.remove('active','done','todo','cs-busy');
     if(n===csCur)btns[i].classList.add('active');
     else if(csDone[n])btns[i].classList.add('done');
     else if(!csAllowed(n)||(m&&m.lock))btns[i].classList.add('todo');
@@ -667,7 +667,15 @@ function setGenButtonsDisabled(off){
 function setLoading(id,show){
   var el=document.getElementById(id);
   if(el){ if(show)el.classList.add('show'); else el.classList.remove('show'); }
-  if(window.studioSetLoading)window.studioSetLoading(show);
+  // Branch stepper ပေါ် လက်ရှိ အဆင့်တွင် spinner ပြရန် (global .loading class နေရာမသုံး — display:none!important တိုက်မိနေ)
+  var btns=document.querySelectorAll('.aics-step-btn');
+  for(var i=0;i<btns.length;i++){
+    var n=parseInt(btns[i].getAttribute('data-step'),10);
+    if(n===csCur){
+      if(show)btns[i].classList.add('cs-busy');
+      else btns[i].classList.remove('cs-busy');
+    }
+  }
 }
 function showError(id,msg){ var el=document.getElementById(id); if(!el)return; el.textContent=msg; el.classList.add('show'); }
 function hideError(id){ var el=document.getElementById(id); if(el)el.classList.remove('show'); }
@@ -719,7 +727,7 @@ function generateContent(){
   if(csBusy)return;
   var idea=document.getElementById('ideaInput').value.trim();
   var type=document.getElementById('typeSelect').value;
-  var byok=document.getElementById('byokInput').value.trim();
+  var byok=(document.getElementById('byokInput')||{value:''}).value.trim();
   var audEl=document.getElementById('audSel');
   if(!idea){showError('genError','အကြောင်းအရာ (User Idea) ထည့်ပါ။');return;}
   if(audEl&&audEl.value)idea+='\\n\\nဘယ်သူအတွက်: '+audEl.value;
@@ -784,7 +792,7 @@ function reviseContent(){
   document.getElementById('reviseBtn').disabled=true;
   addHistory('user',feedback);
   var type=document.getElementById('typeSelect').value;
-  var byok=document.getElementById('byokInput').value.trim();
+  var byok=(document.getElementById('byokInput')||{value:''}).value.trim();
   var body={
     originalContent:lastResult.content||'',
     originalSpeaking:lastResult.speakingStyle||'',
@@ -949,7 +957,7 @@ function generateVoice(){
   var text=(document.getElementById('ttsText').value||'').trim();
   if(!text){showError('voiceError','Text ထည့်ပါ (သို့မဟုတ် Content ကို အရင်ဖန်တီးပါ)။');return;}
   var voiceName=document.getElementById('voiceNameSelect').value;
-  var byok=document.getElementById('byokInput').value.trim();
+  var byok=(document.getElementById('byokInput')||{value:''}).value.trim();
   hideError('voiceError'); hideError('voiceError2');
   document.getElementById('voiceRetryRow').style.display='none';
   audioState.content=text;
@@ -1002,7 +1010,7 @@ function downloadAudio(){
 function generateSrt(){
   if(csBusy)return;
   if(!currentAudioBase64){showError('srtError','အရင် Generate Voice ကို နှိပ်ပါ — Audio မရှိသေးပါ။');return;}
-  var byok=document.getElementById('byokInput').value.trim();
+  var byok=(document.getElementById('byokInput')||{value:''}).value.trim();
   hideError('srtError');
   csBusy=true;
   setGenButtonsDisabled(true);
@@ -1030,7 +1038,7 @@ function translateSrt(){
   if(csBusy)return;
   var srtText=(document.getElementById('resultSrt').value||'').trim();
   if(!srtText){showError('translateError','မူရင်း SRT မရှိသေးပါ — Generate SRT ကို အရင်နှိပ်ပါ။');return;}
-  var byok=document.getElementById('byokInput').value.trim();
+  var byok=(document.getElementById('byokInput')||{value:''}).value.trim();
   hideError('translateError');
   csBusy=true;
   setGenButtonsDisabled(true);
@@ -1174,7 +1182,7 @@ function studioRestoreDraft(d){
   if(d.idea)document.getElementById('ideaInput').value=d.idea;
   if(d.type)document.getElementById('typeSelect').value=d.type;
   var audEl=document.getElementById('audSel');if(audEl&&d.aud)audEl.value=d.aud;if(audEl)window.aichAud=audEl.value;
-  if(d.byok)document.getElementById('byokInput').value=d.byok;
+  if(d.byok&&document.getElementById('byokInput'))document.getElementById('byokInput').value=d.byok;
   if(d.videoContent)document.getElementById('videoContentText').value=d.videoContent;
   if(d.videoType)document.getElementById('videoTypeSelect').value=d.videoType;
   if(d.videoByok)document.getElementById('videoByokInput').value=d.videoByok;
