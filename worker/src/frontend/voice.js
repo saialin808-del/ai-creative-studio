@@ -92,6 +92,34 @@ export const VOICE_HTML = `<!DOCTYPE html>
 <body>
 <div id="loginView" class="aics-login-overlay" style="display:none;"><div class="aics-login-box"><h2>Login လုပ်ရန် လိုအပ်ပါသည်</h2><p>Voice Studio ကို အသုံးပြုရန် Google နဲ့ Login ဝင်ပါ။</p><a href="/api/auth/login?next=/app/voice" class="btn btn-primary">Google နဲ့ Login</a></div></div>
 ${renderStudioShell({id:'voice',activeId:'voice',nameMy:'အသံ Studio',desc:'Text to voice, voice to text',icon:'🎙️',modelCat:'voice',steps:[],content:HOME_HTML})}
+<style id="voice-shell-overrides">
+/* Voice Studio owns its Home shell. Keep shared Studio shell backward-compatible. */
+.voice-studio-shell{}
+#aicsWork .voice-screen#voiceHome{display:block!important;visibility:visible!important;opacity:1!important;width:100%;min-height:420px;}
+#aicsWork .voice-screen#voiceWorkflow{display:none!important;}
+#aicsWork .voice-screen#voiceWorkflow.active{display:block!important;}
+/* Home: no shared stepper/action bar. Workflow controls are enabled by Voice JS. */
+#aicsApp.voice-home-active #aicsStepper{display:none!important;}
+#aicsApp.voice-home-active .aics-actions{display:none!important;}
+/* iPad/tablet: Voice uses the same compact drawer behavior as phone. */
+@media (min-width:769px) and (max-width:1199px){
+  .aics-app .aics-menu-btn{display:inline-flex!important;}
+  .aics-app .layout{display:block!important;min-height:calc(100vh - 63px)!important;}
+  .aics-app .layout > .sidebar{
+    position:fixed!important;left:-280px!important;top:63px!important;bottom:0!important;
+    width:280px!important;max-width:82vw!important;height:auto!important;min-height:0!important;
+    margin:0!important;border-radius:0 16px 16px 0!important;padding:16px 14px!important;
+    z-index:99!important;transition:left .3s!important;
+    box-shadow:4px 0 20px rgba(0,0,0,.5)!important;
+  }
+  .aics-app .layout > .sidebar.open,
+  .aics-app .layout > .sidebar.show{left:0!important;}
+  .aics-app .layout > .aics-main{width:100%!important;margin:0!important;padding:20px!important;}
+}
+@media (max-width:768px){
+  .aics-app .layout > .aics-main{padding:14px!important;}
+}
+</style>
 <div class="loading-overlay" id="voiceLoading"><div class="loading-box"><div class="spinner"></div><div id="voiceLoadingText">AI ဆောင်ရွက်နေပါသည်...</div></div></div>
 <div class="toast" id="toast"></div>
 ${sidebarScript()}
@@ -181,8 +209,15 @@ function renderStepper(items,current){
   });c.innerHTML=h;
 }
 function setScreen(active){
-  document.getElementById('voiceHome').classList.toggle('active',active==='home');
-  document.getElementById('voiceWorkflow').classList.toggle('active',active!=='home');
+  var app=document.getElementById('aicsApp');
+  var home=active==='home';
+  document.getElementById('voiceHome').classList.toggle('active',home);
+  document.getElementById('voiceWorkflow').classList.toggle('active',!home);
+  if(app) app.classList.toggle('voice-home-active',home);
+  var actions=document.querySelector('.aics-actions');
+  if(actions) actions.style.display=home?'none':'';
+  var stepper=document.getElementById('aicsStepper');
+  if(stepper) stepper.style.display=home?'none':'';
 }
 function goHome(clear){
   VOICE_REQUEST_ID++;
@@ -473,6 +508,7 @@ window.studioRestoreDraft=studioRestoreDraft;
     setScreen('workflow');renderMediaResult();
   }
   applyContentTransfer();
+  if(!VOICE_STATE.voiceMode) setScreen('home');
 })();
 </script>
 </body></html>`;
