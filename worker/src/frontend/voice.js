@@ -33,9 +33,9 @@ const TRANSLATE_STEPPER = [
 ];
 
 function esc(s) {
-  const d = document.createElement('div');
-  d.textContent = s == null ? '' : String(s);
-  return d.innerHTML;
+  const value = s == null ? '' : String(s);
+  return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/\"/g, '&quot;').replace(/'/g, '&#39;');
 }
 function voiceOptions() {
   return VOICES.map(v => '<option value="' + esc(v[0]) + '"' + (v[0] === 'Kore' ? ' selected' : '') + '>' +
@@ -195,7 +195,7 @@ function renderTextInput(){
     \${VOICE_STATE.source?'<div class="source-note">Content Studio မှ နောက်ဆုံးပြင်ထားသော Content ကို အလိုအလျောက် ထည့်ပေးထားပါသည်။</div>':''}
     <div class="form-group"><label>စာသားအကြောင်းအရာ *</label><textarea id="ttsText" placeholder="Voice ပြောင်းလိုသော Text ကို ထည့်ပါ" oninput="autoGrow(this)"></textarea></div>
     <div class="form-group"><label>Speaking Style</label><textarea id="speakingStyle" placeholder="ဥပမာ - နူးညံ့စွာ၊ တက်ကြွစွာ၊ သဘာဝကျစွာ ပြောပါ" oninput="autoGrow(this)"></textarea></div>
-    <div class="form-group"><label>Voice Style</label><select id="voiceName">${voiceOptions()}</select></div>
+    <div class="form-group"><label>Voice Style</label><select id="voiceName">\${voiceOptions()}</select></div>
     <div class="form-group"><label>ညွှန်ကြားချက် (Optional)</label><textarea id="voiceInstruction" placeholder="AI အသံအတွက် ထပ်မံညွှန်ကြားလိုသည်များ" oninput="autoGrow(this)"></textarea></div>
     <div class="form-group"><label>ပရိသတ်</label><select id="audience"><option>လူတိုင်း</option><option>လူငယ်</option><option>လူကြီး</option><option>ကလေး</option></select></div>
     <div class="btn-row"><button class="btn primary" id="voiceNextBtn" onclick="submitTextToVoice()">အသံဖန်တီးရန် →</button></div>
@@ -238,8 +238,8 @@ function renderVoiceResult(){
   var url=URL.createObjectURL(base64Blob(LAST_AUDIO.base64,LAST_AUDIO.mime));LAST_AUDIO.url=url;
   document.getElementById('voiceWorkflowBody').innerHTML=workflowTop('🎧 အသံ ရလဒ်')+\`
   <div class="vcard"><div class="vtitle">🎧 အသံ ရလဒ်</div>
-    <div class="audio-box"><audio controls src="${esc(url)}"></audio>
-      <div class="btn-row"><a class="btn secondary" href="${esc(url)}" download="voice_output.wav">💾 Download Audio</a></div>
+    <div class="audio-box"><audio controls src="\${esc(url)}"></audio>
+      <div class="btn-row"><a class="btn secondary" href="\${esc(url)}" download="voice_output.wav">💾 Download Audio</a></div>
     </div>
     <div class="btn-row"><button class="btn secondary" onclick="saveVoiceCreation()">💾 သိမ်းရန်</button><button class="btn ghost" onclick="renderTextInput()">← ပြန်ပြင်ရန်</button></div>
   </div>
@@ -251,7 +251,7 @@ function renderVoiceError(kind,e){
   var msg=friendlyError({error:(e.message||'').split('|')[0],detail:(e.message||'').split('|').slice(1).join('|')},kind==='tts'?'အသံဖန်တီးရာတွင် အခက်အခဲရှိနေပါသည်။ ခဏအကြာတွင် ထပ်မံကြိုးစားပါ။':'ဆောင်ရွက်ရာတွင် အခက်အခဲရှိနေပါသည်။');
   VOICE_STATE.errorState=msg;VOICE_STATE.voiceStep=2;renderStepper(VOICE_STEPPER,2);
   document.getElementById('voiceWorkflowBody').innerHTML=workflowTop('⚠️ ပြန်လည်ကြိုးစားရန်')+\`
-  <div class="vcard"><div class="error-box">${esc(msg)}</div><div class="btn-row">
+  <div class="vcard"><div class="error-box">\${esc(msg)}</div><div class="btn-row">
     <button class="btn ghost" onclick="renderTextInput()">← ပြန်ပြင်ရန်</button><button class="btn primary" onclick="submitTextToVoice()">ထပ်မံကြိုးစားရန်</button>
   </div></div>\`;
 }
@@ -264,7 +264,7 @@ function renderSrtInput(source){
   document.getElementById('voiceWorkflowBody').innerHTML=workflowTop('📄 SRT')+\`
   <div class="vcard"><div class="vtitle">📄 SRT ဖန်တီးရန်</div><p class="hint">လက်ရှိ Audio မှ Timestamp ပါသော SRT ကို ဖန်တီးပါ။</p>
     <div class="source-note">မူရင်း Audio ရလဒ်ကို အသုံးပြုပါမည်။ SRT ကို အလိုအလျောက် မဖန်တီးပါ။</div>
-    <div class="btn-row"><button class="btn primary" onclick="submitSrt('${source}')">SRT ဖန်တီးရန် →</button><button class="btn ghost" onclick="${source==='voice'?'renderVoiceResult()':'renderMediaResult()'}">← နောက်သို့</button></div>
+    <div class="btn-row"><button class="btn primary" onclick="submitSrt('\${source}')">SRT ဖန်တီးရန် →</button><button class="btn ghost" onclick="\${source==='voice'?'renderVoiceResult()':'renderMediaResult()'}">← နောက်သို့</button></div>
   </div>\`;
 }
 function submitSrt(source){
@@ -283,10 +283,10 @@ function renderSrtResult(source){
   VOICE_STATE.voiceStep=3;renderStepper(SRT_STEPPER,3);
   document.getElementById('voiceWorkflowBody').innerHTML=workflowTop('📄 SRT ရလဒ်')+\`
   <div class="vcard"><div class="vtitle">📄 SRT ရလဒ်</div><p class="hint">Timestamp များကို မူရင်းအတိုင်း ထိန်းသိမ်းထားပါသည်။ လိုအပ်သလို စာသားကို ပြင်နိုင်ပါသည်။</p>
-    <textarea class="srt-box" id="srtEditor">${esc(VOICE_STATE.srtResult)}</textarea>
+    <textarea class="srt-box" id="srtEditor">\${esc(VOICE_STATE.srtResult)}</textarea>
     <div class="btn-row"><button class="btn success" onclick="copyValue('srtEditor')">📋 Copy SRT</button><button class="btn secondary" onclick="downloadValue('srtEditor','original_subtitle.srt')">💾 Save .srt</button><button class="btn purple" onclick="saveSrtCreation('original')">💾 သိမ်းရန်</button></div>
   </div>
-  <div class="vcard"><div class="vtitle">🌐 ဘာသာပြန်</div><p class="hint">လိုအပ်မှသာ ဘာသာပြန်လုပ်ပါ။</p><button class="btn primary" onclick="startTranslation('${source}')">ဘာသာပြန်ဖန်တီးရန် →</button></div>\`;
+  <div class="vcard"><div class="vtitle">🌐 ဘာသာပြန်</div><p class="hint">လိုအပ်မှသာ ဘာသာပြန်လုပ်ပါ။</p><button class="btn primary" onclick="startTranslation('\${source}')">ဘာသာပြန်ဖန်တီးရန် →</button></div>\`;
 }
 function startTranslation(source){
   if(USER_PLAN!=='PRO'){toast('ဒီ Feature ကို Pro User သာ အသုံးပြုနိုင်ပါသည်','error');return;}
@@ -300,7 +300,7 @@ function renderTranslationInput(source){
       <option value="MY_TO_CN"\${VOICE_STATE.translationDirection==='MY_TO_CN'?' selected':''}>မြန်မာ → တရုတ်</option>
       <option value="CN_TO_MY"\${VOICE_STATE.translationDirection==='CN_TO_MY'?' selected':''}>တရုတ် → မြန်မာ</option>
     </select></div>
-    <div class="btn-row"><button class="btn primary" onclick="submitTranslation('${source}')">ဘာသာပြန်ဖန်တီးရန် →</button><button class="btn ghost" onclick="renderSrtResult('${source}')">← SRT ရလဒ်</button></div>
+    <div class="btn-row"><button class="btn primary" onclick="submitTranslation('\${source}')">ဘာသာပြန်ဖန်တီးရန် →</button><button class="btn ghost" onclick="renderSrtResult('\${source}')">← SRT ရလဒ်</button></div>
   </div>\`;
 }
 function submitTranslation(source){
@@ -321,7 +321,7 @@ function renderTranslationResult(source){
   var s=VOICE_STATE.translationResult||translatedSrt;
   document.getElementById('voiceWorkflowBody').innerHTML=workflowTop('🌐 ဘာသာပြန် ရလဒ်')+\`
   <div class="vcard"><div class="vtitle">🌐 ဘာသာပြန် ရလဒ်</div><p class="hint">မူရင်း SRT Number နှင့် Timestamp များကို မပြောင်းထားပါ။</p>
-    <textarea class="srt-box" id="translatedEditor">${esc(s)}</textarea>
+    <textarea class="srt-box" id="translatedEditor">\${esc(s)}</textarea>
     <div class="btn-row"><button class="btn success" onclick="copyValue('translatedEditor')">📋 Copy SRT</button><button class="btn secondary" onclick="downloadValue('translatedEditor','translated_subtitle.srt')">💾 Save .srt</button><button class="btn purple" onclick="saveSrtCreation('translated')">💾 သိမ်းရန်</button></div>
   </div>\`;
 }
@@ -331,7 +331,7 @@ function renderGenericError(kind,source,e){
   var retry=kind==='srt'?"submitSrt('"+source+"')":"submitTranslation('"+source+"')";
   var back=kind==='srt'?(source==='voice'?'renderVoiceResult()':'renderMediaResult()'):"renderSrtResult('"+source+"')";
   VOICE_STATE.voiceStep=2;renderStepper(kind==='srt'?SRT_STEPPER:TRANSLATE_STEPPER,2);
-  document.getElementById('voiceWorkflowBody').innerHTML=workflowTop('⚠️ ပြန်လည်ကြိုးစားရန်')+\`<div class="vcard"><div class="error-box">${esc(msg)}</div><div class="btn-row"><button class="btn ghost" onclick="${back}">← ပြန်သွားရန်</button><button class="btn primary" onclick="${retry}">ထပ်မံကြိုးစားရန်</button></div></div>\`;
+  document.getElementById('voiceWorkflowBody').innerHTML=workflowTop('⚠️ ပြန်လည်ကြိုးစားရန်')+\`<div class="vcard"><div class="error-box">\${esc(msg)}</div><div class="btn-row"><button class="btn ghost" onclick="\${back}">← ပြန်သွားရန်</button><button class="btn primary" onclick="\${retry}">ထပ်မံကြိုးစားရန်</button></div></div>\`;
 }
 function processHtml(title,items){
   return '<div class="vcard process"><div class="process-icon">✨</div><h2>'+esc(title)+'</h2><div class="status-list">'+items.map(function(x){return '<div class="status-line '+(x[0]==='✓'?'done':'current')+'">'+esc(x[0]+' '+x[1])+'</div>';}).join('')+'</div></div>';
@@ -369,13 +369,13 @@ function renderMediaProcessing(){
 function renderMediaError(e){
   var msg=friendlyError({error:(e.message||'').split('|')[0]},'စာသားဖန်တီးရာတွင် အခက်အခဲရှိနေပါသည်။ ခဏအကြာတွင် ထပ်မံကြိုးစားပါ။');
   VOICE_STATE.voiceStep=2;renderStepper(MEDIA_STEPPER,2);
-  document.getElementById('voiceWorkflowBody').innerHTML=workflowTop('⚠️ ပြန်လည်ကြိုးစားရန်')+\`<div class="vcard"><div class="error-box">${esc(msg)}</div><div class="btn-row"><button class="btn ghost" onclick="renderMediaInput()">← ပြန်ရွေးရန်</button><button class="btn primary" onclick="submitMedia('text')">ထပ်မံကြိုးစားရန်</button></div></div>\`;
+  document.getElementById('voiceWorkflowBody').innerHTML=workflowTop('⚠️ ပြန်လည်ကြိုးစားရန်')+\`<div class="vcard"><div class="error-box">\${esc(msg)}</div><div class="btn-row"><button class="btn ghost" onclick="renderMediaInput()">← ပြန်ရွေးရန်</button><button class="btn primary" onclick="submitMedia('text')">ထပ်မံကြိုးစားရန်</button></div></div>\`;
 }
 function renderMediaResult(){
   VOICE_STATE.voiceStep=3;renderStepper(MEDIA_STEPPER,3);
   document.getElementById('voiceWorkflowBody').innerHTML=workflowTop('📝 စာသား ရလဒ်')+\`
   <div class="vcard"><div class="vtitle">📝 စာသား ရလဒ်</div><p class="hint">စာသားကို လိုအပ်သလို ပြင်ဆင်နိုင်ပါသည်။</p>
-    <textarea id="textResult" class="result-text" oninput="autoGrow(this)">${esc((VOICE_STATE.voiceResult&&VOICE_STATE.voiceResult.text)||'')}</textarea>
+    <textarea id="textResult" class="result-text" oninput="autoGrow(this)">\${esc((VOICE_STATE.voiceResult&&VOICE_STATE.voiceResult.text)||'')}</textarea>
     <div class="btn-row"><button class="btn success" onclick="copyValue('textResult')">📋 Copy</button><button class="btn purple" onclick="saveTranscript()">💾 သိမ်းရန်</button><button class="btn ghost" onclick="renderMediaInput()">← ပြန်ဖန်တီးရန်</button></div>
   </div>\`;
 }
