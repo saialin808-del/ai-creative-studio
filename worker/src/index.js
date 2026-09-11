@@ -829,21 +829,38 @@ export default {
         }
       }
 
-      // ===== Story Studio — Tab 2: Video Plan =====
+      // ===== Story Studio — Tab 2: Video Plan (04 Form → 05/06) =====
+      // Backward Compat: ယခင် body.idea ကိုလည်း ဆက်လက်လက်ခံသည်။
       if (path === '/api/studio/story/video' && request.method === 'POST') {
         const token = bearer(request);
         if (!token) return json({ error: 'unauthorized' }, 401, cors);
         const payload = await verifyTokenSafe(env, token);
         if (!payload) return json({ error: 'invalid_token' }, 401, cors);
         const body = await request.json().catch(() => null);
-        if (!body || !body.idea) return json({ error: 'missing_idea' }, 400, cors);
+        if (!body || (!body.idea && !body.story)) return json({ error: 'missing_idea' }, 400, cors);
         const plan = await resolvePlan(env, payload);
         const reqType = String(body.type || '1');
         { const denied = await requireFeature(env, 'story.video', plan, reqType); if (denied) return denied; }
         try {
           let apiKey = body.apiKey;
           if (!apiKey) apiKey = await getUserApiKey(env, payload.sub);
-          const out = await generateStoryVideoPlan(env, { model: body.model,  idea: body.idea, type: reqType, plan, apiKey });
+          const out = await generateStoryVideoPlan(env, {
+            model: body.model,
+            story: body.story || body.idea || '',
+            idea: body.idea || body.story || '',
+            type: reqType,
+            videoType: body.videoType,
+            duration: body.duration,
+            sceneDuration: body.sceneDuration,
+            aspectRatio: body.aspectRatio,
+            visualStyle: body.visualStyle,
+            cameraStyle: body.cameraStyle,
+            language: body.language,
+            environmentStyle: body.environmentStyle,
+            characterContinuity: body.characterContinuity,
+            additionalInstructions: body.additionalInstructions,
+            plan, apiKey,
+          });
           await trackUsageSafe(env, payload.sub, 'ai');
           return json({ ok: true, ...out }, 200, cors);
         } catch (e) {
