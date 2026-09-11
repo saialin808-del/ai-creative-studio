@@ -467,7 +467,7 @@ function aicsShellCss() {
     '.aich-model-wrap{margin-top:16px;}\n' +
     '.aich-model-wrap select{width:100%;padding:11px 12px;border-radius:10px;background:#0d1424;border:1px solid #26324a;color:#fff;font-size:13.5px;font-family:inherit;}\n' +
     '.aics-main{max-width:1280px;margin:0 auto;width:100%;padding:20px 24px;}\n' +
-    '.aics-stepper{margin-bottom:18px;background:#0d1424;border:1px solid rgba(0,229,255,.12);border-radius:14px;padding:10px 12px;overflow-x:auto;}\n' +
+    '.aics-stepper{margin-bottom:18px;background:#0d1424;border:1px solid rgba(0,229,255,.12);border-radius:14px;padding:10px 12px;overflow-x:auto;}.aics-stepper:empty{display:none;}\n' +
     '.aics-stepper-inner{display:flex;align-items:center;gap:6px;min-width:max-content;}\n' +
     '.aics-step-btn{display:flex;flex-direction:column;align-items:flex-start;gap:2px;background:none;border:1px solid transparent;color:#5a6478;padding:8px 14px;border-radius:10px;cursor:pointer;font-family:inherit;font-size:13px;white-space:nowrap;transition:all .2s;}\n' +
     '.aics-step-btn .aics-step-label{font-weight:600;color:#94a3b8;font-size:13.5px;}\n' +
