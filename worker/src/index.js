@@ -1116,6 +1116,7 @@ export default {
             mimeType: body.mimeType || 'audio/mpeg',
             type: String(body.type || '2'), plan, apiKey,
           });
+          await trackUsageSafe(env, payload.sub, 'ai');
           return json({ ok: true, ...out }, 200, cors);
         } catch (e) {
           return json({ error: 'srt_error', detail: friendlyError(e) }, 500, cors);
@@ -1140,6 +1141,7 @@ export default {
             direction: body.direction || 'MY_TO_CN',
             type: String(body.type || '2'), plan, apiKey,
           });
+          await trackUsageSafe(env, payload.sub, 'ai');
           return json({ ok: true, ...out }, 200, cors);
         } catch (e) {
           return json({ error: 'translate_error', detail: friendlyError(e) }, 500, cors);
