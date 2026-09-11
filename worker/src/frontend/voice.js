@@ -75,6 +75,17 @@ export const VOICE_HTML = `<!DOCTYPE html>
 <style>
 :root{--bg:#080c18;--card:#0d1424;--card2:#111a2e;--input:#0a1020;--border:rgba(0,229,255,.15);--strong:rgba(0,229,255,.35);--cyan:#00e5ff;--purple:#7b5cff;--text:#e8ecf4;--muted:#8b95a8;--success:#00e676;--error:#ff5252;--warn:#ffc107}
 *{box-sizing:border-box}body{font-family:'Noto Sans Myanmar','Roboto','Segoe UI',Arial,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line-height:1.6}
+/* Voice Studio shell layout fix: sidebar and main must sit side-by-side. */
+.layout{display:flex;min-height:calc(100vh - 57px);align-items:stretch}
+.layout > .sidebar{flex:0 0 auto}
+.aics-main{flex:1 1 auto;min-width:0}
+/* iPad portrait/tablet: keep sidebar as a drawer so Voice Home uses the full width. */
+@media (max-width:1199px){
+  .layout > .sidebar{position:fixed;left:-280px;top:57px;bottom:0;z-index:99;width:256px;max-width:82vw;margin:0;border-radius:0 16px 16px 0;padding:16px 14px;transition:left .3s;box-shadow:4px 0 20px rgba(0,0,0,.5);}
+  .layout > .sidebar.open{left:0}
+  .layout > .main,.layout > main.main{padding:14px}
+  .aics-main{width:100%;max-width:none}
+}
 .voice-screen{display:none}.voice-screen.active{display:block}.voice-hero{text-align:center;padding:26px 12px 22px}.voice-hero-icon{font-size:42px}.voice-hero h1{font-size:23px;margin:5px 0;background:linear-gradient(90deg,var(--purple),var(--cyan));-webkit-background-clip:text;background-clip:text;color:transparent}.voice-hero p{color:var(--muted);font-size:15px}
 .mode-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;max-width:760px;margin:0 auto}.mode-card{appearance:none;text-align:left;background:linear-gradient(145deg,var(--card),var(--card2));border:1px solid var(--border);border-radius:18px;padding:22px;min-height:190px;color:var(--text);cursor:pointer;display:flex;flex-direction:column;gap:8px;transition:.2s}.mode-card:hover,.mode-card:focus{border-color:var(--cyan);transform:translateY(-2px);outline:none;box-shadow:0 8px 28px rgba(0,229,255,.1)}.mode-icon{font-size:30px}.mode-title{font-size:17px;font-weight:700;color:var(--cyan)}.mode-desc{color:var(--muted);font-size:13px}.mode-action{margin-top:auto;font-weight:700;color:#fff}
 .voice-stepper{display:flex;align-items:center;justify-content:center;gap:0;margin:0 auto 18px;max-width:820px;overflow-x:auto;padding:3px 2px 9px}.vstep{border:1px solid var(--border);background:var(--card);color:var(--muted);padding:9px 13px;border-radius:10px;white-space:nowrap;font-size:12px}.vstep.active{border-color:var(--cyan);color:#fff;background:rgba(0,229,255,.1)}.vstep.done{border-color:rgba(0,230,118,.4);color:var(--success)}.vlink{height:1px;background:var(--border);width:34px;flex:0 0 34px}
@@ -183,6 +194,8 @@ function renderStepper(items,current){
 function setScreen(active){
   document.getElementById('voiceHome').classList.toggle('active',active==='home');
   document.getElementById('voiceWorkflow').classList.toggle('active',active!=='home');
+  var actions=document.querySelector('.aics-actions');
+  if(actions)actions.style.display=active==='home'?'none':'';
 }
 function goHome(clear){
   VOICE_REQUEST_ID++;
