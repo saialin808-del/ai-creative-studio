@@ -12,9 +12,9 @@ import { renderSidebar, sidebarScript, renderStudioShell } from './shared.js';
 
 // ===== Shell Stepper (Main — 3 Steps; Shell အတွက် Lock/Req Metadata) =====
 const STEPS = [
-  { label: '① အကြောင်းအရာ' },
-  { label: '② AI ရေးသားနေသည်', req: [1], lock: true },
-  { label: '③ Content ရလဒ်', req: [2] },
+  { label: '01 အကြောင်းအရာ' },
+  { label: '02 AI ရေးသားနေသည်', req: [1], lock: true },
+  { label: '03 Content ရလဒ် / Output Hub', req: [2] },
 ];
 
 // ============================================================
@@ -555,21 +555,21 @@ var csCur = 1;
 var csDone = {};
 var CS_STEPS = {
   main:  [
-    { n: 1,  label: '① အကြောင်းအရာ' },
-    { n: 2,  label: '② AI ရေးသားနေသည်', lock: true, req: [1], loading: 'AI ရေးသားနေသည်...' },
-    { n: 3,  label: '③ Content ရလဒ်', req: [2] }
+    { n: 1,  label: '01 အကြောင်းအရာ' },
+    { n: 2,  label: '02 AI ရေးသားနေသည်', lock: true, req: [1], loading: 'AI ရေးသားနေသည်...' },
+    { n: 3,  label: '03 Content ရလဒ် / Output Hub', req: [2] }
   ],
   video: [
-    { n: 11, label: '① Content' },
-    { n: 12, label: '② Video', req: [11] },
-    { n: 13, label: '③ AI ပြင်ဆင်နေသည်', lock: true, req: [12], loading: 'Video ပြင်ဆင်နေသည်...' },
-    { n: 14, label: '④ Video ရလဒ်', req: [13] }
+    { n: 11, label: '01 Content' },
+    { n: 12, label: '02 Video ပြင်ဆင်ရန်', req: [11] },
+    { n: 13, label: '03 AI ပြင်ဆင်နေသည်', lock: true, req: [12], loading: 'Video ပြင်ဆင်နေသည်...' },
+    { n: 14, label: '04 Video ရလဒ်', req: [13] }
   ],
   audio: [
-    { n: 21, label: '① Content' },
-    { n: 22, label: '② Audio', req: [21] },
-    { n: 23, label: '③ AI ပြင်ဆင်နေသည်', lock: true, req: [22], loading: 'အသံ ပြင်ဆင်နေသည်...' },
-    { n: 24, label: '④ Audio ရလဒ်', req: [23] }
+    { n: 21, label: '01 Content' },
+    { n: 22, label: '02 Audio ပြင်ဆင်ရန်', req: [21] },
+    { n: 23, label: '03 AI ပြင်ဆင်နေသည်', lock: true, req: [22], loading: 'အသံ ပြင်ဆင်နေသည်...' },
+    { n: 24, label: '04 Audio ရလဒ်', req: [23] }
   ]
 };
 
@@ -615,22 +615,15 @@ function csAllowed(n){
 }
 function csNav(n){
   var m=csMeta(n); if(!m)return;
-  var modeSteps=csModeSteps();
-  var inMode=false;
-  for(var i=0;i<modeSteps.length;i++)if(modeSteps[i].n===n){inMode=true;break;}
-  if(!inMode){showToastMsg('ဤအဆင့်သည် လက်ရှိ Branch ထဲတွင် မရှိပါ');return;}
   if(m.lock){ showToastMsg('ဤအဆင့်သည် AI ဆောင်ရွက်နေချိန် အဆင့်ဖြစ်ပြီး ကိုယ်တိုင် ရွေးချယ်၍ မရပါ'); return; }
   if(!csAllowed(n)){ showToastMsg('အရင်အဆင့်များ ပြီးမှ ဤအဆင့်သို့ ဆက်သွားနိုင်ပါသည်'); return; }
   csCur=n; csShow(n);
 }
 // Program အလိုအလျောက် သွားရန် (AI Processing / Branch) — Lock & Req ကို ကျော်သည်
-function csGoForce(n){
-  var m=csMeta(n);
-  if(!m)return;
-  csCur=n;
-  csShow(n);
-}
+function csGoForce(n){ csCur=n; csShow(n); }
 function csMarkDone(n){ csDone[n]=true; csUpdateStepper(); }
+// Error ဖြစ်သော Processing Step ကို Done အဖြစ် မသတ်မှတ်စေရန် — Done အခြေအနေကို ပြန်ဖျက်သည်
+function csUnmarkDone(n){ csDone[n]=false; csUpdateStepper(); }
 function csShow(n){
   var steps=document.querySelectorAll('.aics-step');
   for(var i=0;i<steps.length;i++){
@@ -661,8 +654,7 @@ function csRenderStepper(){
   var html='<div class="aics-stepper-inner">';
   for(var i=0;i<steps.length;i++){
     var s=steps[i];
-    var disabled=(s.lock||!csAllowed(s.n))?' aria-disabled="true"':'';
-    html+='<button type="button" class="aics-step-btn" data-step="'+s.n+'"'+(s.lock?' data-lock="1"':'')+disabled+' onclick="csNav('+s.n+')">'+
+    html+='<button class="aics-step-btn" data-step="'+s.n+'" onclick="csNav('+s.n+')">'+
       '<span class="aics-step-txt"><span class="aics-step-label">'+s.label+'</span></span>'+
       '<span class="aics-step-loading"><span class="aics-step-spinner"></span>'+(s.loading||'ဖန်တီးနေသည်...')+'</span></button>';
     if(i<steps.length-1)html+='<span class="aics-step-link"></span>';
@@ -671,17 +663,7 @@ function csRenderStepper(){
   c.innerHTML=html;
   csUpdateStepper();
 }
-function csSetMode(mode){
-  if(!CS_STEPS[mode])mode='main';
-  CS_MODE=mode;
-  var steps=csModeSteps();
-  var firstReachable=steps[0].n;
-  for(var i=0;i<steps.length;i++){
-    if(!steps[i].lock && csAllowed(steps[i].n)){firstReachable=steps[i].n;break;}
-  }
-  csCur=firstReachable;
-  csRenderStepper();
-}
+function csSetMode(mode){ CS_MODE=mode; csRenderStepper(); }
 
 // ===== Output Hub — Branch ဖွင့်ခြင်း (Auto-Transfer) =====
 function getEditedContent(){
@@ -853,6 +835,10 @@ function generateContent(){
       stopStatusAnim('contentStatus',false);
       showError('genError2','Content ဖန်တီးရာတွင် အခက်အခဲရှိနေပါသည်။ ခဏစောင့်ပြီး ပြန်ကြိုးစားပါ။');
       document.getElementById('genRetryRow').style.display='flex';
+      // Error → သက်ဆိုင်ရာ Input Step (01) သို့ Auto Back — Processing Step (02) ကို Done မသတ်မှတ်ရ
+      csUnmarkDone(2);
+      showToastMsg('⚠️ Content ဖန်တီး၍ မရပါ — ခဏစောင့်ပြီး ပြန်ကြိုးစားပါ');
+      csGoForce(1);
     })
     .finally(function(){setLoading('genLoading',false);setGenButtonsDisabled(false);csBusy=false;});
 }
@@ -956,6 +942,10 @@ function generateVideo(){
       stopStatusAnim('videoStatus',false);
       showError('videoError2','Video ဖန်တီးရာတွင် အခက်အခဲရှိနေပါသည်။ ပြန်ကြိုးစားပါ။');
       document.getElementById('videoRetryRow').style.display='flex';
+      // Error → သက်ဆိုင်ရာ Input / Setup Step (Video 02) သို့ Auto Back — Processing Step (03) ကို Done မသတ်မှတ်ရ
+      csUnmarkDone(13);
+      showToastMsg('⚠️ Video ဖန်တီး၍ မရပါ — ခဏစောင့်ပြီး ပြန်ကြိုးစားပါ');
+      csGoForce(12);
     })
     .finally(function(){setLoading('videoLoading',false);setGenButtonsDisabled(false);csBusy=false;});
 }
@@ -1086,6 +1076,10 @@ function generateVoice(){
       stopStatusAnim('voiceStatus',false);
       showError('voiceError2','အသံဖန်တီးရာတွင် အခက်အခဲရှိနေပါသည်။ ပြန်ကြိုးစားပါ။');
       document.getElementById('voiceRetryRow').style.display='flex';
+      // Error → သက်ဆိုင်ရာ Input / Setup Step (Audio 02) သို့ Auto Back — Processing Step (03) ကို Done မသတ်မှတ်ရ
+      csUnmarkDone(23);
+      showToastMsg('⚠️ အသံဖန်တီး၍ မရပါ — ခဏစောင့်ပြီး ပြန်ကြိုးစားပါ');
+      csGoForce(22);
     })
     .finally(function(){setLoading('voiceLoading',false);setGenButtonsDisabled(false);document.getElementById('voiceBtn').disabled=false;csBusy=false;});
 }

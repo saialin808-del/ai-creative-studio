@@ -82,16 +82,16 @@ const VOICES = [
   ['Sadaltager','ဗဟုသုတရှိ (Knowledgeable)'],['Sulafat','နွေးထွေး (Warm)']
 ];
 const VOICE_STEPPER = [
-  {n:1,label:'စာသား'},{n:2,label:'AI အသံဖန်တီးနေသည်'},{n:3,label:'အသံ ရလဒ်'}
+  {n:1,label:'စာသား'},{n:2,label:'AI အသံဖန်တီးနေသည်'},{n:3,label:'အသံရလဒ်'}
 ];
 const MEDIA_STEPPER = [
-  {n:1,label:'အသံ / Video'},{n:2,label:'AI စာသားဖန်တီးနေသည်'},{n:3,label:'စာသား ရလဒ်'}
+  {n:1,label:'အသံ / Video'},{n:2,label:'AI စာသားဖန်တီးနေသည်'},{n:3,label:'စာသားရလဒ်'}
 ];
 const SRT_STEPPER = [
-  {n:1,label:'Input'},{n:2,label:'AI SRT'},{n:3,label:'SRT ရလဒ်'}
+  {n:1,label:'အချက်အလက်'},{n:2,label:'AI SRT ပြုလုပ်နေသည်'},{n:3,label:'SRT ရလဒ်'}
 ];
 const TRANSLATE_STEPPER = [
-  {n:1,label:'SRT'},{n:2,label:'AI ဘာသာပြန်'},{n:3,label:'ဘာသာပြန် ရလဒ်'}
+  {n:1,label:'SRT'},{n:2,label:'AI ဘာသာပြန်နေသည်'},{n:3,label:'ဘာသာပြန်ရလဒ်'}
 ];
 function esc(s) {
   const value = s == null ? '' : String(s);
@@ -117,6 +117,10 @@ var voiceDraftKey='aics_voice_workflow_v2';
 var VOICE_REQUEST_ID=0;
 
 function toast(msg,type){var t=document.getElementById('toast');if(!t)return;t.textContent=msg;t.className='toast show'+(type?' '+type:'');setTimeout(function(){t.className='toast';},2600);}
+// Error ဖြစ်ပြီး Input Step သို့ Auto Back ဖြစ်သောအခါ Input Screen ထဲတွင် ရှင်းလင်းသော Error Message ပြရန်
+function voiceErrorBanner(){
+  return VOICE_STATE.errorState?('<div class="error-box">'+esc(VOICE_STATE.errorState)+'</div>'):'';
+}
 function friendlyError(d,fallback){
   var e=(d&&d.error)||'', detail=(d&&d.detail)||'';
   var map={
@@ -171,8 +175,15 @@ function restoreDraft(){
   }catch(e){VOICE_DRAFT_VALUES=null;return false;}
 }
 function applyDraftToForm(){
-  var d=VOICE_DRAFT_VALUES;if(!d)return;
-  var map={ttsText:d.tts,speakingStyle:d.speaking,voiceName:d.voice,voiceInstruction:d.instruction,audience:d.audience};
+  var d=VOICE_DRAFT_VALUES;
+  var vi=VOICE_STATE.voiceInput||null;
+  // Error → Auto Back ဖြစ်သောအခါ နောက်ဆုံး ထည့်ထားသော Input များ မပျောက်စေရန် voiceInput ကို ဦးစားပေး ပြန်ဖြည့်သည်
+  var tts=(d&&d.tts)||(vi&&vi.text)||'';
+  var speaking=(d&&d.speaking)||(vi&&vi.speakingStyle)||'';
+  var voice=(d&&d.voice)||(vi&&vi.voiceStyle)||'Kore';
+  var instruction=(d&&d.instruction)||(vi&&vi.instruction)||'';
+  var audience=(d&&d.audience)||(vi&&vi.audience)||'လူတိုင်း';
+  var map={ttsText:tts,speakingStyle:speaking,voiceName:voice,voiceInstruction:instruction,audience:audience};
   Object.keys(map).forEach(function(id){var x=document.getElementById(id);if(x&&map[id]!==undefined&&map[id]!==null)x.value=map[id];});
   var s=document.getElementById('srtEditor');if(s&&d.srt)s.value=d.srt;
   var t=document.getElementById('textResult');if(t&&d.transcript)t.value=d.transcript;
@@ -213,7 +224,7 @@ function workflowTop(title){
 }
 function renderTextInput(){
   VOICE_STATE.voiceStep=1;renderStepper(VOICE_STEPPER,1);
-  document.getElementById('voiceWorkflowBody').innerHTML=workflowTop('📝 စာသား → အသံ')+\`
+  document.getElementById('voiceWorkflowBody').innerHTML=workflowTop('📝 စာသား → အသံ')+voiceErrorBanner()+\`
   <div class="vcard">
     <div class="vtitle">📝 စာသား</div><p class="hint">Voice အဖြစ် ဖန်တီးလိုသော စာသားနှင့် စကားပြောပုံစံကို ထည့်ပါ။</p>
     \${VOICE_STATE.source?'<div class="source-note">Content Studio မှ နောက်ဆုံးပြင်ထားသော Content ကို အလိုအလျောက် ထည့်ပေးထားပါသည်။</div>':''}
@@ -237,6 +248,7 @@ function composeVoiceText(){
 }
 function submitTextToVoice(){
   var text=val('ttsText').trim();if(!text){toast('Voice ပြောင်းလိုသော စာသားကို ထည့်ပါ','error');return;}
+  VOICE_STATE.errorState=null;
   var btn=document.getElementById('voiceNextBtn');if(btn.disabled)return;btn.disabled=true;
   var requestId=++VOICE_REQUEST_ID;
   VOICE_STATE.voiceInput={text:text,speakingStyle:val('speakingStyle'),voiceStyle:val('voiceName'),instruction:val('voiceInstruction'),audience:val('audience')};
@@ -275,11 +287,11 @@ function renderVoiceResult(){
 }
 function renderVoiceError(kind,e){
   var msg=friendlyError({error:(e.message||'').split('|')[0],detail:(e.message||'').split('|').slice(1).join('|')},kind==='tts'?'အသံဖန်တီးရာတွင် အခက်အခဲရှိနေပါသည်။ ခဏအကြာတွင် ထပ်မံကြိုးစားပါ။':'ဆောင်ရွက်ရာတွင် အခက်အခဲရှိနေပါသည်။');
-  VOICE_STATE.errorState=msg;VOICE_STATE.voiceStep=2;renderStepper(VOICE_STEPPER,2);
-  document.getElementById('voiceWorkflowBody').innerHTML=workflowTop('⚠️ ပြန်လည်ကြိုးစားရန်')+\`
-  <div class="vcard"><div class="error-box">\${esc(msg)}</div><div class="btn-row">
-    <button class="btn ghost" onclick="renderTextInput()">← ပြန်ပြင်ရန်</button><button class="btn primary" onclick="submitTextToVoice()">ထပ်မံကြိုးစားရန်</button>
-  </div></div>\`;
+  console.error('Voice TTS Error:', e);
+  VOICE_STATE.errorState=msg;
+  toast(msg,'error');
+  // Error → သက်ဆိုင်ရာ Input Step (စာသား) သို့ Auto Back — ထည့်ထားသော Input များ မပျောက်စေရ
+  renderTextInput();
 }
 function startSrtFromVoice(){
   if(USER_PLAN!=='PRO'){toast('ဒီ Feature ကို Pro User သာ အသုံးပြုနိုင်ပါသည်','error');return;}
@@ -287,7 +299,7 @@ function startSrtFromVoice(){
 }
 function renderSrtInput(source){
   VOICE_STATE.srtSource=source;VOICE_STATE.voiceStep=1;renderStepper(SRT_STEPPER,1);
-  document.getElementById('voiceWorkflowBody').innerHTML=workflowTop('📄 SRT')+\`
+  document.getElementById('voiceWorkflowBody').innerHTML=workflowTop('📄 SRT')+voiceErrorBanner()+\`
   <div class="vcard"><div class="vtitle">📄 SRT ဖန်တီးရန်</div><p class="hint">လက်ရှိ Audio မှ Timestamp ပါသော SRT ကို ဖန်တီးပါ။</p>
     <div class="source-note">မူရင်း Audio ရလဒ်ကို အသုံးပြုပါမည်။ SRT ကို အလိုအလျောက် မဖန်တီးပါ။</div>
     <div class="btn-row"><button class="btn primary" onclick="submitSrt('\${source}')">SRT ဖန်တီးရန် →</button><button class="btn ghost" onclick="\${source==='voice'?'renderVoiceResult()':'renderMediaResult()'}">← နောက်သို့</button></div>
@@ -296,6 +308,7 @@ function renderSrtInput(source){
 function submitSrt(source){
   if(USER_PLAN!=='PRO'){toast('ဒီ Feature ကို Pro User သာ အသုံးပြုနိုင်ပါသည်','error');return;}
   var b=source==='voice'?LAST_AUDIO:MEDIA_AUDIO;if(!b.base64){toast('SRT ထုတ်ဖို့ Audio/Video မရှိသေးပါ','error');return;}
+  VOICE_STATE.errorState=null;
   var requestId=++VOICE_REQUEST_ID;
   VOICE_STATE.processingState='srt';renderSrtProcessing();
   showLoading('✨ AI စာတန်းထိုးဖန်တီးနေသည်...');
@@ -325,7 +338,7 @@ function startTranslation(source){
 }
 function renderTranslationInput(source){
   VOICE_STATE.voiceStep=1;renderStepper(TRANSLATE_STEPPER,1);
-  document.getElementById('voiceWorkflowBody').innerHTML=workflowTop('🌐 ဘာသာပြန်')+\`
+  document.getElementById('voiceWorkflowBody').innerHTML=workflowTop('🌐 ဘာသာပြန်')+voiceErrorBanner()+\`
   <div class="vcard"><div class="vtitle">🌐 ဘာသာပြန်</div>
     <div class="form-group"><label>ဘာသာပြန်ဦးတည်ချက်</label><select id="translationDirection" onchange="VOICE_STATE.translationDirection=this.value">
       <option value="MY_TO_CN"\${VOICE_STATE.translationDirection==='MY_TO_CN'?' selected':''}>မြန်မာ → တရုတ်</option>
@@ -337,6 +350,7 @@ function renderTranslationInput(source){
 function submitTranslation(source){
   if(USER_PLAN!=='PRO'){toast('ဒီ Feature ကို Pro User သာ အသုံးပြုနိုင်ပါသည်','error');return;}
   var srt=val('srtEditor')||VOICE_STATE.srtResult;if(!srt.trim()){toast('ဘာသာပြန်ဖို့ SRT မရှိသေးပါ','error');return;}
+  VOICE_STATE.errorState=null;
   VOICE_STATE.translationDirection=val('translationDirection')||VOICE_STATE.translationDirection;
   var requestId=++VOICE_REQUEST_ID;
   VOICE_STATE.processingState='translation';renderTranslationProcessing();
@@ -364,19 +378,23 @@ function renderGenericError(kind,source,e){
   var raw=(e&&e.message)||'';var actual=(raw.split('|')[0]||'').trim();
   var key=actual|| (kind==='translation'?'translate_error':kind==='srt'?'srt_error':'request_error');
   var msg=friendlyError({error:key},kind==='translation'?'ဘာသာပြန်ဖန်တီးရာတွင် အခက်အခဲရှိနေပါသည်။ ခဏအကြာတွင် ထပ်မံကြိုးစားပါ။':kind==='srt'?'SRT ဖန်တီးရာတွင် အခက်အခဲရှိနေပါသည်။ ခဏအကြာတွင် ထပ်မံကြိုးစားပါ။':'ဆောင်ရွက်ရာတွင် အခက်အခဲရှိနေပါသည်။');
-  var retry=kind==='srt'?"submitSrt('"+source+"')":"submitTranslation('"+source+"')";
-  var back=kind==='srt'?(source==='voice'?'renderVoiceResult()':'renderMediaResult()'):"renderSrtResult('"+source+"')";
-  VOICE_STATE.voiceStep=2;renderStepper(kind==='srt'?SRT_STEPPER:TRANSLATE_STEPPER,2);
-  document.getElementById('voiceWorkflowBody').innerHTML=workflowTop('⚠️ ပြန်လည်ကြိုးစားရန်')+\`<div class="vcard"><div class="error-box">\${esc(msg)}</div><div class="btn-row"><button class="btn ghost" onclick="\${back}">← ပြန်သွားရန်</button><button class="btn primary" onclick="\${retry}">ထပ်မံကြိုးစားရန်</button></div></div>\`;
+  console.error(kind==='srt'?'Voice SRT Error:':'Voice Translate Error:', e);
+  VOICE_STATE.errorState=msg;
+  toast(msg,'error');
+  // Error → သက်ဆိုင်ရာ Input / Setup Step သို့ Auto Back — Processing Step တွင် မရပ်ပါ
+  if(kind==='srt'){renderSrtInput(source);}
+  else{renderTranslationInput(source);}
 }
 function processHtml(title,items){
   return '<div class="vcard process"><div class="process-icon">✨</div><h2>'+esc(title)+'</h2><div class="status-list">'+items.map(function(x){return '<div class="status-line '+(x[0]==='✓'?'done':'current')+'">'+esc(x[0]+' '+x[1])+'</div>';}).join('')+'</div></div>';
 }
 function renderMediaInput(){
   VOICE_STATE.voiceStep=1;renderStepper(MEDIA_STEPPER,1);
-  document.getElementById('voiceWorkflowBody').innerHTML=workflowTop('🎧 အသံ / Video → စာသား')+\`
+  var reuseNote=(MEDIA_AUDIO.base64)?'<div class="source-note">ယခင် ဖိုင်ကို မှတ်ထားပါသည် — အောက်က ခလုတ်ဖြင့် ပြန်လည်ကြိုးစားနိုင်ပါသည်။</div><div class="btn-row"><button class="btn secondary" onclick="submitMedia(&#39;text&#39;)">&#8635; ယခင် ဖိုင်ဖြင့် ထပ်မံကြိုးစားရန်</button></div>':'';
+  document.getElementById('voiceWorkflowBody').innerHTML=workflowTop('🎧 အသံ / Video → စာသား')+voiceErrorBanner()+\`
   <div class="vcard"><div class="vtitle">🎧 အသံ / Video</div><p class="hint">Audio သို့မဟုတ် Video ဖိုင်ကို တင်ပါ။ 5MB အထိ အသုံးပြုနိုင်ပါသည်။</p>
     <div class="form-group"><label>Audio / Video File</label><input type="file" id="mediaFile" accept="audio/*,video/*,.mp3,.wav,.m4a,.aac,.ogg,.flac,.webm,.mp4,.mov,.mkv" onchange="previewMediaChoice()"></div>
+    \${reuseNote}
   </div>
   <div class="vcard" id="mediaOutputCard" style="display:none"><div class="vtitle">Output ရွေးချယ်ရန်</div><p class="hint">ဖိုင်တင်ပြီးနောက် လိုချင်သော result တစ်ခုကို ရွေးပါ။</p><div class="choice-grid">
     <button class="choice-card" onclick="submitMedia('text')"><strong>📝 စာသား</strong><span>အသံ/Video ထဲက စကားပြောစာသားကို ရိုးရိုး Text အဖြစ်ရယူရန်</span></button>
@@ -389,12 +407,17 @@ function previewMediaChoice(){
   if(card)card.style.display=f?'block':'none';
 }
 function readMedia(cb){
-  var f=document.getElementById('mediaFile').files[0];
-  if(!f){toast('Audio သို့မဟုတ် Video ဖိုင် ရွေးပါ','error');return;}
+  var f=document.getElementById('mediaFile')?document.getElementById('mediaFile').files[0]:null;
+  if(!f){
+    // Error → Auto Back ပြီးနောက် ဖိုင်အသစ် ပြန်ရွေးမထားလျှင် ယခင် ဖိုင်ကို ပြန်သုံးသည် (Data မပျောက်စေရ)
+    if(MEDIA_AUDIO.base64){cb();return;}
+    toast('Audio သို့မဟုတ် Video ဖိုင် ရွေးပါ','error');return;
+  }
   if(f.size>5*1024*1024){toast('ဖိုင်သည် 5MB ထက် မကျော်ရပါ','error');return;}
   var r=new FileReader();r.onload=function(e){MEDIA_AUDIO={base64:e.target.result.split(',')[1],mime:f.type||'application/octet-stream',fileName:f.name};cb();};r.onerror=function(){toast('ဖိုင်ဖတ်ရာတွင် အခက်အခဲရှိနေပါသည်','error');};r.readAsDataURL(f);
 }
 function submitMedia(type){
+  VOICE_STATE.errorState=null;
   readMedia(function(){
     if(type==='srt'){startSrtMedia();return;}
     var requestId=++VOICE_REQUEST_ID;
@@ -413,8 +436,11 @@ function renderMediaProcessing(){
 }
 function renderMediaError(e){
   var msg=friendlyError({error:(e.message||'').split('|')[0]},'စာသားဖန်တီးရာတွင် အခက်အခဲရှိနေပါသည်။ ခဏအကြာတွင် ထပ်မံကြိုးစားပါ။');
-  VOICE_STATE.voiceStep=2;renderStepper(MEDIA_STEPPER,2);
-  document.getElementById('voiceWorkflowBody').innerHTML=workflowTop('⚠️ ပြန်လည်ကြိုးစားရန်')+\`<div class="vcard"><div class="error-box">\${esc(msg)}</div><div class="btn-row"><button class="btn ghost" onclick="renderMediaInput()">← ပြန်ရွေးရန်</button><button class="btn primary" onclick="submitMedia('text')">ထပ်မံကြိုးစားရန်</button></div></div>\`;
+  console.error('Voice Transcribe Error:', e);
+  VOICE_STATE.errorState=msg;
+  toast(msg,'error');
+  // Error → သက်ဆိုင်ရာ Input Step (အသံ / Video) သို့ Auto Back — ယခင် ဖိုင်ကို ပြန်သုံးနိုင်ရန် ထားပေးသည်
+  renderMediaInput();
 }
 function renderMediaResult(){
   VOICE_STATE.voiceStep=3;renderStepper(MEDIA_STEPPER,3);

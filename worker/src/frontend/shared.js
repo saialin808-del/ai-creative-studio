@@ -488,22 +488,23 @@ function aicsShellCss() {
     '.aich-model-wrap{margin-top:16px;}\n' +
     '.aich-model-wrap select{width:100%;padding:11px 12px;border-radius:10px;background:#0d1424;border:1px solid #26324a;color:#fff;font-size:13.5px;font-family:inherit;}\n' +
     '.aics-main{max-width:1280px;margin:0 auto;width:100%;padding:20px 24px;}\n' +
-    '.aics-stepper{margin-bottom:18px;background:#0d1424;border:1px solid rgba(0,229,255,.12);border-radius:14px;padding:10px 12px;overflow-x:auto;}.aics-stepper:empty{display:none;}\n' +
-    '.aics-stepper-inner{display:flex;align-items:center;gap:6px;min-width:max-content;}\n' +
-    '.aics-step-btn{display:flex;flex-direction:column;align-items:flex-start;gap:2px;background:none;border:1px solid transparent;color:#5a6478;padding:8px 14px;border-radius:10px;cursor:pointer;font-family:inherit;font-size:13px;white-space:nowrap;transition:all .2s;}\n' +
-    '.aics-step-btn .aics-step-label{font-weight:600;color:#94a3b8;font-size:13.5px;}\n' +
+    '.aics-stepper{margin-bottom:14px;background:#0d1424;border:1px solid rgba(0,229,255,.12);border-radius:10px;padding:6px 8px;overflow-x:auto;}.aics-stepper:empty{display:none;}\n' +
+    '.aics-stepper-inner{display:flex;align-items:center;gap:3px;min-width:max-content;}\n' +
+    '.aics-step-btn{display:flex;flex-direction:column;align-items:flex-start;gap:2px;background:none;border:1px solid transparent;color:#5a6478;padding:6px 9px;border-radius:8px;cursor:pointer;font-family:inherit;font-size:12px;white-space:nowrap;transition:all .2s;}\n' +
+    '.aics-step-btn .aics-step-label{font-weight:600;color:#94a3b8;font-size:12px;}\n' +
     '.aics-step-btn:hover .aics-step-label{color:#e8ecf4;}\n' +
     '.aics-step-btn.active{background:linear-gradient(90deg,rgba(123,92,255,.18),rgba(0,229,255,.08));border:1px solid rgba(123,92,255,.55);box-shadow:0 0 14px rgba(123,92,255,.25);}\n' +
     '.aics-step-btn.active .aics-step-label{color:#fff;}\n' +
-    '.aics-step-btn.done{opacity:.7;}\n' +
+    '.aics-step-btn.done{opacity:.75;}\n' +
     '.aics-step-btn.done .aics-step-label{color:#4ade80;}\n' +
+    '.aics-step-btn.done .aics-step-label::before{content:"\\2713 ";color:#4ade80;font-weight:700;}\n' +
     '.aics-step-btn.todo{cursor:not-allowed;opacity:.4;}\n' +
     '.aics-step-btn .aics-step-loading{display:none;font-size:11px;color:#00e5ff;font-weight:700;align-items:center;gap:5px;margin-top:3px;white-space:nowrap;}\n' +
     '.aics-step-btn.loading .aics-step-loading{display:flex;}\n' +
     '.aics-step-btn.loading{border-color:rgba(0,229,255,.6);box-shadow:0 0 18px rgba(0,229,255,.4);}\n' +
     '.aics-step-btn.loading .aics-step-label{color:#00e5ff;}\n' +
     '.aics-step-btn .aics-step-spinner{width:12px;height:12px;border:2px solid rgba(0,229,255,.25);border-top-color:#00e5ff;border-radius:50%;animation:spin .7s linear infinite;}\n' +
-    '.aics-step-link{width:20px;height:1px;background:rgba(0,229,255,.22);flex-shrink:0;}\n' +
+    '.aics-step-link{width:12px;height:1px;background:rgba(0,229,255,.22);flex-shrink:0;}\n' +
     '.aics-grid{display:block;}\n' +
     '.aics-work{min-width:0;}\n' +
     '.aics-step{display:none;}\n' +
@@ -550,7 +551,9 @@ function aicsShellCss() {
     '  .aics-actions-model select{min-width:0;max-width:130px;padding:8px;font-size:12px;}\n' +
     '  .aics-actions-model-label{font-size:10.5px;}\n' +
     '  .aics-act{flex:1;padding:10px 8px;font-size:12.5px;min-height:42px;}\n' +
-    '  .aics-stepper{padding:8px;}\n' +
+    '  .aics-stepper{padding:6px 8px;}\n' +
+    '  .aics-step-btn{padding:7px 10px;}\n' +
+    '  .aics-step-btn .aics-step-label{font-size:12.5px;}\n' +
     '}\n' +
     '</style>'
   );
@@ -655,8 +658,6 @@ export function renderStudioShell(opts) {
     '    if (window.studioOnStep) { try { window.studioOnStep(n); } catch (e) {} }\n' +
     '  }\n' +
     '  var lockNav = false;\n' +
-    '  window.studioStepMeta = function (n) { return stepMeta(n); };\n' +
-    '  window.studioStepAllowed = function (n) { return allowed(n); };\n' +
     '  window.studioGoStep = function (n) {\n' +
     '    if (!lockNav) {\n' +
     '      if (!allowed(n)) return;\n' +
@@ -673,6 +674,11 @@ export function renderStudioShell(opts) {
     '  };\n' +
     '  window.studioMarkDone = function (n) {\n' +
     '    doneMap[n] = true;\n' +
+    '    updateStepper();\n' +
+    '  };\n' +
+    '  // Error ဖြစ်သော Processing Step ကို Done အဖြစ် မသတ်မှတ်စေရန် — Done အခြေအနေကို ပြန်ဖျက်သည်\n' +
+    '  window.studioUnmarkDone = function (n) {\n' +
+    '    doneMap[n] = false;\n' +
     '    updateStepper();\n' +
     '  };\n' +
     '  window.studioCur = function () { return cur; };\n' +

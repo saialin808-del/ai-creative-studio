@@ -12,9 +12,9 @@ const STEPS = [
   { label: '01 Short အချက်အလက်' },
   { label: '02 AI ရေးသားနေသည်', lock: true },
   { label: '03 Short Script ရလဒ်', req: [2] },
-  { label: '04 Short Video ဖန်တီးရန်', req: [3] },
+  { label: '04 Short Video ပြင်ဆင်ရန်', req: [3] },
   { label: '05 AI ပြင်ဆင်နေသည်', lock: true, req: [4] },
-  { label: '06 MAP / ရလဒ်', req: [5] },
+  { label: '06 MAP / နောက်ဆုံးရလဒ်', req: [5] },
 ];
 
 const STEP1_HTML = `
@@ -451,10 +451,15 @@ function generateShort(){
       autoSave();
     })
     .catch(function(err){
+      console.error('Short Generate Error:', err);
       stopStatusAnim('shortStatus',false);
       if(window.studioSetLoading)window.studioSetLoading(false);
       shortBusy=false;
       showStepError('genError2','genRetry2',friendlyMsg(err,'short'));
+      // Error → သက်ဆိုင်ရာ Input Step (01) သို့ Auto Back — Processing Step (02) ကို Done မသတ်မှတ်ရ
+      if(window.studioUnmarkDone)window.studioUnmarkDone(2);
+      showToastMsg('⚠️ '+(friendlyMsg(err,'short').replace(/\\n/g,' ')));
+      if(window.studioForceGoStep)window.studioForceGoStep(1);
     });
 }
 
@@ -581,11 +586,16 @@ function generateShortVideoPlan(){
       autoSave();
     })
     .catch(function(err){
+      console.error('Short Video Plan Error:', err);
       stopStatusAnim('planStatus',false);
       if(window.studioSetLoading)window.studioSetLoading(false);
       planBusy=false;
       if(btn)btn.disabled=false;
       showStepError('planError5','planRetry5',friendlyMsg(err,'video'));
+      // Error → သက်ဆိုင်ရာ Input / Setup Step (04) သို့ Auto Back — Processing Step (05) ကို Done မသတ်မှတ်ရ
+      if(window.studioUnmarkDone)window.studioUnmarkDone(5);
+      showToastMsg('⚠️ '+(friendlyMsg(err,'video').replace(/\\n/g,' ')));
+      if(window.studioForceGoStep)window.studioForceGoStep(4);
     });
 }
 

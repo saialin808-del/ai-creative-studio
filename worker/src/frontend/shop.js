@@ -13,9 +13,9 @@ import { renderSidebar, sidebarScript, renderStudioShell } from './shared.js';
 
 // ===================== MAIN STEPPER (အမြဲမြင်ရမည် — ၃ ဆင့်) =====================
 const STEPS = [
-  { label: '01 📝 အကြောင်းအရာ' },
-  { label: '02 ✨ AI ရေးသားနေသည်', lock: true },
-  { label: '03 🛍️ Shop Content ရလဒ်', req: [2] },
+  { label: '01 အကြောင်းအရာ' },
+  { label: '02 AI ရေးသားနေသည်', lock: true },
+  { label: '03 Shop Content ရလဒ်', req: [2] },
 ];
 
 // ===================== MAIN STEP 01 — Content Input =====================
@@ -396,8 +396,7 @@ audio{width:100%;margin-top:10px}
 .toast.show{display:block}
 .toast.error{border-color:var(--error);color:var(--error)}
 .toast.success{border-color:var(--success);color:var(--success)}
-/* ===== Main Stepper: done state တွင် ✓ ပြရန် ===== */
-.aics-step-btn.done .aics-step-label:after{content:' ✓';color:#4ade80;font-weight:700}
+/* ===== Main Stepper: done state ✓ ကို shared.js ၏ ::before ဖြင့် ပြသသည် (duplicate မဖြစ်စေရန် local rule ကို ဖယ်သည်) ===== */
 /* ===== Branch Stepper (Video / Audio) ===== */
 .shop-branch-stepper{margin:12px 0 18px;background:#0f1830;border:1px solid rgba(123,92,255,.3);border-radius:14px;padding:10px 12px;overflow-x:auto}
 .shop-branch-inner{display:flex;align-items:center;gap:6px;min-width:max-content}
@@ -792,7 +791,15 @@ function generateContent(){
     stopStatusAnim('contentStatus',true);
     if(window.studioSetLoading)window.studioSetLoading(false);
     shopBusy=false;
-    if(d.error){showStepError('step2Err','step2Retry','❌ Content ဖန်တီးရာတွင် အခက်အခဲရှိနေပါသည်။\\n'+friendlyApiError(d));return;}
+    if(d.error){
+      console.error('Shop Content Generate Error:', d.error);
+      showStepError('step2Err','step2Retry','❌ Content ဖန်တီးရာတွင် အခက်အခဲရှိနေပါသည်။\\n'+friendlyApiError(d));
+      // Error → သက်ဆိုင်ရာ Input Step (01) သို့ Auto Back — Processing Step (02) ကို Done မသတ်မှတ်ရ
+      if(window.studioUnmarkDone)window.studioUnmarkDone(2);
+      showToast('⚠️ Content ဖန်တီး၍ မရပါ — ခဏစောင့်ပြီး ပြန်ကြိုးစားပါ','error');
+      if(window.studioForceGoStep)window.studioForceGoStep(1);
+      return;
+    }
     var text=d.content||'';
     if(d.speakingStyle)text+='\\n\\n[SPEAKING STYLE]\\n'+d.speakingStyle;
     if(d.voiceStyle)text+='\\n\\n[VOICE STYLE]\\n'+d.voiceStyle;
@@ -808,11 +815,16 @@ function generateContent(){
     showToast('✓ Content ဖန်တီးပြီးပါပြီ','success');
     autoSave();
   })
-  .catch(function(){
+  .catch(function(err){
+    console.error('Shop Content Generate Error:', err);
     stopStatusAnim('contentStatus',false);
     if(window.studioSetLoading)window.studioSetLoading(false);
     shopBusy=false;
     showStepError('step2Err','step2Retry','❌ Content ဖန်တီးရာတွင် အခက်အခဲရှိနေပါသည်။\\nNetwork error — ခဏစောင့်ပြီး ပြန်ကြိုးစားပါ။');
+    // Error → သက်ဆိုင်ရာ Input Step (01) သို့ Auto Back — Processing Step (02) ကို Done မသတ်မှတ်ရ
+    if(window.studioUnmarkDone)window.studioUnmarkDone(2);
+    showToast('⚠️ Content ဖန်တီး၍ မရပါ — ခဏစောင့်ပြီး ပြန်ကြိုးစားပါ','error');
+    if(window.studioForceGoStep)window.studioForceGoStep(1);
   });
 }
 function retryContent(){
@@ -862,29 +874,22 @@ function sendRevision(){
 }
 
 // ===================== Branch Stepper Render =====================
-function renderBranchStepper(id,steps,cur,doneMap,kind){
+function renderBranchStepper(id,steps,cur,doneMap){
   var c=document.getElementById(id);
   if(!c)return;
   var html='<div class="shop-branch-inner">';
   for(var i=0;i<steps.length;i++){
     var done=doneMap.indexOf(i)!==-1;
-    var locked=(kind==='video' || kind==='audio') && i===2;
-    var reachable=done || i===cur;
-    if(i===1)reachable=true;
-    if(kind==='audio' && i===3 && shopState.audio.step>=3)reachable=true;
-    if(kind==='audio' && i===4 && shopState.audio.step>=5)reachable=true;
-    if(kind==='audio' && i===5 && shopState.audio.step>=7)reachable=true;
-    var cls='shop-bstep-btn'+(done?' done':(i===cur?' active':''))+(locked?' locked':'')+(!reachable?' todo':'');
+    var cls='shop-bstep'+(done?' done':(i===cur?' active':' todo'));
     var marker=done?'✓':(i===cur?'●':'○');
-    html+='<button type="button" class="'+cls+'" data-branch="'+kind+'" data-index="'+i+'" aria-disabled="'+(locked||!reachable?'true':'false')+'" onclick="shopBranchNav(\''+kind+'\','+i+')">'+
-      '<span class="shop-bstep-marker">'+marker+'</span><span class="shop-bstep-label">'+steps[i]+'</span></button>';
+    html+='<div class="'+cls+'"><span class="shop-bstep-marker">'+marker+'</span><span class="shop-bstep-label">'+steps[i]+'</span></div>';
     if(i<steps.length-1)html+='<span class="shop-bstep-link"></span>';
   }
   html+='</div>';
   c.innerHTML=html;
 }
 function videoBranchMeta(){
-  var steps=['Content','🎬 Video Setup','✨ AI ပြင်ဆင်နေသည်','🎬 Video Result'];
+  var steps=['Content','Video ပြင်ဆင်ရန်','AI ပြင်ဆင်နေသည်','Video ရလဒ်'];
   var cur,done;
   if(shopState.video.step===1){cur=1;done=[0];}
   else if(shopState.video.step===2){cur=2;done=[0,1];}
@@ -892,37 +897,19 @@ function videoBranchMeta(){
   return {steps:steps,cur:cur,done:done};
 }
 function audioBranchMeta(){
-  var steps=['Content','🔊 Audio Setup','✨ AI အသံ','🔊 Audio Result','📝 Original SRT','🌐 Translation'];
+  var steps=['Content','Audio ပြင်ဆင်ရန်','AI အသံဖန်တီးနေသည်','Audio ရလဒ်','SRT','AI SRT ပြုလုပ်နေသည်','SRT ရလဒ်','ဘာသာပြန်','AI ဘာသာပြန်နေသည်','ဘာသာပြန်ရလဒ်'];
   var cur,done;
   switch(shopState.audio.step){
     case 1:cur=1;done=[0];break;
     case 2:cur=2;done=[0,1];break;
     case 3:cur=3;done=[0,1,2];break;
-    case 4:cur=3;done=[0,1,2];break;
-    case 5:cur=4;done=[0,1,2,3];break;
-    case 6:cur=5;done=[0,1,2,3,4];break;
-    case 7:cur=5;done=[0,1,2,3,4];break;
+    case 4:cur=5;done=[0,1,2,3,4];break;
+    case 5:cur=6;done=[0,1,2,3,4,5];break;
+    case 6:cur=8;done=[0,1,2,3,4,5,6,7];break;
+    case 7:cur=9;done=[0,1,2,3,4,5,6,7,8];break;
     default:cur=1;done=[0];break;
   }
   return {steps:steps,cur:cur,done:done};
-}
-function shopBranchNav(kind,index){
-  if(kind==='video'){
-    if(index===0){goContentResult();return;}
-    if(index===1){shopState.view='video';shopState.video.step=1;showBranchViews();setActionsForCurrent();return;}
-    if(index===2){showToast('AI ဆောင်ရွက်နေချိန် အဆင့်ကို ကိုယ်တိုင်ရွေးချယ်၍ မရပါ','error');return;}
-    if(index===3 && shopState.video.step>=3){shopState.view='video';showBranchViews();setActionsForCurrent();return;}
-    showToast('အရင်အဆင့်ကို ပြီးအောင်လုပ်ပါ','error');return;
-  }
-  if(kind==='audio'){
-    if(index===0){goContentResult();return;}
-    if(index===1){shopState.view='audio';shopState.audio.step=1;showBranchViews();setActionsForCurrent();return;}
-    if(index===2){showToast('AI ဆောင်ရွက်နေချိန် အဆင့်ကို ကိုယ်တိုင်ရွေးချယ်၍ မရပါ','error');return;}
-    if(index===3 && shopState.audio.step>=3){shopState.view='audio';shopState.audio.step=3;showAudioPhase();setActionsForCurrent();return;}
-    if(index===4 && shopState.audio.step>=5){shopState.view='audio';shopState.audio.step=5;showAudioPhase();setActionsForCurrent();return;}
-    if(index===5 && shopState.audio.step>=7){shopState.view='audio';shopState.audio.step=7;showAudioPhase();renderTransResult();setActionsForCurrent();return;}
-    showToast('အရင်အဆင့်ကို ပြီးအောင်လုပ်ပါ','error');return;
-  }
 }
 
 // ===================== View Switching (Branch ပြောင်းလျှင် state မပျောက်) =====================
@@ -969,7 +956,7 @@ function goAudioBranch(){
 // ===================== VIDEO BRANCH =====================
 function showVideoPhase(){
   var meta=videoBranchMeta();
-  renderBranchStepper('videoBranchStepper',meta.steps,meta.cur,meta.done,'video');
+  renderBranchStepper('videoBranchStepper',meta.steps,meta.cur,meta.done);
   document.getElementById('videoSetupCard').style.display=shopState.video.step===1?'':'none';
   document.getElementById('videoLoadingCard').style.display=shopState.video.step===2?'':'none';
   document.getElementById('videoResultCard').style.display=shopState.video.step===3?'':'none';
@@ -1000,7 +987,14 @@ function generateVideo(){
   .then(function(d){
     stopStatusAnim('videoStatus',true);
     shopBusy=false;
-    if(d.error){showStepError('videoLoadingErr','videoLoadingRetry','❌ Video ဖန်တီးရာတွင် အခက်အခဲရှိနေပါသည်။\\n'+friendlyApiError(d));return;}
+    if(d.error){
+      console.error('Shop Video Generate Error:', d.error);
+      showStepError('videoLoadingErr','videoLoadingRetry','❌ Video ဖန်တီးရာတွင် အခက်အခဲရှိနေပါသည်။\\n'+friendlyApiError(d));
+      // Error → သက်ဆိုင်ရာ Input / Setup Step (Video ပြင်ဆင်ရန်) သို့ Auto Back — Processing Step ကို Done မသတ်မှတ်ရ
+      shopState.video.step=1;showVideoPhase();setActionsForCurrent();
+      showToast('⚠️ Video ဖန်တီး၍ မရပါ — ခဏစောင့်ပြီး ပြန်ကြိုးစားပါ','error');
+      return;
+    }
     shopState.video.result={product:d.product||null,characters:d.characters||[],scenes:d.scenes||[]};
     shopState.video.step=3;
     showVideoPhase();
@@ -1008,10 +1002,14 @@ function generateVideo(){
     showToast('✓ Video Plan ပြီးပါပြီ','success');
     autoSave();
   })
-  .catch(function(){
+  .catch(function(err){
+    console.error('Shop Video Generate Error:', err);
     stopStatusAnim('videoStatus',false);
     shopBusy=false;
     showStepError('videoLoadingErr','videoLoadingRetry','❌ Video ဖန်တီးရာတွင် အခက်အခဲရှိနေပါသည်။\\nNetwork error — ခဏစောင့်ပြီး ပြန်ကြိုးစားပါ။');
+    // Error → သက်ဆိုင်ရာ Input / Setup Step (Video ပြင်ဆင်ရန်) သို့ Auto Back — Processing Step ကို Done မသတ်မှတ်ရ
+    shopState.video.step=1;showVideoPhase();setActionsForCurrent();
+    showToast('⚠️ Video ဖန်တီး၍ မရပါ — ခဏစောင့်ပြီး ပြန်ကြိုးစားပါ','error');
   });
 }
 function retryVideo(){
@@ -1178,7 +1176,7 @@ function saveAllVideo(){
 // ===================== AUDIO BRANCH =====================
 function showAudioPhase(){
   var meta=audioBranchMeta();
-  renderBranchStepper('audioBranchStepper',meta.steps,meta.cur,meta.done,'audio');
+  renderBranchStepper('audioBranchStepper',meta.steps,meta.cur,meta.done);
   document.getElementById('audioSetupCard').style.display=shopState.audio.step===1?'':'none';
   document.getElementById('audioLoadingCard').style.display=shopState.audio.step===2?'':'none';
   document.getElementById('audioResultCard').style.display=shopState.audio.step===3?'':'none';
@@ -1223,7 +1221,14 @@ function generateAudio(){
   .then(function(d){
     stopStatusAnim('audioStatus',true);
     shopBusy=false;
-    if(d.error){showStepError('audioLoadingErr','audioLoadingRetry','❌ အသံဖန်တီးရာတွင် အခက်အခဲရှိနေပါသည်။\\n'+friendlyApiError(d));return;}
+    if(d.error){
+      console.error('Shop Audio Generate Error:', d.error);
+      showStepError('audioLoadingErr','audioLoadingRetry','❌ အသံဖန်တီးရာတွင် အခက်အခဲရှိနေပါသည်။\\n'+friendlyApiError(d));
+      // Error → သက်ဆိုင်ရာ Input / Setup Step (Audio ပြင်ဆင်ရန်) သို့ Auto Back — Processing Step ကို Done မသတ်မှတ်ရ
+      shopState.audio.step=1;showAudioPhase();setActionsForCurrent();
+      showToast('⚠️ အသံဖန်တီး၍ မရပါ — ခဏစောင့်ပြီး ပြန်ကြိုးစားပါ','error');
+      return;
+    }
     var blob=base64ToBlob(d.data,d.mimeType||'audio/wav');
     var url=URL.createObjectURL(blob);
     shopState.audio.result={data:d.data,mimeType:d.mimeType||'audio/wav',url:url,voiceName:voice};
@@ -1239,10 +1244,14 @@ function generateAudio(){
     showToast('✓ အသံဖန်တီးပြီးပါပြီ','success');
     autoSave();
   })
-  .catch(function(){
+  .catch(function(err){
+    console.error('Shop Audio Generate Error:', err);
     stopStatusAnim('audioStatus',false);
     shopBusy=false;
     showStepError('audioLoadingErr','audioLoadingRetry','❌ အသံဖန်တီးရာတွင် အခက်အခဲရှိနေပါသည်။\\nNetwork error — ခဏစောင့်ပြီး ပြန်ကြိုးစားပါ။');
+    // Error → သက်ဆိုင်ရာ Input / Setup Step (Audio ပြင်ဆင်ရန်) သို့ Auto Back — Processing Step ကို Done မသတ်မှတ်ရ
+    shopState.audio.step=1;showAudioPhase();setActionsForCurrent();
+    showToast('⚠️ အသံဖန်တီး၍ မရပါ — ခဏစောင့်ပြီး ပြန်ကြိုးစားပါ','error');
   });
 }
 function retryAudio(){
@@ -1297,7 +1306,14 @@ function generateSrt(){
   .then(function(d){
     stopStatusAnim('srtStatus',true);
     shopBusy=false;
-    if(d.error){showStepError('srtLoadingErr','srtLoadingRetry','❌ စာတန်းထိုးဖန်တီးရာတွင် အခက်အခဲရှိနေပါသည်။\\n'+friendlyApiError(d));return;}
+    if(d.error){
+      console.error('Shop SRT Generate Error:', d.error);
+      showStepError('srtLoadingErr','srtLoadingRetry','❌ စာတန်းထိုးဖန်တီးရာတွင် အခက်အခဲရှိနေပါသည်။\\n'+friendlyApiError(d));
+      // Error → သက်ဆိုင်ရာ Input / Setup Step (Audio ရလဒ်) သို့ Auto Back — Processing Step ကို Done မသတ်မှတ်ရ
+      shopState.audio.step=3;showAudioPhase();setActionsForCurrent();
+      showToast('⚠️ SRT ဖန်တီး၍ မရပါ — ခဏစောင့်ပြီး ပြန်ကြိုးစားပါ','error');
+      return;
+    }
     shopState.audio.srt.text=d.srt||'';
     var so=document.getElementById('srtOriginal');
     if(so)so.value=shopState.audio.srt.text;
@@ -1307,10 +1323,14 @@ function generateSrt(){
     showToast('✓ SRT ပြီးပါပြီ','success');
     autoSave();
   })
-  .catch(function(){
+  .catch(function(err){
+    console.error('Shop SRT Generate Error:', err);
     stopStatusAnim('srtStatus',false);
     shopBusy=false;
     showStepError('srtLoadingErr','srtLoadingRetry','❌ စာတန်းထိုးဖန်တီးရာတွင် အခက်အခဲရှိနေပါသည်။\\nNetwork error — ခဏစောင့်ပြီး ပြန်ကြိုးစားပါ။');
+    // Error → သက်ဆိုင်ရာ Input / Setup Step (Audio ရလဒ်) သို့ Auto Back — Processing Step ကို Done မသတ်မှတ်ရ
+    shopState.audio.step=3;showAudioPhase();setActionsForCurrent();
+    showToast('⚠️ SRT ဖန်တီး၍ မရပါ — ခဏစောင့်ပြီး ပြန်ကြိုးစားပါ','error');
   });
 }
 function retrySrt(){
@@ -1395,7 +1415,14 @@ function translateSrt(){
   .then(function(d){
     stopStatusAnim('transStatus',true);
     shopBusy=false;
-    if(d.error){showStepError('transLoadingErr','transLoadingRetry','❌ ဘာသာပြန်ဖန်တီးရာတွင် အခက်အခဲရှိနေပါသည်။\\n'+friendlyApiError(d));return;}
+    if(d.error){
+      console.error('Shop Translate Error:', d.error);
+      showStepError('transLoadingErr','transLoadingRetry','❌ ဘာသာပြန်ဖန်တီးရာတွင် အခက်အခဲရှိနေပါသည်။\\n'+friendlyApiError(d));
+      // Error → သက်ဆိုင်ရာ Input / Setup Step (SRT ရလဒ်) သို့ Auto Back — Translation Loading ကို Done မသတ်မှတ်ရ
+      shopState.audio.step=5;showAudioPhase();setActionsForCurrent();
+      showToast('⚠️ ဘာသာပြန်၍ မရပါ — ခဏစောင့်ပြီး ပြန်ကြိုးစားပါ','error');
+      return;
+    }
     shopState.audio.translation.srt=d.srt||'';
     shopState.audio.translation.text=d.srt||'';
     shopState.audio.step=7;
@@ -1405,10 +1432,14 @@ function translateSrt(){
     showToast('✓ ဘာသာပြန်ပြီးပါပြီ','success');
     autoSave();
   })
-  .catch(function(){
+  .catch(function(err){
+    console.error('Shop Translate Error:', err);
     stopStatusAnim('transStatus',false);
     shopBusy=false;
     showStepError('transLoadingErr','transLoadingRetry','❌ ဘာသာပြန်ဖန်တီးရာတွင် အခက်အခဲရှိနေပါသည်။\\nNetwork error — ခဏစောင့်ပြီး ပြန်ကြိုးစားပါ။');
+    // Error → သက်ဆိုင်ရာ Input / Setup Step (SRT ရလဒ်) သို့ Auto Back — Translation Loading ကို Done မသတ်မှတ်ရ
+    shopState.audio.step=5;showAudioPhase();setActionsForCurrent();
+    showToast('⚠️ ဘာသာပြန်၍ မရပါ — ခဏစောင့်ပြီး ပြန်ကြိုးစားပါ','error');
   });
 }
 function retryTrans(){

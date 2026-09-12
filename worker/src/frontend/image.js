@@ -9,12 +9,12 @@
 import { renderSidebar, sidebarScript, renderStudioShell } from './shared.js';
 
 const STEPS = [
-  { label: '01 Input' },
-  { label: '02 AI Prepare', lock: true },
-  { label: '03 Prompt', req: [2] },
-  { label: '04 Prepare Image', req: [3] },
-  { label: '05 AI Generate', lock: true, req: [4] },
-  { label: '06 Image MAP', req: [5] },
+  { label: '01 အချက်အလက်' },
+  { label: '02 AI ပြင်ဆင်နေသည်', lock: true },
+  { label: '03 Prompt ရလဒ်', req: [2] },
+  { label: '04 ပုံဖန်တီးရန် ပြင်ဆင်နေသည်', req: [3] },
+  { label: '05 AI ပုံဖန်တီးနေသည်', lock: true, req: [4] },
+  { label: '06 Image MAP / နောက်ဆုံးရလဒ်', req: [5] },
 ];
 
 const STEP1_HTML = `
@@ -353,10 +353,15 @@ function preparePrompt(){
       autoSave();
     })
     .catch(function(err){
+      console.error('Image Prompt Prepare Error:', err);
       stopStatusAnim('prepareStatus',false);
       if(window.studioSetLoading)window.studioSetLoading(false);
       prepareBusy=false;
       showStepError('prepareErr2','prepareRetry',friendlyMsg(err,'prepare'));
+      // Error → သက်ဆိုင်ရာ Input Step (01) သို့ Auto Back — Processing Step (02) ကို Done မသတ်မှတ်ရ
+      if(window.studioUnmarkDone)window.studioUnmarkDone(2);
+      showToast('⚠️ '+(friendlyMsg(err,'prepare').replace(/\\n/g,' ')),true);
+      if(window.studioForceGoStep)window.studioForceGoStep(1);
     });
 }
 
@@ -436,10 +441,15 @@ function startGenerate(){
       autoSave();
     })
     .catch(function(err){
+      console.error('Image Generate Error:', err);
       stopStatusAnim('genStatus',false);
       if(window.studioSetLoading)window.studioSetLoading(false);
       generateBusy=false;
       showStepError('genErr5','genRetry5',friendlyMsg(err,'generate'));
+      // Error → သက်ဆိုင်ရာ Input / Setup Step (04) သို့ Auto Back — Processing Step (05) ကို Done မသတ်မှတ်ရ
+      if(window.studioUnmarkDone)window.studioUnmarkDone(5);
+      showToast('⚠️ '+(friendlyMsg(err,'generate').replace(/\\n/g,' ')),true);
+      if(window.studioForceGoStep)window.studioForceGoStep(4);
     });
 }
 

@@ -8,12 +8,12 @@
 import { renderSidebar, sidebarScript, renderStudioShell } from './shared.js';
 
 const STEPS = [
-  { label: '01 ဇာတ်လမ်းရေးရန်' },
+  { label: '01 ဇာတ်လမ်းအချက်အလက်' },
   { label: '02 AI ရေးသားနေသည်', lock: true },
   { label: '03 ဇာတ်လမ်းရလဒ်', req: [2] },
-  { label: '04 Video ဇာတ်လမ်းဖန်တီးရန်', req: [3] },
+  { label: '04 Video ဇာတ်လမ်းပြင်ဆင်ရန်', req: [3] },
   { label: '05 AI ပြင်ဆင်နေသည်', lock: true, req: [4] },
-  { label: '06 ရလဒ်', req: [5] },
+  { label: '06 နောက်ဆုံးရလဒ်', req: [5] },
 ];
 
 const STEP1_HTML = `
@@ -580,10 +580,15 @@ function generateStory(){
       autoSave();
     })
     .catch(function(err){
+      console.error('Story Generate Error:', err);
       stopStatusAnim('storyStatus',false);
       if(window.studioSetLoading)window.studioSetLoading(false);
       storyBusy=false;
       showStepError('genError2','genRetry2',friendlyMsg(err,'story'));
+      // Error → သက်ဆိုင်ရာ Input Step (01) သို့ Auto Back — Processing Step (02) ကို Done မသတ်မှတ်ရ
+      if(window.studioUnmarkDone)window.studioUnmarkDone(2);
+      showToastMsg('⚠️ '+(friendlyMsg(err,'story').replace(/\\n/g,' ')));
+      if(window.studioForceGoStep)window.studioForceGoStep(1);
     });
 }
 
@@ -687,11 +692,16 @@ function generateVideoPlan(){
       autoSave();
     })
     .catch(function(err){
+      console.error('Story Video Plan Error:', err);
       stopStatusAnim('planStatus',false);
       if(window.studioSetLoading)window.studioSetLoading(false);
       planBusy=false;
       if(btn)btn.disabled=false;
       showStepError('planError5','planRetry5',friendlyMsg(err,'video'));
+      // Error → သက်ဆိုင်ရာ Input / Setup Step (04) သို့ Auto Back — Processing Step (05) ကို Done မသတ်မှတ်ရ
+      if(window.studioUnmarkDone)window.studioUnmarkDone(5);
+      showToastMsg('⚠️ '+(friendlyMsg(err,'video').replace(/\\n/g,' ')));
+      if(window.studioForceGoStep)window.studioForceGoStep(4);
     });
 }
 
