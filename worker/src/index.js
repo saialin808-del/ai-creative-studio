@@ -953,6 +953,16 @@ export default {
           const out = await generateShortVideoPlan(env, { model: body.model, 
             idea: body.idea, type: reqType, plan, apiKey,
             images: body.images || [],
+            // Short Video Production Setup (Step 04) — additive, backward compatible
+            videoStyle: body.videoStyle || '',
+            aspectRatio: body.aspectRatio || '9:16',
+            duration: body.duration || '30 sec',
+            sceneDuration: body.sceneDuration || '5 sec',
+            visualStyle: body.visualStyle || '',
+            cameraStyle: body.cameraStyle || '',
+            language: body.language || 'မြန်မာ',
+            characterContinuity: body.characterContinuity || 'true',
+            additionalInstructions: body.additionalInstructions || '',
           });
           await trackUsageSafe(env, payload.sub, 'ai');
           return json({ ok: true, ...out }, 200, cors);
