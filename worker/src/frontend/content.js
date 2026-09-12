@@ -71,6 +71,7 @@ const STEP2_HTML = `
 <button class="btn btn-primary" onclick="generateContent()">&#128260; ပြန်ကြိုးစားရန်</button>
 </div>
 </div>
+</div>
 </div>`;
 
 // ============================================================
@@ -183,6 +184,7 @@ const STEP12_HTML = `
 <div class="loading" id="videoLoading"><div class="spinner"></div> ဗီဒီယိုအစီအစဉ် ရေးဆွဲနေပါသည်...</div>
 <div class="error-box" id="videoError"></div>
 </div>
+</div>
 </div>`;
 
 const STEP13_HTML = `
@@ -201,6 +203,7 @@ const STEP13_HTML = `
 <div class="btn-row" id="videoRetryRow" style="display:none;justify-content:center;">
 <button class="btn btn-secondary" onclick="csNav(12)">&#8592; ပြန်ပြင်ရန်</button>
 <button class="btn btn-primary" onclick="generateVideo()">&#128260; ပြန်ကြိုးစားရန်</button>
+</div>
 </div>
 </div>
 </div>`;
@@ -308,6 +311,7 @@ const STEP23_HTML = `
 <div class="btn-row" id="voiceRetryRow" style="display:none;justify-content:center;">
 <button class="btn btn-secondary" onclick="csNav(22)">&#8592; ပြန်ပြင်ရန်</button>
 <button class="btn btn-primary" onclick="generateVoice()">&#128260; ပြန်ကြိုးစားရန်</button>
+</div>
 </div>
 </div>
 </div>`;
