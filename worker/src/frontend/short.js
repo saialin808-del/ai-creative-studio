@@ -1,67 +1,90 @@
-// AI Creative Studio — Short Studio Frontend (Phase 5 + Master Instruction Phase 7)
-// Workflow: Create → Script → Scenes → Edit → Result
+// AI Creative Studio — Short Studio Frontend (Workflow 01→06)
+// Workflow: 01 Short အချက်အလက် → 02 AI ရေးသားနေသည် → 03 Short Script ရလဒ်
+//           → 04 Short Video ဖန်တီးရန် → 05 AI ပြင်ဆင်နေသည် → 06 MAP / ရလဒ်
 // Studio Isolation: ဤ File သည် Short Studio UI နှင့်သာ သက်ဆိုင်သည်။
-// Shared: renderSidebar / sidebarScript / renderStudioShell (frontend/shared.js)
-// ⚠️ API Contract / Business Logic မပြောင်းပါ — UI အခွံသာ ပြောင်းပါသည်။
+// Story Studio ၏ State/Data/API/Result ကို တိုက်ရိုက်မသုံးပါ — Short-specific သီးခြားထားသည်။
+// Shared: renderSidebar / sidebarScript / renderStudioShell (frontend/shared.js) — မျှဝေသုံးသော UI အခွံသာ။
+// ⚠️ API Contract ကို မပျက်စီးစေရ — /api/studio/short/{generate,revise,video,video-image} ကို ဆက်ထိန်းသည်။
 
 import { renderSidebar, sidebarScript, renderStudioShell } from './shared.js';
 
 const STEPS = [
-  { label: 'ဖန်တီးရန်' },
-  { label: 'ဇာတ်ညွှန်း', req: [] },
-  { label: 'မြင်ကွင်း', req: [] },
-  { label: 'ပြင်ဆင်ရန်', req: [3] },
-  { label: 'အပြီးသတ်', req: [3] },
+  { label: '01 Short အချက်အလက်' },
+  { label: '02 AI ရေးသားနေသည်', lock: true },
+  { label: '03 Short Script ရလဒ်', req: [2] },
+  { label: '04 Short Video ဖန်တီးရန်', req: [3] },
+  { label: '05 AI ပြင်ဆင်နေသည်', lock: true, req: [4] },
+  { label: '06 MAP / ရလဒ်', req: [5] },
 ];
 
 const STEP1_HTML = `
 <div class="aics-step" data-step="1">
 <div class="card">
-<div class="card-title">&#127916; Short Script — Create</div>
-<p style="color:var(--text2);font-size:13px;margin-bottom:14px;">Type ရွေးပြီး အောက်ကနေရာလေးများကို ဖြည့်ရေးပါ — TikTok/Reels/Shorts အတွက် Script ဖန်တီးပေးပါမယ်။</p>
-<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;">
+<div class="card-title">&#128221;&#65039; Short အချက်အလက် ဖြည့်ရန်</div>
+<p style="color:var(--text2);font-size:13px;margin-bottom:14px;">Short Video / Short Content ရေးသားရန် လိုအပ်သော အချက်အလက်များကို အောက်တွင် ဖြည့်ပါ — Generate နှိပ်လိုက်ရင် AI က Short Script ရေးပေးပါမယ်။</p>
+<div class="form-row">
 <div class="form-group" style="flex:1;min-width:170px;margin-bottom:0;">
-<label>ရှော့တ် အမျိုးအစား</label>
-<select id="typeSel1" onchange="selectedType1=this.value;">
-<option value="1" selected>Short Video (Free)</option>
-<option value="2">Type 2 (Pro)</option>
-<option value="3">Type 3 (Pro)</option>
-<option value="4">Type 4 (Pro)</option>
-<option value="5">Type 5 (Pro)</option>
-</select>
+<label>Short Type</label>
+<select id="shortTypeSel"></select>
 </div>
 <div class="form-group" style="flex:1;min-width:170px;margin-bottom:0;">
-<label>ဘယ်သူအတွက်</label>
-<select id="audSel" onchange="window.aichAud=this.value;"><option>လူတိုင်း</option><option>လူငယ်</option><option>လူကြီး</option><option>ကလေး</option></select>
+<label>Duration</label>
+<select id="durSel"></select>
 </div>
 </div>
-<div id="ideaFields"></div>
+<div class="form-row">
+<div class="form-group" style="flex:1;min-width:170px;margin-bottom:0;">
+<label>Tone</label>
+<select id="toneSel"></select>
+</div>
+<div class="form-group" style="flex:1;min-width:170px;margin-bottom:0;">
+<label>Language</label>
+<select id="langSel"></select>
+</div>
+</div>
+<div class="form-group">
+<label>Topic / Idea *</label>
+<textarea id="field_0" placeholder="ဥပမာ — မြန်မာပြည်ရဲ့ လက်ဖက်ရည်ဆိုင်ယဉ်ကျေးမှု အကြောင်း 30 စက္ကန့် Short..." style="min-height:110px;resize:vertical;"></textarea>
+</div>
+<div class="form-group">
+<label>Target Audience</label>
+<input type="text" id="audInput" placeholder="ဥပမာ — လူငယ်များ / Gen Z / စီးပွားရေးလုပ်ငန်းရှင်များ">
+</div>
+<div class="form-group">
+<label>Main Message</label>
+<textarea id="mainMsg" placeholder="ဥပမာ — ရိုးရာလက်ဖက်ရည်ဆိုင်က မြန်မာလူမှုဘဝရဲ့ နွေးထွေးမှုကို ဖော်ပြသည်" style="min-height:70px;"></textarea>
+</div>
+<div class="form-group">
+<label>Additional Instructions</label>
+<textarea id="extraInstr" placeholder="ဥပမာ — စိတ်ခံစားချက်ကို ပိုဖော်ပြပါ / အဆုံးမှာ Follow လုပ်ဖို့ တိုက်တွန်းပါ" style="min-height:70px;"></textarea>
+</div>
+<button type="button" id="advToggle" onclick="toggleAdvFields()" style="width:100%;padding:11px;border-radius:14px;background:rgba(0,229,255,.08);border:1px solid rgba(0,229,255,.25);color:#00e5ff;font-size:13px;font-weight:600;cursor:pointer;margin-bottom:12px;"><span>အပိုဆောင်းသတ်မှတ်ချက် (Advanced Options) ▼</span></button>
+<div id="advFields" class="adv-grid" style="display:none;">
+<div class="form-group"><label>Hook</label><textarea id="advHook" placeholder="ဥပမာ — "ဒီနေ့ မင်းတို့ကို မြန်မာတစ်ပြည်လုံး ချစ်တဲ့ လက်ဖက်ရည်ဆိုင် ပြပေးမယ်"" style="min-height:60px;"></textarea></div>
+<div class="form-group"><label>Call To Action</label><textarea id="advCta" placeholder="ဥပမာ — Follow + Like နှိပ်ဖို့ မမေ့နဲ့နော်" style="min-height:60px;"></textarea></div>
+<div class="form-group"><label>Character Information</label><textarea id="advCharInfo" placeholder="ဥပမာ — အသက် ၄၅ နှစ် ဆိုင်ရှင် ဦးဘ" style="min-height:60px;"></textarea></div>
+<div class="form-group"><label>Location</label><input type="text" id="advLocation" placeholder="ဥပမာ — ရန်ကုန် / ကျေးရွာ"></div>
+<div class="form-group"><label>Visual Style</label><input type="text" id="advVisualStyle" placeholder="ဥပမာ — Warm Tone / Cinematic"></div>
+<div class="form-group"><label>Ending Style</label><input type="text" id="advEnding" placeholder="ဥပမာ — ပြုံးရွှင်သော အဆုံးသတ်"></div>
+</div>
+<div class="error-box" id="genError"></div>
 </div>
 </div>`;
 
 const STEP2_HTML = `
 <div class="aics-step" data-step="2">
 <div class="card">
-<div class="card-title">&#128221; Script ဖန်တီးရန်</div>
-<p style="color:var(--text2);font-size:13px;margin-bottom:14px;">Generate Short နှိပ်ပါ — ရလာတဲ့ Script ကို ဒီနေရာမှာ တိုက်ရိုက် ပြင်နိုင်ပါတယ်။</p>
-<div class="loading" id="genLoading"><div class="spinner"></div> AI Short Script ရေးသားနေပါသည်...</div>
-<div class="error-box" id="genError"></div>
-<textarea class="result-textarea" id="shortResult" placeholder="Short Script ဒီနေရာမှာ ပေါ်လာပါမယ် — တိုက်ရိုက် ပြင်နိုင်ပါတယ်"></textarea>
-<p class="result-hint">&#9999; ဒီနေရာမှာ နှိပ်ပြီး ကိုယ်တိုင် ပြင်ဆင်နိုင်ပါတယ်</p>
-<div class="action-row" id="scriptActions" style="display:none;">
-<button class="btn btn-success" onclick="copyResult()">&#128203; Copy Short</button>
-<button class="btn btn-purple" onclick="saveToCreations()">&#128190; Save to My Creations</button>
-<button class="btn btn-orange" onclick="transferToVideo()">&#127909; ဗီဒီယို ဖန်တီးရန် (Scenes သို့)</button>
+<div class="loading-card">
+<div class="spinner"></div>
+<div class="loading-title">&#10024; AI ရေးသားနေသည်...</div>
+<div class="status-list" id="shortStatus">
+<div class="st-line" data-idx="0"><span class="st-marker">○</span><span>အချက်အလက်များကို ဖတ်နေသည်</span></div>
+<div class="st-line" data-idx="1"><span class="st-marker">○</span><span>Short Structure ပြင်ဆင်နေသည်</span></div>
+<div class="st-line" data-idx="2"><span class="st-marker">○</span><span>Script ရေးသားနေသည်</span></div>
+<div class="st-line" data-idx="3"><span class="st-marker">○</span><span>Script ကို စစ်ဆေးနေသည်</span></div>
 </div>
-<div class="revise-section" id="reviseSection" style="display:none;">
-<div class="card-title">&#129302; AI ကို ဆက်ညွှန်ကြားရန် (Revise)</div>
-<div class="revise-history" id="reviseHistory"></div>
-<div class="revise-input-row">
-<textarea id="feedbackInput" placeholder="ဥပမာ — Hook ကို ပိုပြင်းထန်အောင် ပြင်ပေးပါ"></textarea>
-<button class="btn btn-secondary" id="reviseBtn" onclick="reviseShort()">&#128260; ပြင်ပါ</button>
-</div>
-<div class="loading" id="revLoading"><div class="spinner"></div> ပြင်ဆင်နေပါသည်...</div>
-<div class="error-box" id="revError"></div>
+<div class="error-box" id="genError2"></div>
+<div class="retry-row" id="genRetry2"><button class="btn btn-secondary" onclick="generateShort()">&#8635; ပြန်ကြိုးစားရန်</button></div>
 </div>
 </div>
 </div>`;
@@ -69,61 +92,92 @@ const STEP2_HTML = `
 const STEP3_HTML = `
 <div class="aics-step" data-step="3">
 <div class="card">
-<div class="card-title">&#127909; Scenes — Video Plan ဖန်တီးရန်</div>
-<p style="color:var(--text2);font-size:13px;margin-bottom:14px;">Type ရွေးပြီး Idea/Script ထည့်ပါ — Scene အလိုက်၊ Character အလိုက် ခွဲထားသော Video Production Prompt များ ဖန်တီးပေးပါမယ်။</p>
-<div class="type-chips" id="typeChips2"></div>
-<div class="form-group">
-<label>Idea / Script</label>
-<textarea id="videoIdea" placeholder="ဥပမာ — ဒါရိုက်ခိုင်းလိုတဲ့ Script/Idea ကို ထည့်ပါ" style="min-height:140px;"></textarea>
+<div class="card-title">&#128241; Short Script ရလဒ်</div>
+<textarea class="result-textarea" id="shortResult" placeholder="Short Script ဒီနေရာမှာ ပေါ်လာပါမယ်..." oninput="onShortEdit()"></textarea>
+<p style="color:var(--text3);font-size:12px;margin-top:6px;font-style:italic;">&#9997;&#65039; ဒီနေရာမှာ တိုက်ရိုက် နှိပ်ပြီး ကိုယ်တိုင် ပြင်ဆင်နိုင်ပါတယ် — ပြင်ထားတဲ့ Script ကို "Final Short Script" အဖြစ် Video အဆင့်ကို အလိုအလျောက် ပို့ပေးပါမယ်</p>
+<div class="btn-row">
+<button class="btn btn-success" onclick="copyShort()">&#128203; Copy Short</button>
+<button class="btn btn-purple" onclick="saveShort()">&#128190; Save to My Creations</button>
+<button class="btn btn-secondary" onclick="focusRevise()">&#9999;&#65039; ပြန်ပြင်ရန်</button>
+<button class="btn btn-primary" onclick="goToVideoForm()">&#127916; Video ဆက်ဖန်တီးရန်</button>
 </div>
-<div class="ref-upload-area">
-<label>&#128444; Reference ပုံများ ပူးတွဲရန် (ချန်ထားလို့ရသည်)</label>
-<input type="file" id="refImageInput" accept="image/*" multiple onchange="onRefImageSelected()">
-<p class="ref-hint">အများဆုံး ၅ ပုံအထိ Upload တင်နိုင်ပါတယ် (ပုံတစ်ပုံချင်းစီ Max 5MB) — Character/Scene ပုံများ တင်ထားရင် AI က ထိုပုံများကို ကိုးကားပြီး ဒီပုံနှင့် ကိုက်ညီသော Reference Prompt ရေးပေးပါမယ်။</p>
-<div class="ref-preview" id="refPreview"></div>
 </div>
-<div class="loading" id="videoLoading"><div class="spinner"></div> AI Video Plan ရေးသားနေပါသည် (Scene/Character အလိုက် ခွဲနေပါသည်)...</div>
-<div class="error-box" id="videoError"></div>
-<div class="fallback-note" id="fallbackNote">&#9888; CMS ပုံစံအတိုင်း Scene/Character အပြည့်အစုံ မခွဲနိုင်ခဲ့ပါ — AI ရဲ့ Raw Output ကို Scene 1 အနေနဲ့ ပြထားပါသည်။</div>
+<div class="card revise-section" id="revise-section">
+<div class="card-title">&#129302; AI ကို ဆက်ညွှန်ကြားရန် (Revise)</div>
+<div class="revise-history" id="reviseHistory"></div>
+<div class="revise-input-row">
+<textarea id="feedbackInput" placeholder="ဥပမာ — Hook ကို ပိုပြင်းထန်အောင် ပြင်ပေးပါ" onkeypress="if(event.key==='Enter'){reviseShort();}"></textarea>
+<button class="btn btn-secondary" id="reviseBtn" onclick="reviseShort()">&#128260; ပြင်ပါ</button>
 </div>
-<div id="videoResultSection" style="display:none;">
-<div class="section-block">
-<div class="section-title"><span class="section-badge">01</span> &#128100; CHARACTER REFERENCE PROMPT</div>
-<div id="characterArea"><div class="empty-note">Generate နှိပ်ပြီးရင် ဒီနေရာမှာ Character (ရှိလျှင်) ပေါ်ပါမယ်</div></div>
-</div>
-<div class="section-block">
-<div class="section-title"><span class="section-badge">02</span> &#127757;&#127916; SCENE PROMPT (Environment &amp; Video)</div>
-<div id="sceneArea"><div class="empty-note">Generate နှိပ်ပြီးရင် ဒီနေရာမှာ Scene တစ်ခုချင်းစီ ပေါ်ပါမယ်</div></div>
-</div>
-<p style="color:var(--text3);font-size:12px;margin-top:8px;">&#9888; Text Prompt များသာ Save/Copy ဖြစ်ပါမည် — Image များကို &#128190; Save Image ခလုတ်ကနေ တစ်ပုံချင်း Download ချပေးပါ</p>
-</div>
+<div class="loading" id="revLoading"><div class="spinner"></div> ပြင်ဆင်နေပါသည်...</div>
+<div class="error-box" id="revError"></div>
 </div>
 </div>`;
 
 const STEP4_HTML = `
 <div class="aics-step" data-step="4">
 <div class="card">
-<div class="card-title">&#9999; Edit — Scene အလိုက် ပြင်ဆင်ရန်</div>
-<p style="color:var(--text2);font-size:13px;margin-bottom:14px;">အောက်က Scene တစ်ခုချင်းစီရဲ့ Video Prompt ကို တိုက်ရိုက် ပြင်နိုင်ပါတယ်။ ပြင်ပြီးရင် Result အဆင့်မှာ Copy/Save လုပ်ပါ။</p>
-<div id="editCharArea"></div>
-<div id="editSceneArea"></div>
+<div class="card-title">&#127916; Short Video ဖန်တီးရန်</div>
+<p style="color:var(--text2);font-size:13px;margin-bottom:14px;">Step 03 မှာ ရရှိထားသော Final Short Script ကို အလိုအလျောက် ထည့်ပေးထားပါသည် — Video အတွက် ဆက်တင်များရွေးပြီး ဖန်တီးပါ။</p>
+<div class="form-group">
+<label>&#128241; အသုံးပြုမည့် Short Script</label>
+<textarea id="videoScriptInput" style="min-height:150px;" oninput="autoExpand(this)"></textarea>
+</div>
+<div class="vf-grid">
+<div class="form-group"><label>Video Style</label><select id="vidStyleSel"></select></div>
+<div class="form-group"><label>Aspect Ratio</label><select id="vidRatioSel"></select></div>
+<div class="form-group"><label>Duration</label><select id="vidDurationSel"></select></div>
+<div class="form-group"><label>Scene Duration</label><select id="vidSceneSel"></select></div>
+<div class="form-group"><label>Visual Style</label><select id="vidVisualSel"></select></div>
+<div class="form-group"><label>Camera Style</label><select id="vidCamSel"></select></div>
+<div class="form-group"><label>Language</label><select id="vidLangSel"></select></div>
+</div>
+<label style="display:flex;align-items:center;gap:8px;margin:2px 0 16px;cursor:pointer;color:var(--text2);">
+<input type="checkbox" id="vidContinuity" checked style="width:18px;height:18px;flex-shrink:0;accent-color:var(--cyan);"> &#10004; Maintain Same Character (Character Continuity)
+</label>
+<div class="form-group">
+<label>Additional Instructions</label>
+<textarea id="vidExtra" placeholder="ဥပမာ — နောက်ဆုံး Scene မှာ Logo ပြပါ / Background Music အရှိန်မြှင့်ပါ..." style="min-height:80px;"></textarea>
+</div>
+<div class="ref-upload-area">
+<label>&#128444;&#65039; Reference ပုံများ ပူးတွဲရန် (ချန်ထားလို့ရသည်)</label>
+<input type="file" id="refImageInput" accept="image/*" multiple onchange="onRefImageSelected()">
+<p class="ref-hint">အများဆုံး ၅ ပုံအထိ Upload တင်နိုင်ပါတယ် (ပုံတစ်ပုံချင်းစီ Max 5MB) — Character/Scene ပုံများ တင်ထားရင် AI က ထိုပုံများကို ကိုးကားပြီး ဒီပုံနှင့် ကိုက်ညီသော Reference Prompt ရေးပေးပါမယ်။</p>
+<div class="ref-preview" id="refPreview"></div>
+</div>
+<div class="error-box" id="planError"></div>
+<div class="btn-row" style="margin-top:14px;">
+<button class="btn btn-primary" id="shortVideoBtn" onclick="generateShortVideoPlan()" style="flex:1;">&#127916; Short Video ဖန်တီးရန်</button>
+</div>
 </div>
 </div>`;
 
 const STEP5_HTML = `
 <div class="aics-step" data-step="5">
 <div class="card">
-<div class="card-title">&#127894; Result</div>
-<p style="color:var(--text2);font-size:13px;margin-bottom:14px;">ညာဘက် Preview မှာ နောက်ဆုံး Prompt အားလုံးကို ကြည့်ပြီး အောက်က ခလုတ်များနဲ့ Copy / Save လုပ်နိုင်ပါတယ်။</p>
-<div class="action-row">
-<button class="btn btn-success" onclick="copyAllPrompts()">&#128203; Copy All</button>
-<button class="btn btn-purple" onclick="saveAllToCreations()">&#128190; Save All to My Creations</button>
-<button class="btn btn-orange" onclick="studioGoStep(4)">&#9999; Edit ပြန်လုပ်ရန်</button>
+<div class="loading-card">
+<div class="spinner"></div>
+<div class="loading-title">&#10024; AI ပြင်ဆင်နေသည်...</div>
+<div class="status-list" id="planStatus">
+<div class="st-line" data-idx="0"><span class="st-marker">○</span><span>Short Script ကို ဖတ်ပြီးပါပြီ</span></div>
+<div class="st-line" data-idx="1"><span class="st-marker">○</span><span>ဇာတ်ကောင်များကို ရှာဖွေနေသည်</span></div>
+<div class="st-line" data-idx="2"><span class="st-marker">○</span><span>Scene များ ခွဲခြားနေသည်</span></div>
+<div class="st-line" data-idx="3"><span class="st-marker">○</span><span>Character Reference ပြင်ဆင်နေသည်</span></div>
+<div class="st-line" data-idx="4"><span class="st-marker">○</span><span>Environment Reference ပြင်ဆင်နေသည်</span></div>
+<div class="st-line" data-idx="5"><span class="st-marker">○</span><span>Video Prompt များ ရေးသားနေသည်</span></div>
+</div>
+<div class="error-box" id="planError5"></div>
+<div class="retry-row" id="planRetry5"><button class="btn btn-secondary" onclick="generateShortVideoPlan()">&#8635; ပြန်ကြိုးစားရန်</button></div>
 </div>
 </div>
 </div>`;
 
-const STEPS_HTML = STEP1_HTML + STEP2_HTML + STEP3_HTML + STEP4_HTML + STEP5_HTML;
+const STEP6_HTML = `
+<div class="aics-step" data-step="6">
+<div id="finalResult"></div>
+</div>`;
+
+const CONTENT_HTML = STEP1_HTML + STEP2_HTML + STEP3_HTML + STEP4_HTML + STEP5_HTML + STEP6_HTML;
 
 export const SHORT_HTML = `<!DOCTYPE html>
 <html lang="my">
@@ -136,29 +190,6 @@ export const SHORT_HTML = `<!DOCTYPE html>
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:'Noto Sans Myanmar','Roboto','Segoe UI',Arial,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line-height:1.6}
 a{color:var(--cyan);text-decoration:none}
-.header{background:linear-gradient(135deg,#0a1628,#0d1f3c);border-bottom:1px solid var(--border);padding:12px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
-.header-left{display:flex;align-items:center;gap:12px}
-.logo{font-size:18px;font-weight:700;background:linear-gradient(90deg,var(--cyan),var(--purple));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-.header-right{display:flex;align-items:center;gap:12px;font-size:13px}
-.user-email{color:var(--text2)}
-.plan-badge{background:linear-gradient(135deg,var(--purple),var(--cyan));color:#fff;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600}
-.menu-btn{display:none;background:none;border:1px solid var(--border);color:var(--cyan);padding:8px 12px;border-radius:8px;cursor:pointer;font-size:18px}
-.layout{display:flex;min-height:calc(100vh - 57px)}
-.sidebar{width:220px;background:#0d1425;border-radius:16px;margin:14px 12px;padding:14px 12px;flex-shrink:0;display:flex;flex-direction:column;}
-.brand{margin-bottom:18px;padding:0 4px;}
-.brand-title{font-weight:800;font-size:17px;letter-spacing:.5px;background:linear-gradient(90deg,var(--purple),var(--cyan));-webkit-background-clip:text;background-clip:text;color:transparent;}
-.nav-label{font-size:11px;color:var(--text3);letter-spacing:1.5px;margin:16px 0 6px 8px;text-transform:uppercase;}
-.nav-item{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:10px;color:#c6cede;text-decoration:none;cursor:pointer;font-size:13.5px;margin-bottom:2px;border:1px solid transparent;transition:all .2s;}
-.nav-item:hover{background:#161d30;}
-.nav-item.active{background:linear-gradient(90deg,rgba(123,92,255,.18),rgba(0,229,255,.08));color:#fff;border:1px solid var(--purple);box-shadow:0 0 14px rgba(123,92,255,.35);}
-.nav-icon-circle{width:30px;height:30px;border-radius:9px;background:#1a2138;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;}
-.sidebar-bottom{margin-top:auto;padding-top:14px;border-top:1px solid var(--border);}
-.license-badge{display:inline-block;font-size:11px;padding:4px 10px;border-radius:20px;margin-bottom:10px;background:#333;color:#aaa;}
-.license-badge.pro{background:#103a2a;color:var(--success);box-shadow:0 0 10px rgba(43,255,159,.25);}
-.side-email{font-size:11.5px;color:var(--text3);margin-bottom:8px;word-break:break-all;}
-.side-btn{display:flex;align-items:center;gap:8px;width:100%;text-align:left;padding:8px 10px;border-radius:10px;background:#161d30;color:#c6cede;border:1px solid var(--border);font-size:12.5px;cursor:pointer;margin-bottom:5px;text-decoration:none;transition:all .2s;box-sizing:border-box;}
-.side-btn:hover{background:#1e2740;border-color:var(--cyan);}
-.main{flex:1;padding:24px;max-width:960px;margin:0 auto;width:100%}
 .card{background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px}
 .card-title{font-size:15px;font-weight:600;color:var(--cyan);margin-bottom:14px;display:flex;align-items:center;gap:8px}
 label{display:block;font-size:12.5px;color:var(--text2);margin-bottom:6px;font-weight:500}
@@ -170,6 +201,8 @@ select option{background:var(--bg-card);color:var(--text)}
 .form-group{margin-bottom:16px}
 .form-row{display:flex;gap:14px;flex-wrap:wrap}
 .form-row .form-group{flex:1;min-width:200px}
+.adv-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.adv-grid .form-group{margin-bottom:0;}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:12px 24px;border-radius:8px;border:none;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .2s;min-height:44px;min-width:44px}
 .btn-primary{background:linear-gradient(135deg,var(--cyan),#00b8d4);color:#080c18}
 .btn-primary:hover{opacity:.9;transform:translateY(-1px)}
@@ -181,21 +214,15 @@ select option{background:var(--bg-card);color:var(--text)}
 .btn-success{background:linear-gradient(135deg,#00e676,#00c853);color:#080c18}
 .btn-purple{background:linear-gradient(135deg,var(--purple),#9c7cff);color:#fff}
 .btn-orange{background:linear-gradient(135deg,#ff9f2b,#ff6f00);color:#080c18}
-.type-chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
-.type-chip{padding:8px 16px;background:var(--bg-card2);border:2px solid var(--border);border-radius:8px;color:var(--text2);cursor:pointer;font-size:13px;font-family:inherit;transition:all .2s;min-height:40px}
-.type-chip:hover{border-color:var(--cyan);color:var(--text)}
-.type-chip.active{border-color:var(--cyan);background:rgba(0,229,255,.1);color:var(--cyan);font-weight:600}
-.type-chip.locked{opacity:.45;cursor:not-allowed}
-.type-chip.locked:hover{border-color:var(--border);color:var(--text2)}
-.result-textarea{width:100%;min-height:200px;background:var(--bg-input);border:1px solid var(--border);border-radius:10px;padding:14px;color:var(--text);font-size:14px;font-family:inherit;line-height:1.7;resize:vertical}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.result-textarea{width:100%;min-height:220px;background:var(--bg-input);border:1px solid var(--border);border-radius:10px;padding:16px;color:var(--text);font-size:15px;line-height:1.7;font-family:inherit;resize:vertical;overflow:hidden;box-sizing:border-box}
 .result-textarea:focus{outline:none;border-color:var(--cyan)}
 .result-hint{color:var(--text3);font-size:12px;margin-top:6px;font-style:italic}
-.action-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
 .revise-section{margin-top:20px;padding-top:20px;border-top:1px solid var(--border)}
-.revise-history{max-height:240px;overflow-y:auto;background:var(--bg-input);border-radius:8px;padding:12px;margin-bottom:12px}
-.revise-msg{padding:8px 12px;border-radius:8px;margin-bottom:8px;font-size:13px;max-width:85%;line-height:1.5}
-.revise-msg.user{background:rgba(123,92,255,.15);margin-left:auto;text-align:right}
-.revise-msg.ai{background:var(--bg-card2);color:var(--success)}
+.revise-history{margin-bottom:14px;max-height:280px;overflow-y:auto}
+.revise-msg{background:var(--bg-input);border-radius:8px;padding:10px 14px;margin-bottom:8px;font-size:13px}
+.revise-msg.user{border-left:3px solid var(--purple)}
+.revise-msg .role{font-size:11px;color:var(--text3);margin-bottom:4px}
 .revise-input-row{display:flex;gap:10px;align-items:flex-end}
 .revise-input-row textarea{flex:1;min-height:60px}
 .ref-upload-area{margin-top:14px}
@@ -205,38 +232,48 @@ select option{background:var(--bg-card);color:var(--text)}
 .ref-thumb{position:relative;width:72px;height:72px}
 .ref-thumb img{width:72px;height:72px;object-fit:cover;border-radius:8px;border:1px solid var(--border);display:block}
 .ref-thumb .remove-x{position:absolute;top:-7px;right:-7px;width:24px;height:24px;border-radius:50%;background:var(--error);color:#fff;border:none;font-size:13px;line-height:24px;text-align:center;cursor:pointer;padding:0;min-height:24px;min-width:24px}
-.fallback-note{display:none;background:rgba(255,193,7,.1);border:1px solid rgba(255,193,7,.3);color:var(--warn);padding:12px 16px;border-radius:8px;font-size:13px;margin-top:14px;line-height:1.5}
-.fallback-note.show{display:block}
-.section-block{margin-top:24px}
-.section-title{display:flex;align-items:center;gap:10px;font-size:16px;font-weight:700;color:var(--text);margin-bottom:14px}
-.section-badge{background:var(--error);color:#fff;font-weight:700;padding:3px 11px;border-radius:6px;font-size:13px}
-.empty-note{color:var(--text3);font-size:13px;padding:16px;background:var(--bg-input);border:1px dashed var(--border);border-radius:10px;text-align:center}
-.scene-group{margin-bottom:22px}
-.scene-group-title{color:var(--cyan);font-weight:700;font-size:15px;padding-bottom:8px;margin-bottom:12px;border-bottom:1px solid var(--border)}
-.scene-card,.character-card{background:var(--bg-card2);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:14px}
-.card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
-.card-header span{font-weight:700;color:var(--cyan);font-size:14px}
-.card-subtext{color:var(--text2);font-size:13px;margin-bottom:8px}
-.card-label{color:var(--text2);font-size:12.5px;margin-top:10px;margin-bottom:5px;font-weight:500}
-.card-text{white-space:pre-wrap;line-height:1.6;background:var(--bg-input);padding:12px 14px;border-radius:8px;font-size:13.5px;color:var(--text);min-height:24px}
-.card-textarea{width:100%;background:var(--bg-input);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:12px 14px;font-size:13.5px;font-family:inherit;line-height:1.6;outline:none;resize:vertical;min-height:60px}
-.card-textarea:focus{border-color:var(--cyan)}
-.mini-btn{padding:6px 14px;font-size:12px;background:var(--success);color:#080c18;border:none;border-radius:6px;cursor:pointer;font-family:inherit;font-weight:600;min-height:32px}
-.gen-img-btn{margin-top:12px;padding:8px 16px;font-size:13px;background:var(--orange);color:#080c18;border:none;border-radius:8px;cursor:pointer;font-family:inherit;font-weight:600;display:block;min-height:40px}
-.gen-img-btn:disabled{opacity:.5;cursor:not-allowed}
-.image-result-area img{width:100%;border-radius:8px;margin-top:10px}
-.image-result-area a{display:inline-block;margin-top:8px}
-.loading{display:none !important;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);align-items:center;gap:12px;color:#00e5ff;font-size:15px;font-weight:600;padding:16px 28px;border-radius:16px;background:rgba(8,12,24,.95);border:1px solid rgba(0,229,255,.4);box-shadow:0 8px 40px rgba(0,229,255,.3);z-index:99999;backdrop-filter:blur(12px);white-space:nowrap}
+.loading{display:none !important;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);align-items:center;gap:12px;color:#00e5ff;font-size:15px;font-weight:600;padding:16px 28px;border-radius:16px;background:rgba(8,12,24,.95);border:1px solid rgba(0,229,255,.4);box-shadow:0 8px 40px rgba(0,229,255,.3);z-index:99999;backdrop-filter:blur(12px);white-space:nowrap;}
 .loading.show{display:flex}
-.spinner{width:18px;height:18px;border:2px solid var(--border);border-top-color:var(--cyan);border-radius:50%;animation:spin .8s linear infinite}
+.spinner{width:20px;height:20px;border:3px solid rgba(0,229,255,.2);border-top-color:#00e5ff;border-radius:50%;animation:spin .8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
-.error-box{display:none;background:rgba(255,82,82,.1);border:1px solid rgba(255,82,82,.3);color:var(--error);padding:12px 16px;border-radius:8px;font-size:13px;margin-top:12px}
+.error-box{display:none;background:rgba(255,82,82,.1);border:1px solid rgba(255,82,82,.3);color:var(--error);padding:12px 16px;border-radius:8px;font-size:13px;margin-top:12px;line-height:1.7;white-space:pre-line}
 .error-box.show{display:block}
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(100px);background:var(--bg-card2);border:1px solid var(--success);color:var(--success);padding:10px 20px;border-radius:8px;font-size:13px;z-index:1000;transition:transform .3s}
 .toast.show{transform:translateX(-50%) translateY(0)}
 .toast.error{border-color:var(--error);color:var(--error)}
-.pv-pre{white-space:pre-wrap;line-height:1.6;background:var(--bg-input);border:1px solid var(--border);border-radius:10px;padding:12px 14px;font-size:12.5px;color:var(--text2);max-height:420px;overflow-y:auto}
-@media(max-width:768px){.menu-btn{display:block}.sidebar{position:fixed;left:-260px;top:57px;bottom:0;z-index:99;transition:left .3s;box-shadow:4px 0 20px rgba(0,0,0,.5)}.sidebar.open{left:0}.main{padding:16px}.header-right .user-email{display:none}.form-row{flex-direction:column}.revise-input-row{flex-direction:column;align-items:stretch}.action-row{flex-direction:column}.action-row .btn{width:100%}}
+.empty-note{color:var(--text3);font-size:13px;padding:16px;background:var(--bg-input);border:1px dashed var(--border);border-radius:10px;text-align:center}
+/* ===== Short Studio Workflow 01→06 — Styles ===== */
+.vf-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.vf-grid .form-group{margin-bottom:14px;}
+.loading-card{text-align:center;padding:40px 16px;}
+.loading-card .spinner{width:38px;height:38px;border-width:4px;margin:0 auto 18px;}
+.loading-title{font-size:18px;font-weight:700;color:var(--cyan);margin-bottom:20px;}
+.status-list{max-width:440px;margin:0 auto;text-align:left;}
+.st-line{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:10px;color:var(--text2);font-size:14px;opacity:.5;transition:all .2s;}
+.st-line .st-marker{width:22px;text-align:center;flex-shrink:0;font-weight:700;color:var(--text3);}
+.st-line.active{opacity:1;color:var(--text);background:rgba(0,229,255,.06);}
+.st-line.active .st-marker{color:var(--cyan);}
+.st-line.done{opacity:1;color:var(--text);}
+.st-line.done .st-marker{color:var(--success);}
+.retry-row{display:none;justify-content:center;margin-top:16px;}
+.retry-row.show{display:flex;}
+.final-char-card{background:var(--bg-card2);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:14px;}
+.final-char-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px;flex-wrap:wrap;}
+.final-char-name{font-weight:700;color:var(--cyan);font-size:15px;}
+.final-char-id{font-size:11px;color:var(--purple);background:rgba(123,92,255,.12);border:1px solid rgba(123,92,255,.3);padding:2px 10px;border-radius:20px;}
+.final-char-meta{display:flex;flex-wrap:wrap;gap:4px 16px;font-size:12.5px;color:var(--text2);margin-bottom:10px;}
+.final-char-img{background:var(--bg-input);border:1px dashed var(--border);border-radius:10px;padding:10px;margin-bottom:10px;text-align:center;}
+.final-char-img img{max-width:100%;max-height:340px;border-radius:8px;}
+.final-prompt-label{font-size:11.5px;color:var(--text3);font-weight:700;letter-spacing:.4px;margin:8px 0 6px;text-transform:uppercase;}
+.final-prompt-text{font-size:13px;color:var(--text);line-height:1.7;white-space:pre-wrap;word-break:break-word;background:var(--bg-input);padding:12px 14px;border-radius:10px;min-height:20px;}
+.final-scene-card{background:var(--bg-card2);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:14px;}
+.final-scene-title{font-weight:700;color:var(--purple);font-size:14.5px;padding-bottom:10px;margin-bottom:12px;border-bottom:1px solid var(--border);}
+.final-scene-box{margin-bottom:12px;}
+.final-box-label{font-size:12px;color:var(--cyan);font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:6px;}
+.final-scene-meta{font-size:12.5px;color:var(--text2);border-top:1px solid var(--border);padding-top:10px;margin-top:4px;display:flex;flex-wrap:wrap;gap:6px 16px;}
+.scene-image-area{margin-top:10px;text-align:center}
+.scene-image-area img{max-width:100%;border-radius:8px;border:1px solid var(--border)}
+@media(max-width:768px){.form-row{flex-direction:column}.revise-input-row{flex-direction:column;align-items:stretch}.action-row{flex-direction:column}.action-row .btn{width:100%}.vf-grid{grid-template-columns:1fr;}.adv-grid{grid-template-columns:1fr;}.btn-row .btn{flex:1 1 100%;}}
 </style>
 </head>
 <body>
@@ -245,231 +282,331 @@ ${renderStudioShell({
   id: 'short',
   activeId: 'short',
   nameMy: 'ရှော့တ် Studio',
-  desc: 'Short videos from script to scenes',
+  desc: 'Short videos from script to MAP',
   icon: '🎬',
   modelCat: 'text',
   steps: STEPS,
-  content: STEPS_HTML,
+  content: CONTENT_HTML,
 })}
 ${sidebarScript()}
-<div class="toast" id="toast">&#9989; အောင်မြင်ပါသည်</div>
+<div class="toast" id="toast">&#9989; ကူးယူပြီးပါပြီ</div>
 <script>
 var token=localStorage.getItem('aics_token')||'';
 var userEmail=localStorage.getItem('aics_email')||'';
 var userPlan=localStorage.getItem('aics_plan')||'FREE';
 var isPro=(userPlan==='PRO');
 
-var FIELD_CONFIG=[
-  {label:"Video ရဲ့ အကြောင်းအရာ",placeholder:"ဥပမာ — ဘာအကြောင်း Video ရေးချင်ပါသလဲ?",required:true,multiline:true},
-  {label:"Platform",placeholder:"ဥပမာ — TikTok / Instagram Reels / YouTube Shorts"},
-  {label:"Video ကြာချိန်",placeholder:"ဥပမာ — ၁၅ စက္ကန့် / ၃၀ စက္ကန့် / ၁ မိနစ်"},
-  {label:"ဘယ်သူတွေအတွက်လဲ",placeholder:"ဥပမာ — လူငယ်များ / စီးပွားရေးလုပ်ငန်းရှင်များ / အခြား"},
-  {label:"အသံစံ/Tone",placeholder:"ဥပမာ — ဟာသ / အရှိန်မြှင့် / ရိုးရှင်းရှင်းလင်း / အခြား"}
-];
-var MAX_REF_IMAGES=5;
-var selectedType1='1';
-var selectedType2='1';
-var currentShort='';
+// ===================== Short-specific State (Story နှင့် သီးခြား) =====================
+var selectedShortType='1';
+var currentShort='';        // Final Short Script (User နောက်ဆုံး ပြင်ထားသော Script)
 var currentShortIdea='';
 var currentScenes=[];
 var currentCharacters=[];
-var currentVideoIdea='';
+var imgCache={};
+var videoStarted=false;
+var shortBusy=false;
+var planBusy=false;
+var typewriterTimer=null;
 var refImages=[];
+var MAX_REF_IMAGES=5;
+
+var SHORT_TYPES=[
+  {v:'1',label:'Short Video (Free)',pro:false},
+  {v:'2',label:'Type 2 (Pro)',pro:true},
+  {v:'3',label:'Type 3 (Pro)',pro:true},
+  {v:'4',label:'Type 4 (Pro)',pro:true},
+  {v:'5',label:'Type 5 (Pro)',pro:true}
+];
+var DURATIONS=['15 sec','30 sec','45 sec','60 sec','90 sec','120 sec'];
+var SCENE_DURATIONS=['3 sec','5 sec','8 sec','10 sec','12 sec'];
+var RATIOS=['9:16','16:9','1:1','4:5','21:9'];
+var VIDEO_STYLES=['Cinematic','Vlog Style','TikTok Trend','Music Sync','Talking Head','Storytime','ASMR','Documentary'];
+var VISUAL_STYLES=['Realistic','Cinematic Realism','Anime','3D Animation','2D Illustration','Stylized','Fantasy'];
+var CAMERA_STYLES=['Dynamic','Static Shot','Handheld','Tracking Shot','Slow Motion','Drone Shot','Feature Film'];
+var LANGUAGES=['မြန်မာ','English','မြန်မာ + English'];
+var TONES=['Emotional','Funny','Epic','Motivational','Mysterious','Educational'];
 
 (function init(){
   if(!token){document.getElementById('loginView').style.display='flex';document.getElementById('aicsApp').style.display='none';return;}
   var _ue=document.getElementById('userEmail');if(_ue)_ue.textContent=userEmail||'—';
   var _pb=document.getElementById('planBadge');if(_pb)_pb.textContent=userPlan||'FREE';
-  buildTypeChips('typeChips2',2);
-  buildIdeaFields();
+  try{var ic=localStorage.getItem('aics_draft_short_imgcache');if(ic){imgCache=JSON.parse(ic)||{};}}catch(e){}
+  buildShortTypeSel();
+  fillSelect('durSel',DURATIONS,'30 sec');
+  fillSelect('toneSel',TONES,'Emotional');
+  fillSelect('langSel',LANGUAGES,'မြန်မာ');
+  fillSelect('vidStyleSel',VIDEO_STYLES,'Cinematic');
+  fillSelect('vidRatioSel',RATIOS,'9:16');
+  fillSelect('vidDurationSel',DURATIONS,'30 sec');
+  fillSelect('vidSceneSel',SCENE_DURATIONS,'5 sec');
+  fillSelect('vidVisualSel',VISUAL_STYLES,'Realistic');
+  fillSelect('vidCamSel',CAMERA_STYLES,'Dynamic');
+  fillSelect('vidLangSel',LANGUAGES,'မြန်မာ');
+  var _ta=document.getElementById('field_0');
+  if(_ta){_ta.addEventListener('input',function(){this.style.height='auto';this.style.height=(this.scrollHeight)+'px';});}
+  var sr=document.getElementById('shortResult');
+  if(sr){
+    sr.addEventListener('keydown',function(){stopTypewriter();});
+    sr.addEventListener('pointerdown',function(){stopTypewriter();});
+  }
+  var _db=debounce(autoSave,400);
+  document.addEventListener('input',function(e){if(e.target&&e.target.closest&&e.target.closest('#aicsApp'))_db();},true);
+  document.addEventListener('change',function(e){if(e.target&&e.target.closest&&e.target.closest('#aicsApp'))_db();},true);
 })();
 
-function setTypeChip(containerId,val){
-  var container=document.getElementById(containerId);
-  if(!container)return;
-  var chips=container.querySelectorAll('.type-chip');
-  for(var i=0;i<chips.length;i++){
-    var t=chips[i].getAttribute('data-v');
-    if(t===String(val))chips[i].classList.add('active');
-    else chips[i].classList.remove('active');
+function debounce(fn,ms){var t=null;return function(){var a=arguments,c=this;clearTimeout(t);t=setTimeout(function(){fn.apply(c,a);},ms);};}
+function sel(id){var e=document.getElementById(id);return e?e.value:'';}
+function fillSelect(id,opts,defVal){
+  var s=document.getElementById(id);if(!s)return;
+  s.innerHTML='';
+  for(var i=0;i<opts.length;i++){
+    var o=document.createElement('option');o.value=opts[i];o.textContent=opts[i];
+    if(opts[i]===defVal)o.selected=true;
+    s.appendChild(o);
   }
 }
-
-function buildTypeChips(containerId,tabNum){
-  var container=document.getElementById(containerId);
-  if(!container)return;
-  var types=[
-    {v:'1',label:'Short Video (Free)',pro:false},
-    {v:'2',label:'Type 2 (Pro)',pro:true},
-    {v:'3',label:'Type 3 (Pro)',pro:true},
-    {v:'4',label:'Type 4 (Pro)',pro:true},
-    {v:'5',label:'Type 5 (Pro)',pro:true}
-  ];
-  types.forEach(function(t){
-    var chip=document.createElement('button');
-    chip.className='type-chip'+(t.v==='1'?' active':'')+(t.pro&&!isPro?' locked':'');
-    chip.setAttribute('data-v',t.v);
-    chip.textContent=(t.pro&&!isPro?'🔒 ':'')+t.label;
-    chip.onclick=function(){
-      if(t.pro&&!isPro){showToast('ဒီ Type ကို Pro User သာ အသုံးပြုနိုင်ပါသည်။ Upgrade လိုအပ်ပါသည်။',true);return;}
-      var chips=container.querySelectorAll('.type-chip');
-      for(var i=0;i<chips.length;i++)chips[i].classList.remove('active');
-      chip.classList.add('active');
-      if(tabNum===1)selectedType1=t.v;else selectedType2=t.v;
-    };
-    container.appendChild(chip);
-  });
+function buildShortTypeSel(){
+  var selEl=document.getElementById('shortTypeSel');if(!selEl)return;
+  selEl.innerHTML='';
+  for(var i=0;i<SHORT_TYPES.length;i++){
+    (function(t){
+      var o=document.createElement('option');
+      o.value=t.v;
+      o.textContent=t.label+(t.pro?' (PRO)':'');
+      if(t.pro&&!isPro)o.disabled=true;
+      selEl.appendChild(o);
+    })(SHORT_TYPES[i]);
+  }
+  if(!isPro&&selectedShortType!=='1')selectedShortType='1';
+  selEl.value=selectedShortType;
+  selEl.onchange=function(){
+    var v=selEl.value;
+    var meta=SHORT_TYPES[parseInt(v,10)-1];
+    if(meta&&meta.pro&&!isPro){showToastMsg('ဒီ Type ကို Pro User သာ အသုံးပြုနိုင်ပါသည်။');selEl.value=selectedShortType;return;}
+    selectedShortType=v;
+  };
 }
 
-function buildIdeaFields(){
-  var container=document.getElementById('ideaFields');
-  container.innerHTML='';
-  FIELD_CONFIG.forEach(function(field,idx){
-    var row=document.createElement('div');
-    row.className='form-group';
-    var label=document.createElement('label');
-    label.textContent=field.label+(field.required?' *':'');
-    var input;
-    if(field.multiline){input=document.createElement('textarea');input.rows=2;}
-    else{input=document.createElement('input');input.type='text';}
-    input.placeholder=field.placeholder;
-    input.id='field_'+idx;
-    row.appendChild(label);
-    row.appendChild(input);
-    container.appendChild(row);
-  });
+function toggleAdvFields(){
+  var box=document.getElementById('advFields');
+  var label=document.querySelector('#advToggle span');
+  if(box.style.display==='none'){box.style.display='grid';if(label)label.textContent='ချုံ့ရန် ▲';}
+  else{box.style.display='none';if(label)label.textContent='အပိုဆောင်းသတ်မှတ်ချက် (Advanced Options) ▼';}
 }
 
-function collectIdeaText(){
-  var lines=[];
-  var valid=true;
-  FIELD_CONFIG.forEach(function(field,idx){
-    var val=document.getElementById('field_'+idx).value.trim();
-    if(field.required&&!val)valid=false;
-    if(val)lines.push(field.label+': '+val);
-  });
-  var audEl=document.getElementById('audSel');
-  if(audEl&&audEl.value)lines.push('Audience: '+audEl.value);
+function apiCall(url,body){var s=document.getElementById('aiModelSel');if(s&&s.value)body.model=s.value;return fetch(url,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify(body)}).then(function(res){return res.json().then(function(data){if(!res.ok)throw new Error(data.detail||data.error||'Request failed');return data;});});}
+
+// ===================== Step 01 → 02 → 03 (Short Generate) =====================
+function collectShortIdea(){
+  var lines=[],valid=true;
+  var topic=document.getElementById('field_0').value.trim();
+  if(!topic)valid=false;
+  function add(label,val){if(val&&String(val).trim())lines.push(label+': '+String(val).trim());}
+  var stMeta=SHORT_TYPES[parseInt(selectedShortType,10)-1];
+  add('Short Type',stMeta?stMeta.label:selectedShortType);
+  add('Duration',sel('durSel'));
+  add('Tone',sel('toneSel'));
+  add('Language',sel('langSel'));
+  add('Target Audience',document.getElementById('audInput')?document.getElementById('audInput').value:'');
+  add('Topic',topic);
+  add('Main Message',document.getElementById('mainMsg')?document.getElementById('mainMsg').value:'');
+  add('Additional Instructions',document.getElementById('extraInstr')?document.getElementById('extraInstr').value:'');
+  add('Hook',document.getElementById('advHook')?document.getElementById('advHook').value:'');
+  add('Call To Action',document.getElementById('advCta')?document.getElementById('advCta').value:'');
+  add('Character Information',document.getElementById('advCharInfo')?document.getElementById('advCharInfo').value:'');
+  add('Location',document.getElementById('advLocation')?document.getElementById('advLocation').value:'');
+  add('Visual Style',document.getElementById('advVisualStyle')?document.getElementById('advVisualStyle').value:'');
+  add('Ending Style',document.getElementById('advEnding')?document.getElementById('advEnding').value:'');
   return{text:lines.join('\\n'),valid:valid};
 }
 
-function apiCall(url,body){
-  var s=document.getElementById('aiModelSel');if(s&&s.value)body.model=s.value;
-  return fetch(url,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify(body)}).then(function(res){return res.json().then(function(data){if(!res.ok)throw new Error(data.detail||data.error||'Request failed');return data;});});
-}
-
-// ===== Script =====
 function generateShort(){
-  var collected=collectIdeaText();
-  if(!collected.valid){showToast('Video ရဲ့ အကြောင်းအရာ အနည်းဆုံး ဖြည့်ရေးပါ',true);return;}
-  if(selectedType1!=='1'&&!isPro){showToast('ဒီ Type ကို Pro User သာ အသုံးပြုနိုင်ပါသည်။',true);return;}
-  window.aichAud=(document.getElementById('audSel')?document.getElementById('audSel').value:'လူတိုင်း');
-  setLoading('genLoading',true);
-  hideError('genError');
-  document.getElementById('scriptActions').style.display='none';
-  apiCall('/api/studio/short/generate',{idea:collected.text,type:selectedType1})
+  if(shortBusy)return;
+  var collected=collectShortIdea();
+  if(!collected.valid){showError('genError','Short အကြောင်းအရာကို အနည်းဆုံး ဖြည့်ရေးပါ။');return;}
+  var stMeta=SHORT_TYPES[parseInt(selectedShortType,10)-1];
+  if(stMeta&&stMeta.pro&&!isPro){showToastMsg('ဒီ Type ကို Pro User သာ အသုံးပြုနိုင်ပါသည်။');return;}
+  var idea=collected.text;
+  hideError('genError');hideStepError('genError2','genRetry2');
+  shortBusy=true;
+  currentShort='';
+  if(window.studioForceGoStep)window.studioForceGoStep(2);
+  else window.studioGoStep(2);
+  startStatusAnim('shortStatus');
+  if(window.studioSetLoading)window.studioSetLoading(true);
+  apiCall('/api/studio/short/generate',{idea:idea,type:selectedShortType})
     .then(function(data){
       currentShort=data.short||'';
-      currentShortIdea=collected.text;
-      document.getElementById('shortResult').value=currentShort;
-      document.getElementById('scriptActions').style.display='flex';
-      document.getElementById('reviseSection').style.display='block';
+      currentShortIdea=idea;
+      stopStatusAnim('shortStatus',true);
+      if(window.studioSetLoading)window.studioSetLoading(false);
+      studioMarkDone(1);studioMarkDone(2);
       document.getElementById('reviseHistory').innerHTML='';
-      studioMarkDone(2);
-      showToast('✓ Script ပြီးပါပြီ');
+      var ta=document.getElementById('shortResult');
+      typewriteShort(currentShort,ta);
+      shortBusy=false;
+      if(window.studioForceGoStep)window.studioForceGoStep(3);
+      else window.studioGoStep(3);
+      showToastMsg('✓ Short Script ရေးပြီးပါပြီ');
+      autoSave();
     })
-    .catch(function(err){showError('genError',err.message);})
-    .finally(function(){setLoading('genLoading',false);});
+    .catch(function(err){
+      stopStatusAnim('shortStatus',false);
+      if(window.studioSetLoading)window.studioSetLoading(false);
+      shortBusy=false;
+      showStepError('genError2','genRetry2',friendlyMsg(err,'short'));
+    });
 }
 
+// ===================== Typewriter + Auto Expand =====================
+function stopTypewriter(){if(typewriterTimer){clearInterval(typewriterTimer);typewriterTimer=null;}}
+function autoExpand(ta){if(!ta)return;ta.style.height='auto';ta.style.height=(ta.scrollHeight+2)+'px';}
+function typewriteShort(text,ta){
+  stopTypewriter();
+  if(!ta)return;
+  ta.value='';autoExpand(ta);
+  var i=0,total=text.length;
+  var step=Math.max(1,Math.round(total/150));
+  typewriterTimer=setInterval(function(){
+    i+=step;
+    if(i>=total){ta.value=text;stopTypewriter();autoExpand(ta);currentShort=text;return;}
+    ta.value=text.slice(0,i);
+    autoExpand(ta);
+  },18);
+}
+function onShortEdit(){
+  stopTypewriter();
+  var ta=document.getElementById('shortResult');
+  if(ta){currentShort=ta.value;autoExpand(ta);}
+}
+
+// ===================== Step 03 — Revise =====================
 function reviseShort(){
-  var feedback=document.getElementById('feedbackInput').value.trim();
-  if(!feedback){showToast('ဘယ်လိုပြင်ချင်လဲ ရေးပါ',true);return;}
-  if(!currentShort){showToast('အရင် Short Script ကို ဖန်တီးပါ',true);return;}
-  setLoading('revLoading',true);
+  var instruction=document.getElementById('feedbackInput').value.trim();
+  if(!instruction){showError('revError','ဘယ်လိုပြင်ချင်လဲ ရေးပါ');return;}
+  if(!currentShort){showError('revError','အရင် Short Script ကို ဖန်တီးပါ');return;}
   hideError('revError');
+  document.getElementById('revLoading').classList.add('show');
   document.getElementById('reviseBtn').disabled=true;
-  addHistory('user',feedback);
-  apiCall('/api/studio/short/revise',{
-    idea:currentShortIdea,
-    type:selectedType1,
-    currentShort:document.getElementById('shortResult').value,
-    instruction:feedback
-  })
+  addHistory('user',instruction);
+  document.getElementById('feedbackInput').value='';
+  var latestShort=document.getElementById('shortResult').value;
+  apiCall('/api/studio/short/revise',{idea:currentShortIdea,type:selectedShortType,currentShort:latestShort,instruction:instruction})
     .then(function(data){
       currentShort=data.short||'';
-      document.getElementById('shortResult').value=currentShort;
-      document.getElementById('feedbackInput').value='';
-      addHistory('ai','ပြင်ဆင်ပြီးပါပြီ ✓ (အပေါ်က Script ထဲမှာ ကြည့်ပါ)');
+      var ta=document.getElementById('shortResult');
+      if(ta){ta.value=currentShort;autoExpand(ta);}
+      addHistory('ai','ပြင်ဆင်ပြီးပါပြီ — အထက်က Short Script ထဲမှာ ကြည့်ပါ');
+      autoSave();
     })
-    .catch(function(err){showError('revError',err.message);})
-    .finally(function(){setLoading('revLoading',false);document.getElementById('reviseBtn').disabled=false;});
+    .catch(function(err){showError('revError',friendlyMsg(err,'short'));})
+    .finally(function(){document.getElementById('revLoading').classList.remove('show');document.getElementById('reviseBtn').disabled=false;});
 }
-
 function addHistory(role,text){
-  var div=document.createElement('div');
-  div.className='revise-msg '+role;
-  div.textContent=text;
+  var div=document.createElement('div');div.className='revise-msg '+role;
+  div.innerHTML='<div class="role">'+(role==='user'?'သင် (User)':'AI')+'</div>'+escapeHtml(text);
   document.getElementById('reviseHistory').appendChild(div);
-  var log=document.getElementById('reviseHistory');
-  log.scrollTop=log.scrollHeight;
+  document.getElementById('reviseHistory').scrollTop=document.getElementById('reviseHistory').scrollHeight;
+}
+function focusRevise(){
+  var r=document.getElementById('revise-section');
+  if(r)r.scrollIntoView({behavior:'smooth',block:'center'});
+  var f=document.getElementById('feedbackInput');
+  if(f)f.focus();
 }
 
-function copyResult(){
-  var text=document.getElementById('shortResult').value;
-  if(!text){showToast('Copy လုပ်ဖို့ Result မရှိသေးပါ',true);return;}
-  copyToClipboard(text);
-  showToast('✓ Copy ပြီးပါပြီ');
+// ===================== 03 → 04 (User နောက်ဆုံးပြင်ထားသော Final Short Script ကို ပို့သည်) =====================
+function goToVideoForm(){
+  var ta=document.getElementById('shortResult');
+  stopTypewriter();
+  if(ta)currentShort=ta.value;
+  if(!currentShort||!currentShort.trim()){showToastMsg('ဗီဒီယို ဖန်တီးရန် Short Script မရှိသေးပါ');return;}
+  studioMarkDone(3);
+  videoStarted=true;
+  fillVideoScriptField();
+  window.studioGoStep(4);
+  autoSave();
+}
+function fillVideoScriptField(){
+  var ta=document.getElementById('videoScriptInput');
+  if(!ta)return;
+  ta.value=currentShort||'';
+  autoExpand(ta);
 }
 
-function saveToCreations(){
-  var resultText=document.getElementById('shortResult').value;
-  if(!resultText){showToast('Save လုပ်ဖို့ Result မရှိသေးပါ',true);return;}
-  var topic=document.getElementById('field_0').value.trim()||'Short Video';
-  var defaultTitle=topic.substring(0,40)+(topic.length>40?'...':'');
-  var title=prompt('Creation အမည် ပေးပါ:',defaultTitle);
-  if(title===null)return;
-  AICS_CREATIONS.save({
-    studio:'SHORT',
-    type:selectedType1,
-    original_prompt:currentShortIdea,
-    ai_output:resultText,
-    title:title||defaultTitle
-  })
-    .then(function(){showToast('💾 My Creations ထဲ Save ပြီးပါပြီ');})
-    .catch(function(err){showToast('Save မအောင်မြင်ပါ: '+((err&&err.message)||'Error'),true);});
-}
-
-function transferToVideo(){
-  var shortText=document.getElementById('shortResult').value;
-  if(!shortText||!shortText.trim()){showToast('ဗီဒီယို ဖန်တီးရန် Script မရှိသေးပါ။ Script ကနေ Generate အရင်လုပ်ပါ။',true);return;}
-  var videoBox=document.getElementById('videoIdea');
-  if(videoBox.value&&videoBox.value.trim()!==''){
-    if(!confirm('ဗီဒီယို ဖန်တီးရန် Idea Box ထဲမှာ Info ရှိပြီးသားပါ။ အစားထိုးမလား?'))return;
+// ===================== Step 04 → 05 → 06 (Short Video Plan) =====================
+function generateShortVideoPlan(){
+  if(planBusy)return;
+  var script=document.getElementById('videoScriptInput').value.trim();
+  if(!script){showError('planError','Short Script ထည့်ရန် လိုအပ်ပါသည် — Step 03 မှာ Script ရေးပြီးမှ ဆက်လုပ်ပါ');return;}
+  hideError('planError');hideStepError('planError5','planRetry5');
+  planBusy=true;
+  var btn=document.getElementById('shortVideoBtn');
+  if(btn)btn.disabled=true;
+  studioMarkDone(4);
+  if(window.studioForceGoStep)window.studioForceGoStep(5);
+  else window.studioGoStep(5);
+  startStatusAnim('planStatus');
+  if(window.studioSetLoading)window.studioSetLoading(true);
+  var continuity=document.getElementById('vidContinuity');
+  var body={
+    idea:script,
+    type:selectedShortType,
+    videoStyle:sel('vidStyleSel'),
+    aspectRatio:sel('vidRatioSel'),
+    duration:sel('vidDurationSel'),
+    sceneDuration:sel('vidSceneSel'),
+    visualStyle:sel('vidVisualSel'),
+    cameraStyle:sel('vidCamSel'),
+    language:sel('vidLangSel'),
+    characterContinuity:(continuity&&continuity.checked)?'true':'false',
+    additionalInstructions:document.getElementById('vidExtra')?document.getElementById('vidExtra').value.trim():''
+  };
+  if(refImages.length>0){
+    body.images=refImages.map(function(img){return{base64:img.base64,mimeType:img.mimeType};});
   }
-  videoBox.value=shortText;
-  studioGoStep(3);
+  apiCall('/api/studio/short/video',body)
+    .then(function(data){
+      currentScenes=data.scenes||[];
+      currentCharacters=data.characters||[];
+      stopStatusAnim('planStatus',true);
+      if(window.studioSetLoading)window.studioSetLoading(false);
+      studioMarkDone(4);studioMarkDone(5);
+      planBusy=false;
+      if(btn)btn.disabled=false;
+      if(window.studioForceGoStep)window.studioForceGoStep(6);
+      else window.studioGoStep(6);
+      renderFinalResult();
+      showToastMsg('✓ Short Video ပြင်ဆင်ပြီးပါပြီ');
+      autoSave();
+    })
+    .catch(function(err){
+      stopStatusAnim('planStatus',false);
+      if(window.studioSetLoading)window.studioSetLoading(false);
+      planBusy=false;
+      if(btn)btn.disabled=false;
+      showStepError('planError5','planRetry5',friendlyMsg(err,'video'));
+    });
 }
 
-// ===== Video Plan =====
+// ===================== Reference Images (Short-specific) =====================
 function onRefImageSelected(){
   var fileInput=document.getElementById('refImageInput');
   var files=fileInput.files;
   for(var i=0;i<files.length;i++){
     if(refImages.length>=MAX_REF_IMAGES){
-      showToast('Reference ပုံ အများဆုံး '+MAX_REF_IMAGES+' ပုံပဲ တင်လို့ရပါတယ်။',true);
+      showToastMsg('Reference ပုံ အများဆုံး '+MAX_REF_IMAGES+' ပုံပဲ တင်လို့ရပါတယ်။');
       break;
     }
     var file=files[i];
     if(file.size>5*1024*1024){
-      showToast("'"+file.name+"' ပုံသည် 5MB ထက် ကျော်နေလို့ ကျော်သွားပါမည်။",true);
+      showToastMsg("'"+file.name+"' ပုံသည် 5MB ထက် ကျော်နေလို့ ကျော်သွားပါမည်။");
       continue;
     }
     addRefImageFile(file);
   }
   fileInput.value='';
 }
-
 function addRefImageFile(file){
   var reader=new FileReader();
   reader.onload=function(e){
@@ -482,9 +619,9 @@ function addRefImageFile(file){
   };
   reader.readAsDataURL(file);
 }
-
 function renderRefPreviews(){
   var container=document.getElementById('refPreview');
+  if(!container)return;
   container.innerHTML='';
   refImages.forEach(function(img,idx){
     var thumb=document.createElement('div');
@@ -500,371 +637,333 @@ function renderRefPreviews(){
     container.appendChild(thumb);
   });
 }
-
 function removeRefImage(idx){
   refImages.splice(idx,1);
   renderRefPreviews();
 }
 
-function generateVideoPlan(){
-  var idea=document.getElementById('videoIdea').value;
-  if(!idea||!idea.trim()){showToast('Idea/Script ထည့်ပါ',true);return;}
-  currentVideoIdea=idea;
-  setLoading('videoLoading',true);
-  hideError('videoError');
-  document.getElementById('fallbackNote').classList.remove('show');
-  var body={idea:idea,type:selectedType2};
-  if(refImages.length>0){
-    body.images=refImages.map(function(img){return{base64:img.base64,mimeType:img.mimeType};});
+// ===================== Step 06 — Short MAP (Characters + Scenes) =====================
+function durText(d){
+  if(d===undefined||d===null||d==='')return '';
+  if(typeof d==='number')return d+' sec';
+  var s=String(d).trim();
+  return /sec/i.test(s)?s:(s+' sec');
+}
+function resolveSceneCharacters(idx){
+  var s=currentScenes[idx];if(!s)return '-';
+  var ids=(s.characterIds&&s.characterIds.length)?s.characterIds:(Array.isArray(s.characters)?s.characters:[]);
+  if(!ids.length)return '-';
+  var names=[];
+  for(var i=0;i<ids.length;i++){
+    var id=ids[i],found=null;
+    for(var k=0;k<currentCharacters.length;k++){
+      if(currentCharacters[k].id===id||currentCharacters[k].name===id){found=currentCharacters[k];break;}
+    }
+    names.push(found?(found.name||id):id);
   }
-  apiCall('/api/studio/short/video',body)
-    .then(function(data){
-      currentScenes=data.scenes||[];
-      currentCharacters=data.characters||[];
-      renderCharacters('characterArea');
-      renderScenes('sceneArea');
-      if(data.rawFallback)document.getElementById('fallbackNote').classList.add('show');
-      document.getElementById('videoResultSection').style.display='block';
-      studioMarkDone(3);
-      showToast('✓ Video Plan ပြီးပါပြီ');
-    })
-    .catch(function(err){showError('videoError',err.message);})
-    .finally(function(){setLoading('videoLoading',false);});
+  return names.join(', ');
 }
-
-function renderCharacters(targetId){
-  var area=document.getElementById(targetId);
-  if(!area)return;
-  area.innerHTML='';
-  if(currentCharacters.length===0){
-    area.innerHTML='<div class="empty-note">Character Prompt မရှိသေးပါ (Presenter မလိုအပ်တဲ့ Video ဖြစ်နိုင်ပါသည်)</div>';
-    return;
+function renderFinalResult(){
+  var c=document.getElementById('finalResult');if(!c)return;
+  var html='';
+  if(currentCharacters&&currentCharacters.length){
+    html+='<div class="card"><div class="card-title">&#127934; Characters</div>';
+    for(var i=0;i<currentCharacters.length;i++){
+      (function(idx){
+        var ch=currentCharacters[idx]||{};
+        var prompt=ch.characterPrompt||ch.prompt||'(မရှိပါ)';
+        var img=imgCache['char_'+idx]||ch.referenceImage||'';
+        html+='<div class="final-char-card">';
+        html+='<div class="final-char-head"><span class="final-char-name">&#128100; '+escapeHtml(ch.name||'Character '+(idx+1))+'</span><span class="final-char-id">'+escapeHtml(ch.id||('char_'+String(idx+1).padStart(2,'0')))+'</span></div>';
+        var meta='';
+        if(ch.age)meta+='<div>&#127875; အသက် '+escapeHtml(ch.age)+'</div>';
+        if(ch.role)meta+='<div>&#127917; Role: '+escapeHtml(ch.role)+'</div>';
+        if(ch.description)meta+='<div>&#128221; '+escapeHtml(ch.description)+'</div>';
+        if(meta)html+='<div class="final-char-meta">'+meta+'</div>';
+        html+='<div class="final-char-img" id="charImg_'+idx+'">'+(img?'<img class="aics-pv-img" src="'+img+'">':'<div class="empty-note">ရုပ်ပုံ မရှိသေးပါ</div>')+'</div>';
+        html+='<div class="final-prompt-label">Character Reference Prompt</div>';
+        html+='<div class="final-prompt-text">'+escapeHtml(prompt)+'</div>';
+        html+='<div class="btn-row"><button class="btn-ghost" onclick="copyCharPrompt('+idx+')">&#128203; Copy Prompt</button><button class="btn-ghost" onclick="generateCharImage('+idx+')">&#127912; Character Image ဖန်တီးရန်</button></div>';
+        html+='</div>';
+      })(i);
+    }
+    html+='</div>';
   }
-  currentCharacters.forEach(function(char,idx){
-    var card=document.createElement('div');
-    card.className='character-card';
-    var header=document.createElement('div');
-    header.className='card-header';
-    var title=document.createElement('span');
-    title.textContent='🧑 CHARACTER '+(idx+1)+' — '+(char.name||'(အမည်မသိ)');
-    var copyBtn=document.createElement('button');
-    copyBtn.className='mini-btn';
-    copyBtn.textContent='📋 Copy';
-    copyBtn.onclick=function(){copyToClipboard(char.prompt||'');showToast('✓ Copy ပြီးပါပြီ');};
-    header.appendChild(title);
-    header.appendChild(copyBtn);
-    var subtext=document.createElement('div');
-    subtext.className='card-subtext';
-    subtext.textContent='Role: '+(char.role||'-');
-    var label=document.createElement('div');
-    label.className='card-label';
-    label.textContent='Character Reference Prompt:';
-    var text=document.createElement('div');
-    text.className='card-text';
-    text.textContent=char.prompt||'(မရှိပါ)';
-    var imgBtn=document.createElement('button');
-    imgBtn.className='gen-img-btn';
-    imgBtn.textContent='🎨 Character Reference Image ဖန်တီးရန်';
-    imgBtn.onclick=function(){generateCardImage(char.prompt,'charImg_'+targetId+'_'+idx,imgBtn);};
-    var imgContainer=document.createElement('div');
-    imgContainer.className='image-result-area';
-    imgContainer.id='charImg_'+targetId+'_'+idx;
-    card.appendChild(header);
-    card.appendChild(subtext);
-    card.appendChild(label);
-    card.appendChild(text);
-    card.appendChild(imgBtn);
-    card.appendChild(imgContainer);
-    area.appendChild(card);
-  });
-}
-
-function renderScenes(targetId){
-  var area=document.getElementById(targetId);
-  if(!area)return;
-  area.innerHTML='';
-  if(currentScenes.length===0){
-    area.innerHTML='<div class="empty-note">Scene Prompt မရှိသေးပါ</div>';
-    return;
+  if(currentScenes&&currentScenes.length){
+    html+='<div class="card"><div class="card-title">&#127916; Scenes</div>';
+    for(var j=0;j<currentScenes.length;j++){
+      (function(idx){
+        var s=currentScenes[idx]||{};
+        var num=String(s.number||(idx+1));
+        var title=s.title?(' — '+escapeHtml(s.title)):'';
+        html+='<div class="final-scene-card">';
+        html+='<div class="final-scene-title">&#127916; SCENE '+num+title+'</div>';
+        html+='<div class="final-scene-box"><div class="final-box-label">&#127916; Video Prompt</div><div class="final-prompt-text">'+escapeHtml(s.videoPrompt||'(မရှိပါ)')+'</div><div class="btn-row"><button class="btn-ghost" onclick="copyVideoPrompt('+idx+')">&#128203; Copy Video Prompt</button></div></div>';
+        html+='<div class="final-scene-box"><div class="final-box-label">&#127757; Environment Reference</div><div class="final-prompt-text">'+escapeHtml(s.environmentPrompt||'(မရှိပါ)')+'</div>';
+        html+='<div class="scene-image-area" id="envImg_'+idx+'">'+(imgCache['env_'+idx]?'<img src="'+imgCache['env_'+idx]+'">':'<button class="btn btn-orange" style="font-size:12px;padding:8px 14px;min-height:36px;" onclick="generateEnvImage('+idx+')">&#127912; Environment Image ဖန်တီးပါ</button>')+'</div>';
+        html+='<div class="btn-row"><button class="btn-ghost" onclick="copyEnvPrompt('+idx+')">&#128203; Copy Environment Prompt</button></div></div>';
+        html+='<div class="final-scene-meta"><span>&#128100; Characters: '+escapeHtml(resolveSceneCharacters(idx))+'</span><span>&#9201; '+escapeHtml(durText(s.duration))+'</span></div>';
+        html+='</div>';
+      })(j);
+    }
+    html+='</div>';
   }
-  currentScenes.forEach(function(scene,idx){
-    var group=document.createElement('div');
-    group.className='scene-group';
-    var groupTitle=document.createElement('div');
-    groupTitle.className='scene-group-title';
-    groupTitle.textContent='SCENE '+scene.number;
-    group.appendChild(groupTitle);
-
-    var eCard=document.createElement('div');
-    eCard.className='scene-card';
-    var eHeader=document.createElement('div');
-    eHeader.className='card-header';
-    var eTitle=document.createElement('span');
-    eTitle.textContent='🌍 Environment Reference Prompt';
-    var eCopyBtn=document.createElement('button');
-    eCopyBtn.className='mini-btn';
-    eCopyBtn.textContent='📋 Copy';
-    eCopyBtn.onclick=function(){copyToClipboard(scene.environmentPrompt||'');showToast('✓ Copy ပြီးပါပြီ');};
-    eHeader.appendChild(eTitle);
-    eHeader.appendChild(eCopyBtn);
-    var eText=document.createElement('div');
-    eText.className='card-text';
-    eText.textContent=scene.environmentPrompt||'(မရှိပါ)';
-    var eImgBtn=document.createElement('button');
-    eImgBtn.className='gen-img-btn';
-    eImgBtn.textContent='🎨 Environment Reference Image ဖန်တီးရန်';
-    eImgBtn.onclick=function(){generateCardImage(scene.environmentPrompt,'envImg_'+targetId+'_'+idx,eImgBtn);};
-    var eImgContainer=document.createElement('div');
-    eImgContainer.className='image-result-area';
-    eImgContainer.id='envImg_'+targetId+'_'+idx;
-    eCard.appendChild(eHeader);
-    eCard.appendChild(eText);
-    eCard.appendChild(eImgBtn);
-    eCard.appendChild(eImgContainer);
-    group.appendChild(eCard);
-
-    var vCard=document.createElement('div');
-    vCard.className='scene-card';
-    var vHeader=document.createElement('div');
-    vHeader.className='card-header';
-    var vTitle=document.createElement('span');
-    vTitle.textContent='🎬 Video Prompt';
-    var vCopyBtn=document.createElement('button');
-    vCopyBtn.className='mini-btn';
-    vCopyBtn.textContent='📋 Copy';
-    vCopyBtn.onclick=function(){copyToClipboard(vTextarea.value);showToast('✓ Copy ပြီးပါပြီ');};
-    vHeader.appendChild(vTitle);
-    vHeader.appendChild(vCopyBtn);
-    var vTextarea=document.createElement('textarea');
-    vTextarea.className='card-textarea';
-    vTextarea.value=scene.videoPrompt||'';
-    vTextarea.addEventListener('input',function(){currentScenes[idx].videoPrompt=vTextarea.value;});
-    vCard.appendChild(vHeader);
-    vCard.appendChild(vTextarea);
-    group.appendChild(vCard);
-
-    area.appendChild(group);
-  });
+  if(!html)html='<div class="card"><div class="empty-note">ရလဒ် မရှိသေးပါ — Step 04 မှာ Short Video ဖန်တီးပါ</div></div>';
+  c.innerHTML=html;
 }
 
-function generateCardImage(promptText,containerId,btnEl){
-  if(!promptText||!promptText.trim()){showToast('Prompt Text မရှိပါ',true);return;}
-  var container=document.getElementById(containerId);
-  btnEl.disabled=true;
-  var originalLabel=btnEl.textContent;
-  btnEl.textContent='ပုံဖန်တီးနေပါသည်... (မိနစ်အနည်းငယ် ကြာနိုင်)';
-  container.innerHTML='';
-  apiCall('/api/studio/short/video-image',{prompt:promptText})
-    .then(function(data){
-      btnEl.disabled=false;
-      btnEl.textContent=originalLabel;
-      var dataUri='data:'+data.mimeType+';base64,'+data.data;
-      var img=document.createElement('img');
-      img.src=dataUri;
-      var link=document.createElement('a');
-      link.href=dataUri;
-      link.download='short_video_reference.png';
-      var dlBtn=document.createElement('button');
-      dlBtn.className='mini-btn';
-      dlBtn.style.background='var(--warn)';
-      dlBtn.textContent='💾 Save Image';
-      link.appendChild(dlBtn);
-      container.appendChild(img);
-      container.appendChild(document.createElement('br'));
-      container.appendChild(link);
-    })
-    .catch(function(err){
-      btnEl.disabled=false;
-      btnEl.textContent=originalLabel;
-      container.innerHTML='<div class="empty-note">Error: '+err.message+'</div>';
-      showToast('ပုံဖန်တီးမှု မအောင်မြင်ပါ: '+err.message,true);
-    });
+// ===================== Copy / Save / Export (Short-specific) =====================
+function copyShort(){
+  var text=document.getElementById('shortResult').value;
+  if(!text){showToastMsg('Copy လုပ်ဖို့ Result မရှိသေးပါ');return;}
+  copyToClipboard(text);
 }
-
-function buildCombinedText(){
-  var combined='🧑 CHARACTER REFERENCE PROMPTS\\n\\n';
-  currentCharacters.forEach(function(char,idx){
-    combined+='CHARACTER '+(idx+1)+'\\n';
-    combined+='----------------------\\n\\n';
-    combined+='Name: '+(char.name||'-')+'\\n';
-    combined+='Role: '+(char.role||'-')+'\\n\\n';
-    combined+='Character Reference Prompt:\\n'+(char.prompt||'-')+'\\n\\n';
-    combined+='======================\\n\\n';
-  });
-  combined+='\\n🌍🎬 SCENE PROMPTS (Environment & Video)\\n\\n';
-  currentScenes.forEach(function(scene){
-    combined+='SCENE '+scene.number+'\\n';
-    combined+='----------------------\\n\\n';
-    combined+='Environment Prompt:\\n'+(scene.environmentPrompt||'-')+'\\n\\n';
-    combined+='----------------------\\n\\n';
-    combined+='Video Prompt:\\n'+(scene.videoPrompt||'-')+'\\n\\n';
-    combined+='======================\\n\\n';
-  });
-  return combined;
-}
-
-function copyAllPrompts(){
-  if(currentScenes.length===0&&currentCharacters.length===0){
-    showToast('Copy လုပ်ဖို့ Result မရှိသေးပါ။ Generate အရင်လုပ်ပါ။',true);return;
-  }
-  copyToClipboard(buildCombinedText());
-  showToast('✓ Copy ပြီးပါပြီ');
-}
-
-function saveAllToCreations(){
-  if(currentScenes.length===0&&currentCharacters.length===0){
-    showToast('Save လုပ်ဖို့ Result မရှိသေးပါ။ Generate အရင်လုပ်ပါ။',true);return;
-  }
-  var combined=buildCombinedText();
-  var defaultTitle=currentVideoIdea.substring(0,40)+(currentVideoIdea.length>40?'...':'');
+function saveShort(){
+  var text=document.getElementById('shortResult').value;
+  if(!text){showToastMsg('Save လုပ်ဖို့ Result မရှိသေးပါ');return;}
+  var topic=document.getElementById('field_0').value.trim()||'Short Video';
+  var defaultTitle=topic.substring(0,40)+(topic.length>40?'...':'');
   var title=prompt('Creation အမည် ပေးပါ:',defaultTitle);
   if(title===null)return;
-  AICS_CREATIONS.save({
-    studio:'SHORTVIDEO',
-    type:selectedType2,
-    original_prompt:currentVideoIdea,
-    ai_output:combined,
-    title:title||defaultTitle
-  })
-    .then(function(){showToast('💾 My Creations ထဲ Save ပြီးပါပြီ');})
-    .catch(function(err){showToast('Save မအောင်မြင်ပါ: '+((err&&err.message)||'Error'),true);});
+  AICS_CREATIONS.save({studio:'SHORT',type:selectedShortType,title:title||defaultTitle,original_prompt:currentShortIdea,ai_output:text})
+    .then(function(){showToastMsg('💾 My Creations ထဲ Save ပြီးပါပြီ');})
+    .catch(function(err){showToastMsg('Save မအောင်မြင်ပါ: '+(err&&err.message||'Error'));});
+}
+function copyCharPrompt(idx){
+  if(!currentCharacters[idx])return;
+  copyToClipboard(currentCharacters[idx].characterPrompt||currentCharacters[idx].prompt||'');
+}
+function copyVideoPrompt(idx){if(!currentScenes[idx])return;copyToClipboard(currentScenes[idx].videoPrompt||'');}
+function copyEnvPrompt(idx){if(!currentScenes[idx])return;copyToClipboard(currentScenes[idx].environmentPrompt||'');}
+
+// ===================== Image Generation (Character / Environment) =====================
+function generateCharImage(idx){
+  if(!currentCharacters[idx])return;
+  var prompt=currentCharacters[idx].characterPrompt||currentCharacters[idx].prompt||'';
+  if(!prompt){showToastMsg('Prompt မရှိပါ');return;}
+  var area=document.getElementById('charImg_'+idx);
+  if(area)area.innerHTML='<div style="display:flex;align-items:center;gap:8px;justify-content:center;padding:14px;"><div class="spinner"></div><span style="font-size:13px;color:var(--cyan);">ရုပ်ပုံ ဖန်တီးနေပါသည်...</span></div>';
+  apiCall('/api/studio/short/video-image',{prompt:prompt})
+    .then(function(data){
+      if(data.data){
+        var src='data:'+(data.mimeType||'image/png')+';base64,'+data.data;
+        imgCache['char_'+idx]=src;
+        currentCharacters[idx].referenceImage=src;
+        if(area)area.innerHTML='<img class="aics-pv-img" src="'+src+'"><div style="margin-top:8px;"><a href="'+src+'" download="short_character_'+(idx+1)+'.png"><button class="btn-ghost">&#128190; Save Image</button></a></div>';
+        autoSave();autoSaveImgCache();
+      }else{if(area)area.innerHTML='<div class="empty-note">ရုပ်ပုံ မထွက်ပါ — ထပ်စမ်းပါ</div>';}
+    })
+    .catch(function(err){if(area)area.innerHTML='<div style="color:var(--error);font-size:12px;padding:10px;">'+escapeHtml(friendlyMsg(err,'image'))+'</div><div style="text-align:center;margin-top:4px;"><button class="btn-ghost" onclick="generateCharImage('+idx+')">&#8635; ထပ်စမ်းပါ</button></div>';});
+}
+function generateEnvImage(idx){
+  if(!currentScenes[idx]||!currentScenes[idx].environmentPrompt){showToastMsg('Prompt မရှိပါ');return;}
+  var area=document.getElementById('envImg_'+idx);
+  if(area)area.innerHTML='<div style="display:flex;align-items:center;gap:8px;justify-content:center;padding:12px;"><div class="spinner"></div><span style="font-size:13px;color:var(--cyan);">ရုပ်ပုံ ဖန်တီးနေပါသည်...</span></div>';
+  apiCall('/api/studio/short/video-image',{prompt:currentScenes[idx].environmentPrompt})
+    .then(function(data){
+      if(data.data){
+        var src='data:'+(data.mimeType||'image/png')+';base64,'+data.data;
+        imgCache['env_'+idx]=src;
+        if(area)area.innerHTML='<img src="'+src+'"><div style="margin-top:8px;"><a href="'+src+'" download="short_scene_'+(idx+1)+'_env.png"><button class="btn-ghost">&#128190; Save Image</button></a></div>';
+        autoSave();autoSaveImgCache();
+      }else{if(area)area.innerHTML='<div class="empty-note">ရုပ်ပုံ မထွက်ပါ — ထပ်စမ်းပါ</div>';}
+    })
+    .catch(function(err){if(area)area.innerHTML='<div style="color:var(--error);font-size:12px;padding:10px;">'+escapeHtml(friendlyMsg(err,'image'))+'</div><div style="text-align:center;margin-top:4px;"><button class="btn-ghost" onclick="generateEnvImage('+idx+')">&#8635; ထပ်စမ်းပါ</button></div>';});
 }
 
-// ===== Preview renderers =====
-function renderScriptPreview(){
-  var text=document.getElementById('shortResult').value;
-  if(!text||!text.trim()){studioPreview('');return;}
-  studioPreview('<div class="aics-pv-label">&#128221; Script</div><div class="pv-pre">'+escapeHtml(text)+'</div>');
-}
-function renderPlanPreview(){
-  if(currentScenes.length===0&&currentCharacters.length===0){studioPreview('');return;}
-  studioPreview('<div class="aics-pv-label">&#127909; Video Plan</div><div class="pv-pre">'+escapeHtml(buildCombinedText())+'</div>');
-}
-function renderEditView(){
-  var cArea=document.getElementById('editCharArea');
-  var sArea=document.getElementById('editSceneArea');
-  if(!cArea)return;
-  cArea.innerHTML='';
-  sArea.innerHTML='';
-  if(currentCharacters.length===0&&currentScenes.length===0){
-    cArea.innerHTML='<div class="empty-note">Scene/Character မရှိသေးပါ — အရင် Scenes အဆင့်မှာ Generate Video Plan လုပ်ပါ။</div>';
-    return;
+// ===================== Result Text / Export =====================
+function buildShortResultText(){
+  var parts=[];
+  if(currentShort&&currentShort.trim())parts.push('SHORT SCRIPT\\n======================\\n'+currentShort);
+  if(currentCharacters&&currentCharacters.length){
+    var cp='CHARACTER REFERENCE PROMPTS\\n======================\\n';
+    for(var i=0;i<currentCharacters.length;i++){
+      var ch=currentCharacters[i];
+      cp+='\\nCHARACTER '+(i+1)+'\\nID: '+(ch.id||'-')+'\\nName: '+(ch.name||'-')+'\\nRole: '+(ch.role||'-')+(ch.age?'\\nAge: '+ch.age:'')+(ch.description?'\\nDescription: '+ch.description:'')+'\\nPrompt: '+(ch.characterPrompt||ch.prompt||'-');
+    }
+    parts.push(cp);
   }
-  var title=document.createElement('div');
-  title.className='section-title';
-  title.textContent='🧑 CHARACTER PROMPTS';
-  cArea.appendChild(title);
-  if(currentCharacters.length===0){
-    cArea.innerHTML+='<div class="empty-note">Character Prompt မရှိပါ</div>';
-  }else{
-    currentCharacters.forEach(function(char,idx){
-      var card=document.createElement('div');
-      card.className='character-card';
-      var header=document.createElement('div');
-      header.className='card-header';
-      var t=document.createElement('span');
-      t.textContent='🧑 CHARACTER '+(idx+1)+' — '+(char.name||'(အမည်မသိ)');
-      header.appendChild(t);
-      card.appendChild(header);
-      var sub=document.createElement('div');
-      sub.className='card-subtext';
-      sub.textContent='Role: '+(char.role||'-');
-      card.appendChild(sub);
-      var label=document.createElement('div');
-      label.className='card-label';
-      label.textContent='Character Reference Prompt:';
-      card.appendChild(label);
-      var text=document.createElement('textarea');
-      text.className='card-textarea';
-      text.value=char.prompt||'';
-      text.addEventListener('input',function(){currentCharacters[idx].prompt=text.value;});
-      card.appendChild(text);
-      cArea.appendChild(card);
-    });
+  if(currentScenes&&currentScenes.length){
+    var sp='SCENE PROMPTS (Environment & Video)\\n======================\\n';
+    for(var j=0;j<currentScenes.length;j++){
+      var sc=currentScenes[j];
+      sp+='\\nSCENE '+(sc.number||(j+1))+(sc.title?' — '+sc.title:'')+'\\nCharacters: '+resolveSceneCharacters(j)+'\\nDuration: '+durText(sc.duration)+'\\nEnvironment: '+(sc.environmentPrompt||'-')+'\\nVideo: '+(sc.videoPrompt||'-');
+    }
+    parts.push(sp);
   }
-  var sTitle=document.createElement('div');
-  sTitle.className='section-title';
-  sTitle.textContent='🌍🎬 SCENE PROMPTS';
-  sArea.appendChild(sTitle);
-  if(currentScenes.length===0){
-    sArea.innerHTML+='<div class="empty-note">Scene Prompt မရှိပါ</div>';
-  }else{
-    currentScenes.forEach(function(scene,idx){
-      var group=document.createElement('div');
-      group.className='scene-group';
-      var gt=document.createElement('div');
-      gt.className='scene-group-title';
-      gt.textContent='SCENE '+scene.number;
-      group.appendChild(gt);
-      var card=document.createElement('div');
-      card.className='scene-card';
-      var hl=document.createElement('div');
-      hl.className='card-label';
-      hl.textContent='Environment Prompt:';
-      card.appendChild(hl);
-      var env=document.createElement('textarea');
-      env.className='card-textarea';
-      env.value=scene.environmentPrompt||'';
-      env.addEventListener('input',function(){currentScenes[idx].environmentPrompt=env.value;});
-      card.appendChild(env);
-      var hl2=document.createElement('div');
-      hl2.className='card-label';
-      hl2.textContent='Video Prompt:';
-      card.appendChild(hl2);
-      var vp=document.createElement('textarea');
-      vp.className='card-textarea';
-      vp.value=scene.videoPrompt||'';
-      vp.addEventListener('input',function(){currentScenes[idx].videoPrompt=vp.value;});
-      card.appendChild(vp);
-      group.appendChild(card);
-      sArea.appendChild(group);
-    });
+  return parts.join('\\n\\n');
+}
+function copyAllResult(){
+  var text=buildShortResultText();
+  if(!text.trim()){showToastMsg('Result မရှိသေးပါ');return;}
+  copyToClipboard(text);
+}
+function saveAllResult(){
+  var text=buildShortResultText();
+  if(!text.trim()){showToastMsg('Save လုပ်ဖို့ Result မရှိသေးပါ');return;}
+  var defaultTitle=(document.getElementById('field_0').value.trim()||'Short Result').substring(0,40);
+  var title=prompt('Creation အမည် ပေးပါ:',defaultTitle);
+  if(title===null)return;
+  AICS_CREATIONS.save({studio:'SHORTVIDEO',type:selectedShortType,title:title||defaultTitle,original_prompt:currentShortIdea,ai_output:text})
+    .then(function(){showToastMsg('💾 My Creations ထဲ Save ပြီးပါပြီ');})
+    .catch(function(err){showToastMsg('Save မအောင်မြင်ပါ: '+(err&&err.message||'Error'));});
+}
+function exportResult(){
+  var text=buildShortResultText();
+  if(!text.trim()){showToastMsg('Export လုပ်ဖို့ Result မရှိသေးပါ');return;}
+  var blob=new Blob([text],{type:'text/plain;charset=utf-8'});
+  var url=URL.createObjectURL(blob);
+  var a=document.createElement('a');a.href=url;a.download='short_result.txt';
+  document.body.appendChild(a);a.click();document.body.removeChild(a);
+  setTimeout(function(){URL.revokeObjectURL(url);},1000);
+  showToastMsg('✓ Export ပြီးပါပြီ');
+}
+
+// ===================== Status Animation (Loading Steps 02/05) =====================
+var statusTimers={};
+function startStatusAnim(id){
+  stopStatusAnim(id,false);
+  var box=document.getElementById(id);if(!box)return;
+  var lines=box.querySelectorAll('.st-line');
+  var cur=0,started=false;
+  for(var k=0;k<lines.length;k++){lines[k].className='st-line';var m=lines[k].querySelector('.st-marker');if(m)m.textContent='○';}
+  statusTimers[id]=setInterval(function(){
+    if(!started){lines[0].className='st-line active';var m0=lines[0].querySelector('.st-marker');if(m0)m0.textContent='●';started=true;return;}
+    if(cur<lines.length){
+      lines[cur].className='st-line done';
+      var md=lines[cur].querySelector('.st-marker');if(md)md.textContent='✓';
+      cur++;
+      if(cur<lines.length){lines[cur].className='st-line active';var ma=lines[cur].querySelector('.st-marker');if(ma)ma.textContent='●';}
+    }
+  },1100);
+}
+function stopStatusAnim(id,allDone){
+  if(statusTimers[id]){clearInterval(statusTimers[id]);delete statusTimers[id];}
+  var box=document.getElementById(id);if(!box)return;
+  var lines=box.querySelectorAll('.st-line');
+  if(allDone){
+    for(var k=0;k<lines.length;k++){
+      lines[k].className='st-line done';
+      var m=lines[k].querySelector('.st-marker');if(m)m.textContent='✓';
+    }
   }
 }
 
-// ===== Studio shell hooks =====
-function bBack(){return{label:'&#8592; Back',cls:'ghost',fn:function(){studioGoStep(studioCur()-1);}};}
-function bReset(){return{label:'Reset',cls:'ghost',fn:studioReset};}
-function bSave(){return null;}
+// ===================== Error Helpers (Myanmar — Technical error ကို မပြပါ) =====================
+function friendlyMsg(err,kind){
+  var m=(err&&err.message)?String(err.message):'';
+  if(kind==='short'){
+    if(/missing_idea/.test(m))return 'Short အကြောင်းအရာကို အနည်းဆုံး ဖြည့်ရေးပါ။';
+    if(/pro_only|feature_disabled/.test(m))return 'ဒီ Feature ကို ယခု အသုံးပြုခွင့် မရှိပါ။';
+    if(/unauthorized|invalid_token/.test(m))return 'Login သက်တမ်း ကုန်သွားပါပြီ။ ပြန် Login ဝင်ပါ။';
+    if(/fetch|network|failed/i.test(m))return '⚠️ Short Script ရေးသား၍ မရပါ။\\nAI Server မှ တုံ့ပြန်မှု မရရှိပါ။\\nခဏစောင့်ပြီး ပြန်ကြိုးစားပါ။';
+    return '⚠️ Short Script ရေးသား၍ မရပါ။\\nခဏစောင့်ပြီး ပြန်ကြိုးစားပါ။';
+  }
+  if(kind==='video'){
+    if(/missing_idea/.test(m))return 'Short Script ထည့်ရန် လိုအပ်ပါသည် — Step 03 မှာ Script ရေးပြီးမှ ဆက်လုပ်ပါ။';
+    if(/pro_only|feature_disabled/.test(m))return 'ဒီ Feature ကို ယခု အသုံးပြုခွင့် မရှိပါ။';
+    if(/unauthorized|invalid_token/.test(m))return 'Login သက်တမ်း ကုန်သွားပါပြီ။ ပြန် Login ဝင်ပါ။';
+    if(/fetch|network|failed/i.test(m))return '⚠️ Short Video အတွက် ပြင်ဆင်၍ မရပါ။\\nAI Server မှ တုံ့ပြန်မှု မရရှိပါ။\\nခဏစောင့်ပြီး ပြန်ကြိုးစားပါ။';
+    return '⚠️ Short Video အတွက် ပြင်ဆင်၍ မရပါ။\\nScene များကို ခွဲခြားရာတွင် အခက်အခဲ ဖြစ်ပေါ်ခဲ့ပါသည်။';
+  }
+  if(kind==='image'){
+    if(/fetch|network|failed/i.test(m))return '⚠️ ရုပ်ပုံ ဖန်တီး၍ မရပါ။\\nAI Server မှ တုံ့ပြန်မှု မရရှိပါ။\\nခဏစောင့်ပြီး ပြန်ကြိုးစားပါ။';
+    return '⚠️ ရုပ်ပုံ ဖန်တီး၍ မရပါ။\\nခဏစောင့်ပြီး ပြန်ကြိုးစားပါ။';
+  }
+  return '⚠️ လုပ်ဆောင်၍ မရပါ။\\nခဏစောင့်ပြီး ပြန်ကြိုးစားပါ။';
+}
+function showError(id,msg){var el=document.getElementById(id);if(!el)return;el.textContent=msg;el.classList.add('show');}
+function hideError(id){var el=document.getElementById(id);if(el)el.classList.remove('show');}
+function showStepError(id,rid,msg){
+  var el=document.getElementById(id);
+  if(el){el.innerHTML=String(msg).replace(/\\n/g,'<br>');el.classList.add('show');}
+  var r=document.getElementById(rid);
+  if(r)r.classList.add('show');
+}
+function hideStepError(id,rid){
+  var el=document.getElementById(id);if(el)el.classList.remove('show');
+  var r=document.getElementById(rid);if(r)r.classList.remove('show');
+}
+function showToastMsg(msg){var t=document.getElementById('toast');t.textContent=msg||'✅ ကူးယူပြီးပါပြီ';t.classList.add('show');setTimeout(function(){t.classList.remove('show');},2500);}
+function escapeHtml(s){var d=document.createElement('div');d.textContent=s;return d.innerHTML;}
+function copyToClipboard(text){
+  if(!text){showToastMsg('Text မရှိပါ');return;}
+  if(navigator.clipboard)navigator.clipboard.writeText(text).then(function(){showToastMsg('✅ ကူးယူပြီးပါပြီ');});
+  else{var ta=document.createElement('textarea');ta.value=text;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);showToastMsg('✅ ကူးယူပြီးပါပြီ');}
+}
 
+// ===================== Stepper Actions =====================
+function bReset(){return {label:'Reset',cls:'ghost',fn:studioReset};}
 function studioOnStep(n){
   if(n===1){
-    studioSetActions([bReset(),bSave(),{label:'Next &#8594;',cls:'primary',fn:function(){studioGoStep(2);}}]);
-    studioPreview('');
+    studioSetActions([bReset(),{label:'&#10024; Generate Short',cls:'primary',fn:generateShort}]);
   }else if(n===2){
-    studioSetActions([bBack(),bReset(),bSave(),{label:'Generate Short &#10022;',cls:'primary',fn:generateShort}]);
-    renderScriptPreview();
+    studioSetActions([]);
   }else if(n===3){
-    studioSetActions([bBack(),bReset(),bSave(),{label:'Generate Video Plan &#10022;',cls:'primary',fn:generateVideoPlan}]);
-    renderPlanPreview();
+    studioSetActions([
+      {label:'&#8592; Back',cls:'ghost',fn:function(){window.studioGoStep(1);}},
+      bReset(),
+      {label:'&#128203; Copy Short',cls:'secondary',fn:copyShort},
+      {label:'&#128190; Save to My Creations',cls:'purple',fn:saveShort}
+    ]);
+    var ta=document.getElementById('shortResult');
+    if(ta)autoExpand(ta);
   }else if(n===4){
-    studioSetActions([bBack(),bReset(),bSave(),{label:'&#128203; Copy All',cls:'ghost',fn:copyAllPrompts},{label:'&#128190; Save All',cls:'purple',fn:saveAllToCreations}]);
-    renderEditView();
-    renderPlanPreview();
+    fillVideoScriptField();
+    var pb=document.getElementById('shortVideoBtn');
+    if(pb)pb.disabled=false;
+    studioSetActions([
+      {label:'&#8592; Back',cls:'ghost',fn:function(){window.studioGoStep(3);}},
+      bReset()
+    ]);
   }else if(n===5){
-    studioSetActions([bBack(),bReset(),bSave(),{label:'&#128203; Copy All',cls:'ghost',fn:copyAllPrompts},{label:'&#128190; Save All',cls:'purple',fn:saveAllToCreations}]);
-    renderPlanPreview();
+    studioSetActions([]);
+  }else if(n===6){
+    studioSetActions([
+      {label:'&#8592; Back',cls:'ghost',fn:function(){window.studioGoStep(4);}},
+      {label:'&#128203; Copy All',cls:'secondary',fn:copyAllResult},
+      {label:'&#128190; Save All Result',cls:'purple',fn:saveAllResult},
+      {label:'&#128228; Export',cls:'success',fn:exportResult}
+    ]);
+    renderFinalResult();
   }
 }
 window.studioOnStep=studioOnStep;
 
+// ===================== Draft (studioCollectDraft / studioRestoreDraft) =====================
+// localStorage key: aics_draft_short — Story (aics_draft_story) နှင့် သီးခြား
 function studioCollectDraft(){
   var fields={};
-  for(var i=0;i<5;i++){
-    var el=document.getElementById('field_'+i);
-    if(el)fields[i]=el.value;
-  }
-  return{
+  var f0=document.getElementById('field_0');fields[0]=f0?f0.value:'';
+  function v(id){var e=document.getElementById(id);return e?e.value:'';}
+  return {
+    stepNow:window.studioCur?window.studioCur():1,
+    shortType:selectedShortType,
     fields:fields,
-    videoIdea:document.getElementById('videoIdea').value,
-    type1:selectedType1,
-    type2:selectedType2,
-    aud:(document.getElementById('audSel')?document.getElementById('audSel').value:''),
+    aud:v('audInput'),
+    dur:sel('durSel'),
+    tone:sel('toneSel'),
+    lang:sel('langSel'),
+    mainMsg:v('mainMsg'),
+    extraInstr:v('extraInstr'),
+    adv:{hook:v('advHook'),cta:v('advCta'),charInfo:v('advCharInfo'),location:v('advLocation'),visualStyle:v('advVisualStyle'),ending:v('advEnding')},
+    short:currentShort,
     shortIdea:currentShortIdea,
-    short:document.getElementById('shortResult').value,
-    videoIdeaSaved:currentVideoIdea,
-    scenes:currentScenes,
+    videoStarted:videoStarted,
+    videoForm:{
+      script:document.getElementById('videoScriptInput')?document.getElementById('videoScriptInput').value:'',
+      videoStyle:sel('vidStyleSel'),
+      aspectRatio:sel('vidRatioSel'),
+      duration:sel('vidDurationSel'),
+      sceneDuration:sel('vidSceneSel'),
+      visualStyle:sel('vidVisualSel'),
+      cameraStyle:sel('vidCamSel'),
+      language:sel('vidLangSel'),
+      characterContinuity:document.getElementById('vidContinuity')?document.getElementById('vidContinuity').checked:true,
+      additionalInstructions:v('vidExtra')
+    },
     characters:currentCharacters,
+    scenes:currentScenes,
     refCount:refImages.length
   };
 }
@@ -872,46 +971,64 @@ window.studioCollectDraft=studioCollectDraft;
 
 function studioRestoreDraft(d){
   if(!d)return;
-  if(d.fields){
-    for(var k in d.fields){
-      var el=document.getElementById('field_'+k);
-      if(el)el.value=d.fields[k];
-    }
+  selectedShortType=d.shortType||'1';
+  var sts=document.getElementById('shortTypeSel');if(sts)sts.value=selectedShortType;
+  if(d.fields){var f0=document.getElementById('field_0');if(f0)f0.value=d.fields[0]||'';}
+  var aud=document.getElementById('audInput');if(aud&&d.aud)aud.value=d.aud;
+  function setv(id,val){var e=document.getElementById(id);if(e&&val)e.value=val;}
+  setv('durSel',d.dur);setv('toneSel',d.tone);setv('langSel',d.lang);
+  setv('mainMsg',d.mainMsg);setv('extraInstr',d.extraInstr);
+  if(d.adv){
+    setv('advHook',d.adv.hook);setv('advCta',d.adv.cta);setv('advCharInfo',d.adv.charInfo);
+    setv('advLocation',d.adv.location);setv('advVisualStyle',d.adv.visualStyle);setv('advEnding',d.adv.ending);
   }
-  if(d.type1){selectedType1=d.type1;var ts1=document.getElementById('typeSel1');if(ts1)ts1.value=String(d.type1);}
-  var audEl=document.getElementById('audSel');if(audEl&&d.aud)audEl.value=d.aud;if(audEl)window.aichAud=audEl.value;
-  if(d.type2){selectedType2=d.type2;setTypeChip('typeChips2',d.type2);}
-  if(d.videoIdea)document.getElementById('videoIdea').value=d.videoIdea;
-  if(d.short){currentShort=d.short;document.getElementById('shortResult').value=d.short;document.getElementById('scriptActions').style.display='flex';document.getElementById('reviseSection').style.display='block';}
-  if(d.shortIdea)currentShortIdea=d.shortIdea;
-  if(d.videoIdeaSaved)currentVideoIdea=d.videoIdeaSaved;
-  if(d.scenes)currentScenes=d.scenes;
-  if(d.characters)currentCharacters=d.characters;
-  if((d.scenes&&d.scenes.length)||(d.characters&&d.characters.length)){
-    document.getElementById('videoResultSection').style.display='block';
-    renderCharacters('characterArea');
-    renderScenes('sceneArea');
-    studioMarkDone(3);
+  currentShort=d.short||'';
+  currentShortIdea=d.shortIdea||'';
+  videoStarted=!!d.videoStarted;
+  document.getElementById('shortResult').value=currentShort;
+  if(d.videoForm){
+    var vf=d.videoForm;
+    var vs=document.getElementById('videoScriptInput');if(vs){vs.value=vf.script||currentShort;autoExpand(vs);}
+    setv('vidStyleSel',vf.videoStyle);setv('vidRatioSel',vf.aspectRatio);
+    setv('vidDurationSel',vf.duration);setv('vidSceneSel',vf.sceneDuration);
+    setv('vidVisualSel',vf.visualStyle);setv('vidCamSel',vf.cameraStyle);setv('vidLangSel',vf.language);
+    var cc=document.getElementById('vidContinuity');if(cc)cc.checked=vf.characterContinuity!==false;
+    setv('vidExtra',vf.additionalInstructions);
   }
-  if(d.short)studioMarkDone(2);
+  currentCharacters=d.characters||[];
+  currentScenes=d.scenes||[];
+  var was=d.stepNow||1;
+  if(currentShort){studioMarkDone(1);studioMarkDone(2);}
+  if((videoStarted||was>=4)&&currentShort){studioMarkDone(3);studioMarkDone(4);}
+  if(currentCharacters.length||currentScenes.length){studioMarkDone(4);studioMarkDone(5);}
+  if(currentScenes.length||currentCharacters.length)renderFinalResult();
+  setTimeout(function(){
+    var c=window.studioCur?window.studioCur():1;
+    if(c===2){window.studioGoStep(currentShort?3:1);}
+    else if(c===5){window.studioGoStep((currentScenes.length||currentCharacters.length)?6:4);}
+    else if(c===4&&!currentShort){window.studioGoStep(1);}
+  },0);
 }
 window.studioRestoreDraft=studioRestoreDraft;
 
-function copyToClipboard(text){
-  if(navigator.clipboard)navigator.clipboard.writeText(text);
-  else{var ta=document.createElement('textarea');ta.value=text;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);}
+// ===================== Auto Save (Refresh ပြီးနောက် Data မပျောက်စေရ) =====================
+function autoSave(){
+  try{
+    var data=studioCollectDraft();
+    localStorage.setItem('aics_draft_short',JSON.stringify({step:window.studioCur?window.studioCur():1,data:data,savedAt:new Date().toISOString()}));
+  }catch(e){}
 }
-function showToast(msg,isError){
-  var t=document.getElementById('toast');
-  t.textContent=msg;
-  if(isError)t.classList.add('error');else t.classList.remove('error');
-  t.classList.add('show');
-  setTimeout(function(){t.classList.remove('show');},2500);
+function autoSaveImgCache(){
+  try{localStorage.setItem('aics_draft_short_imgcache',JSON.stringify(imgCache));}catch(e){}
 }
-function setLoading(id,show){var el=document.getElementById(id);if(show){el.classList.add("show");if(window.studioSetLoading)studioSetLoading(true);}else{el.classList.remove("show");if(window.studioSetLoading)studioSetLoading(false);}}
-function showError(id,msg){var el=document.getElementById(id);el.textContent=msg;el.classList.add('show');}
-function hideError(id){document.getElementById(id).classList.remove('show');}
-function escapeHtml(s){var d=document.createElement('div');d.textContent=s;return d.innerHTML;}
+
+// Reset — Shared Reset ၏ Draft ဖျက်ခြင်းနှင့်အတူ Short Image Cache ကိုပါ ရှင်းသည်
+window.studioReset=function(){
+  if(!confirm('ဤ Studio ရဲ့ အချက်အလက်အားလုံးကို ဖျက်ပြီး အစကပြန်စမလား?'))return;
+  try{localStorage.removeItem('aics_draft_short');}catch(e){}
+  try{localStorage.removeItem('aics_draft_short_imgcache');}catch(e){}
+  location.reload();
+};
 </script>
 </body>
 </html>`;
