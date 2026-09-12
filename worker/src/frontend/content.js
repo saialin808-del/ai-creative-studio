@@ -682,18 +682,15 @@ function openBranch(kind){
     csMarkDone(11);
     csGoForce(12);
   }else if(kind==='audio'){
-    // Voice output is now handled by the dedicated Voice Studio.
-    // Transfer the latest edited Content without requiring copy/paste.
-    try{
-      localStorage.setItem('aics_voice_transfer',JSON.stringify({
-        source:'content',
-        text:content,
-        speakingStyle:(lastResult&&lastResult.speakingStyle)||'',
-        voiceStyle:(lastResult&&lastResult.voiceStyle)||'',
-        transferredAt:new Date().toISOString()
-      }));
-    }catch(e){}
-    window.location.href='/app/voice?source=content';
+    // Content Studio ၏ ကိုယ်ပိုင် Audio Branch (Step 21→22→23→24) သို့ သွားသည် —
+    // Voice Studio ကို ပြောင်းမသွားတော့ဘဲ ဤ Studio ထဲမှာပဲ ဆက်လုပ်သည်။
+    // Copy/paste မလိုအပ် — နောက်ဆုံး edit လုပ်ထားသော Content ကို Auto-fill လုပ်သည်။
+    audioState.content=content;
+    var ap=document.getElementById('audioContentPreview'); if(ap)ap.textContent=content;
+    var tt=document.getElementById('ttsText'); if(tt){tt.value=content;autoGrow(tt);}
+    csSetMode('audio');
+    csMarkDone(21);
+    csGoForce(22);
   }
 }
 function backToContentResult(){
