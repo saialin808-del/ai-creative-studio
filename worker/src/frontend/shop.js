@@ -398,15 +398,15 @@ audio{width:100%;margin-top:10px}
 .toast.success{border-color:var(--success);color:var(--success)}
 /* ===== Main Stepper: done state ✓ ကို shared.js ၏ ::before ဖြင့် ပြသသည် (duplicate မဖြစ်စေရန် local rule ကို ဖယ်သည်) ===== */
 /* ===== Branch Stepper (Video / Audio) ===== */
-.shop-branch-stepper{margin:12px 0 18px;background:#0f1830;border:1px solid rgba(123,92,255,.3);border-radius:14px;padding:10px 12px;overflow-x:auto}
-.shop-branch-inner{display:flex;align-items:center;gap:6px;min-width:max-content}
-.shop-bstep{display:flex;align-items:center;gap:7px;padding:8px 13px;border-radius:10px;border:1px solid transparent;color:#5a6478;font-size:12.5px;white-space:nowrap}
-.shop-bstep .shop-bstep-marker{width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;background:#1a2138;color:#5a6478;flex-shrink:0}
+.shop-branch-stepper{margin:8px 0 12px;background:#0f1830;border:1px solid rgba(123,92,255,.3);border-radius:10px;padding:6px 8px;overflow-x:auto}
+.shop-branch-inner{display:flex;align-items:center;gap:3px;min-width:max-content}
+.shop-bstep{display:flex;align-items:center;gap:5px;padding:6px 9px;border-radius:8px;border:1px solid transparent;color:#5a6478;font-size:12px;white-space:nowrap}
+.shop-bstep .shop-bstep-marker{width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;background:#1a2138;color:#5a6478;flex-shrink:0}
 .shop-bstep.done{color:#4ade80}
 .shop-bstep.done .shop-bstep-marker{background:rgba(0,230,118,.15);color:#00e676}
 .shop-bstep.active{background:linear-gradient(90deg,rgba(123,92,255,.2),rgba(0,229,255,.08));border-color:rgba(123,92,255,.55);color:#fff}
 .shop-bstep.active .shop-bstep-marker{background:rgba(123,92,255,.35);color:#fff}
-.shop-bstep-link{width:18px;height:1px;background:rgba(123,92,255,.3);flex-shrink:0}
+.shop-bstep-link{width:12px;height:1px;background:rgba(123,92,255,.3);flex-shrink:0}
 /* ===== View Head / Branch Head ===== */
 .shop-view-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px}
 .shop-view-subhead{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px}
@@ -917,6 +917,9 @@ function showBranchViews(){
   document.getElementById('viewContent').style.display=shopState.view==='content'?'':'none';
   document.getElementById('viewVideo').style.display=shopState.view==='video'?'':'none';
   document.getElementById('viewAudio').style.display=shopState.view==='audio'?'':'none';
+  // Branch mode ဝင်လျှင် Main Stepper ကို ဖျောက်ပြီး Branch Stepper တစ်ခုတည်း ပြသည် (Content Studio နဲ့ တူညီစေ)
+  var mainSp=document.getElementById('aicsStepper');
+  if(mainSp){mainSp.style.display=(shopState.view==='content')?'':'none';}
   if(shopState.view==='video')showVideoPhase();
   else if(shopState.view==='audio')showAudioPhase();
 }
