@@ -192,6 +192,7 @@ function setScreen(active){
 }
 function goHome(clear){
   VOICE_REQUEST_ID++;
+  hideLoading();
   if(clear){VOICE_STATE={voiceMode:null,voiceStep:0,voiceInput:null,voiceResult:null,audioResult:null,srtResult:null,translationDirection:'MY_TO_CN',translationResult:null,processingState:null,errorState:null,source:'',srtSource:null};LAST_AUDIO={base64:'',mime:'audio/wav',url:''};MEDIA_AUDIO={base64:'',mime:'',fileName:''};translatedSrt='';}
   setScreen('home');document.getElementById('voiceStepper').innerHTML='';document.getElementById('voiceWorkflowBody').innerHTML='';
 }
@@ -240,15 +241,17 @@ function submitTextToVoice(){
   var requestId=++VOICE_REQUEST_ID;
   VOICE_STATE.voiceInput={text:text,speakingStyle:val('speakingStyle'),voiceStyle:val('voiceName'),instruction:val('voiceInstruction'),audience:val('audience')};
   renderVoiceProcessing();
+  showLoading('✨ AI အသံဖန်တီးနေသည်...');
   api('/api/studio/voice/tts',{text:composeVoiceText(),voiceName:val('voiceName')}).then(function(d){
     if(requestId!==VOICE_REQUEST_ID)return;
+    hideLoading();
     if(d.error)throw new Error(d.error+'|'+(d.detail||''));
     LAST_AUDIO.base64=d.data;LAST_AUDIO.mime=d.mimeType||'audio/wav';
     VOICE_STATE.audioResult={data:d.data,mimeType:LAST_AUDIO.mime};
     VOICE_STATE.voiceResult=d;
     renderVoiceResult();
     toast('✓ Voice ဖန်တီးပြီးပါပြီ','success');saveDraft();
-  }).catch(function(e){if(requestId===VOICE_REQUEST_ID)renderVoiceError('tts',e);});
+  }).catch(function(e){if(requestId===VOICE_REQUEST_ID){hideLoading();renderVoiceError('tts',e);}});
 }
 function renderVoiceProcessing(){
   VOICE_STATE.voiceStep=2;renderStepper(VOICE_STEPPER,2);
@@ -295,10 +298,12 @@ function submitSrt(source){
   var b=source==='voice'?LAST_AUDIO:MEDIA_AUDIO;if(!b.base64){toast('SRT ထုတ်ဖို့ Audio/Video မရှိသေးပါ','error');return;}
   var requestId=++VOICE_REQUEST_ID;
   VOICE_STATE.processingState='srt';renderSrtProcessing();
+  showLoading('✨ AI စာတန်းထိုးဖန်တီးနေသည်...');
   api('/api/studio/voice/srt',{audioBase64:b.base64,mimeType:b.mime,type:'2'}).then(function(d){
     if(requestId!==VOICE_REQUEST_ID)return;
+    hideLoading();
     if(d.error)throw new Error(d.error+'|'+(d.detail||''));VOICE_STATE.srtResult=d.srt||'';renderSrtResult(source);toast('✓ SRT ပြီးပါပြီ','success');saveDraft();
-  }).catch(function(e){if(requestId===VOICE_REQUEST_ID)renderGenericError('srt',source,e);});
+  }).catch(function(e){if(requestId===VOICE_REQUEST_ID){hideLoading();renderGenericError('srt',source,e);}});
 }
 function renderSrtProcessing(){
   VOICE_STATE.voiceStep=2;renderStepper(SRT_STEPPER,2);
@@ -335,10 +340,12 @@ function submitTranslation(source){
   VOICE_STATE.translationDirection=val('translationDirection')||VOICE_STATE.translationDirection;
   var requestId=++VOICE_REQUEST_ID;
   VOICE_STATE.processingState='translation';renderTranslationProcessing();
+  showLoading('✨ AI ဘာသာပြန်ဖန်တီးနေသည်...');
   api('/api/studio/voice/translate-srt',{srtText:srt,direction:VOICE_STATE.translationDirection,type:'2'}).then(function(d){
     if(requestId!==VOICE_REQUEST_ID)return;
+    hideLoading();
     if(d.error)throw new Error(d.error+'|'+(d.detail||''));translatedSrt=d.srt||'';VOICE_STATE.translationResult=translatedSrt;renderTranslationResult(source);toast('✓ ဘာသာပြန်ပြီးပါပြီ','success');saveDraft();
-  }).catch(function(e){if(requestId===VOICE_REQUEST_ID)renderGenericError('translation',source,e);});
+  }).catch(function(e){if(requestId===VOICE_REQUEST_ID){hideLoading();renderGenericError('translation',source,e);}});
 }
 function renderTranslationProcessing(){
   VOICE_STATE.voiceStep=2;renderStepper(TRANSLATE_STEPPER,2);
@@ -392,10 +399,12 @@ function submitMedia(type){
     if(type==='srt'){startSrtMedia();return;}
     var requestId=++VOICE_REQUEST_ID;
     renderMediaProcessing();
+    showLoading('✨ AI စာသားဖန်တီးနေသည်...');
     api('/api/studio/voice/transcribe',{audioBase64:MEDIA_AUDIO.base64,mimeType:MEDIA_AUDIO.mime,type:'1'}).then(function(d){
       if(requestId!==VOICE_REQUEST_ID)return;
+      hideLoading();
       if(d.error)throw new Error(d.error+'|'+(d.detail||''));VOICE_STATE.voiceResult={text:d.text||''};renderMediaResult();toast('✓ စာသားဖန်တီးပြီးပါပြီ','success');saveDraft();
-    }).catch(function(e){if(requestId===VOICE_REQUEST_ID)renderMediaError(e);});
+    }).catch(function(e){if(requestId===VOICE_REQUEST_ID){hideLoading();renderMediaError(e);}});
   });
 }
 function renderMediaProcessing(){
