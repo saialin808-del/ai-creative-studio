@@ -615,12 +615,21 @@ function csAllowed(n){
 }
 function csNav(n){
   var m=csMeta(n); if(!m)return;
+  var modeSteps=csModeSteps();
+  var inMode=false;
+  for(var i=0;i<modeSteps.length;i++)if(modeSteps[i].n===n){inMode=true;break;}
+  if(!inMode){showToastMsg('ဤအဆင့်သည် လက်ရှိ Branch ထဲတွင် မရှိပါ');return;}
   if(m.lock){ showToastMsg('ဤအဆင့်သည် AI ဆောင်ရွက်နေချိန် အဆင့်ဖြစ်ပြီး ကိုယ်တိုင် ရွေးချယ်၍ မရပါ'); return; }
   if(!csAllowed(n)){ showToastMsg('အရင်အဆင့်များ ပြီးမှ ဤအဆင့်သို့ ဆက်သွားနိုင်ပါသည်'); return; }
   csCur=n; csShow(n);
 }
 // Program အလိုအလျောက် သွားရန် (AI Processing / Branch) — Lock & Req ကို ကျော်သည်
-function csGoForce(n){ csCur=n; csShow(n); }
+function csGoForce(n){
+  var m=csMeta(n);
+  if(!m)return;
+  csCur=n;
+  csShow(n);
+}
 function csMarkDone(n){ csDone[n]=true; csUpdateStepper(); }
 function csShow(n){
   var steps=document.querySelectorAll('.aics-step');
@@ -652,7 +661,8 @@ function csRenderStepper(){
   var html='<div class="aics-stepper-inner">';
   for(var i=0;i<steps.length;i++){
     var s=steps[i];
-    html+='<button class="aics-step-btn" data-step="'+s.n+'" onclick="csNav('+s.n+')">'+
+    var disabled=(s.lock||!csAllowed(s.n))?' aria-disabled="true"':'';
+    html+='<button type="button" class="aics-step-btn" data-step="'+s.n+'"'+(s.lock?' data-lock="1"':'')+disabled+' onclick="csNav('+s.n+')">'+
       '<span class="aics-step-txt"><span class="aics-step-label">'+s.label+'</span></span>'+
       '<span class="aics-step-loading"><span class="aics-step-spinner"></span>'+(s.loading||'ဖန်တီးနေသည်...')+'</span></button>';
     if(i<steps.length-1)html+='<span class="aics-step-link"></span>';
@@ -661,7 +671,17 @@ function csRenderStepper(){
   c.innerHTML=html;
   csUpdateStepper();
 }
-function csSetMode(mode){ CS_MODE=mode; csRenderStepper(); }
+function csSetMode(mode){
+  if(!CS_STEPS[mode])mode='main';
+  CS_MODE=mode;
+  var steps=csModeSteps();
+  var firstReachable=steps[0].n;
+  for(var i=0;i<steps.length;i++){
+    if(!steps[i].lock && csAllowed(steps[i].n)){firstReachable=steps[i].n;break;}
+  }
+  csCur=firstReachable;
+  csRenderStepper();
+}
 
 // ===== Output Hub — Branch ဖွင့်ခြင်း (Auto-Transfer) =====
 function getEditedContent(){

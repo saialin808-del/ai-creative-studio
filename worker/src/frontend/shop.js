@@ -862,15 +862,22 @@ function sendRevision(){
 }
 
 // ===================== Branch Stepper Render =====================
-function renderBranchStepper(id,steps,cur,doneMap){
+function renderBranchStepper(id,steps,cur,doneMap,kind){
   var c=document.getElementById(id);
   if(!c)return;
   var html='<div class="shop-branch-inner">';
   for(var i=0;i<steps.length;i++){
     var done=doneMap.indexOf(i)!==-1;
-    var cls='shop-bstep'+(done?' done':(i===cur?' active':' todo'));
+    var locked=(kind==='video' || kind==='audio') && i===2;
+    var reachable=done || i===cur;
+    if(i===1)reachable=true;
+    if(kind==='audio' && i===3 && shopState.audio.step>=3)reachable=true;
+    if(kind==='audio' && i===4 && shopState.audio.step>=5)reachable=true;
+    if(kind==='audio' && i===5 && shopState.audio.step>=7)reachable=true;
+    var cls='shop-bstep-btn'+(done?' done':(i===cur?' active':''))+(locked?' locked':'')+(!reachable?' todo':'');
     var marker=done?'✓':(i===cur?'●':'○');
-    html+='<div class="'+cls+'"><span class="shop-bstep-marker">'+marker+'</span><span class="shop-bstep-label">'+steps[i]+'</span></div>';
+    html+='<button type="button" class="'+cls+'" data-branch="'+kind+'" data-index="'+i+'" aria-disabled="'+(locked||!reachable?'true':'false')+'" onclick="shopBranchNav(\''+kind+'\','+i+')">'+
+      '<span class="shop-bstep-marker">'+marker+'</span><span class="shop-bstep-label">'+steps[i]+'</span></button>';
     if(i<steps.length-1)html+='<span class="shop-bstep-link"></span>';
   }
   html+='</div>';
@@ -891,13 +898,31 @@ function audioBranchMeta(){
     case 1:cur=1;done=[0];break;
     case 2:cur=2;done=[0,1];break;
     case 3:cur=3;done=[0,1,2];break;
-    case 4:cur=4;done=[0,1,2,3];break;
+    case 4:cur=3;done=[0,1,2];break;
     case 5:cur=4;done=[0,1,2,3];break;
     case 6:cur=5;done=[0,1,2,3,4];break;
     case 7:cur=5;done=[0,1,2,3,4];break;
     default:cur=1;done=[0];break;
   }
   return {steps:steps,cur:cur,done:done};
+}
+function shopBranchNav(kind,index){
+  if(kind==='video'){
+    if(index===0){goContentResult();return;}
+    if(index===1){shopState.view='video';shopState.video.step=1;showBranchViews();setActionsForCurrent();return;}
+    if(index===2){showToast('AI ဆောင်ရွက်နေချိန် အဆင့်ကို ကိုယ်တိုင်ရွေးချယ်၍ မရပါ','error');return;}
+    if(index===3 && shopState.video.step>=3){shopState.view='video';showBranchViews();setActionsForCurrent();return;}
+    showToast('အရင်အဆင့်ကို ပြီးအောင်လုပ်ပါ','error');return;
+  }
+  if(kind==='audio'){
+    if(index===0){goContentResult();return;}
+    if(index===1){shopState.view='audio';shopState.audio.step=1;showBranchViews();setActionsForCurrent();return;}
+    if(index===2){showToast('AI ဆောင်ရွက်နေချိန် အဆင့်ကို ကိုယ်တိုင်ရွေးချယ်၍ မရပါ','error');return;}
+    if(index===3 && shopState.audio.step>=3){shopState.view='audio';shopState.audio.step=3;showAudioPhase();setActionsForCurrent();return;}
+    if(index===4 && shopState.audio.step>=5){shopState.view='audio';shopState.audio.step=5;showAudioPhase();setActionsForCurrent();return;}
+    if(index===5 && shopState.audio.step>=7){shopState.view='audio';shopState.audio.step=7;showAudioPhase();renderTransResult();setActionsForCurrent();return;}
+    showToast('အရင်အဆင့်ကို ပြီးအောင်လုပ်ပါ','error');return;
+  }
 }
 
 // ===================== View Switching (Branch ပြောင်းလျှင် state မပျောက်) =====================
@@ -944,7 +969,7 @@ function goAudioBranch(){
 // ===================== VIDEO BRANCH =====================
 function showVideoPhase(){
   var meta=videoBranchMeta();
-  renderBranchStepper('videoBranchStepper',meta.steps,meta.cur,meta.done);
+  renderBranchStepper('videoBranchStepper',meta.steps,meta.cur,meta.done,'video');
   document.getElementById('videoSetupCard').style.display=shopState.video.step===1?'':'none';
   document.getElementById('videoLoadingCard').style.display=shopState.video.step===2?'':'none';
   document.getElementById('videoResultCard').style.display=shopState.video.step===3?'':'none';
@@ -1153,7 +1178,7 @@ function saveAllVideo(){
 // ===================== AUDIO BRANCH =====================
 function showAudioPhase(){
   var meta=audioBranchMeta();
-  renderBranchStepper('audioBranchStepper',meta.steps,meta.cur,meta.done);
+  renderBranchStepper('audioBranchStepper',meta.steps,meta.cur,meta.done,'audio');
   document.getElementById('audioSetupCard').style.display=shopState.audio.step===1?'':'none';
   document.getElementById('audioLoadingCard').style.display=shopState.audio.step===2?'':'none';
   document.getElementById('audioResultCard').style.display=shopState.audio.step===3?'':'none';

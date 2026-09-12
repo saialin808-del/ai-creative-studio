@@ -655,6 +655,8 @@ export function renderStudioShell(opts) {
     '    if (window.studioOnStep) { try { window.studioOnStep(n); } catch (e) {} }\n' +
     '  }\n' +
     '  var lockNav = false;\n' +
+    '  window.studioStepMeta = function (n) { return stepMeta(n); };\n' +
+    '  window.studioStepAllowed = function (n) { return allowed(n); };\n' +
     '  window.studioGoStep = function (n) {\n' +
     '    if (!lockNav) {\n' +
     '      if (!allowed(n)) return;\n' +
