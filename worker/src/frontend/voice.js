@@ -5,42 +5,11 @@
 
 import { sidebarScript, renderStudioShell } from './shared.js';
 
-const VOICES = [
-  ['Zephyr','တောက်ပ (Bright)'],['Puck','တက်ကြွ (Upbeat)'],['Charon','ရှင်းလင်းတိကျ (Informative)'],
-  ['Kore','ခိုင်မာတည်ငြိမ် (Firm)'],['Fenrir','စိတ်လှုပ်ရှားလွယ် (Excitable)'],['Leda','လူငယ်ဆန် (Youthful)'],
-  ['Orus','ခိုင်မာ (Firm)'],['Aoede','ပေါ့ပါးလန်းဆန်း (Breezy)'],['Callirrhoe','အေးဆေး (Easy-going)'],
-  ['Autonoe','တောက်ပ (Bright)'],['Enceladus','အသက်ရှူသံပါ (Breathy)'],['Iapetus','ရှင်းလင်း (Clear)'],
-  ['Umbriel','အေးဆေး (Easy-going)'],['Algieba','ချောမွေ့ (Smooth)'],['Despina','ချောမွေ့ (Smooth)'],
-  ['Erinome','ရှင်းလင်း (Clear)'],['Algenib','ရိုင်းရင့် (Gravelly)'],['Rasalgethi','ရှင်းလင်းတိကျ (Informative)'],
-  ['Laomedeia','တက်ကြွ (Upbeat)'],['Achernar','နူးညံ့ (Soft)'],['Alnilam','ခိုင်မာ (Firm)'],
-  ['Schedar','တညီတညာ (Even)'],['Gacrux','ရင့်ကျက် (Mature)'],['Pulcherrima','တိုက်ရိုက် (Forward)'],
-  ['Achird','ဖော်ရွေ (Friendly)'],['Zubenelgenubi','ပေါ့ပေါ့ပါးပါး (Casual)'],
-  ['Vindemiatrix','နူးညံ့သိမ်မွေ့ (Gentle)'],['Sadachbia','တက်ကြွရှင်သန် (Lively)'],
-  ['Sadaltager','ဗဟုသုတရှိ (Knowledgeable)'],['Sulafat','နွေးထွေး (Warm)']
-];
-
-const VOICE_STEPPER = [
-  {n:1,label:'စာသား'},{n:2,label:'AI အသံဖန်တီးနေသည်'},{n:3,label:'အသံ ရလဒ်'}
-];
-const MEDIA_STEPPER = [
-  {n:1,label:'အသံ / Video'},{n:2,label:'AI စာသားဖန်တီးနေသည်'},{n:3,label:'စာသား ရလဒ်'}
-];
-const SRT_STEPPER = [
-  {n:1,label:'Input'},{n:2,label:'AI SRT'},{n:3,label:'SRT ရလဒ်'}
-];
-const TRANSLATE_STEPPER = [
-  {n:1,label:'SRT'},{n:2,label:'AI ဘာသာပြန်'},{n:3,label:'ဘာသာပြန် ရလဒ်'}
-];
-
-function esc(s) {
-  const value = s == null ? '' : String(s);
-  return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-    .replace(/\"/g, '&quot;').replace(/'/g, '&#39;');
-}
-function voiceOptions() {
-  return VOICES.map(v => '<option value="' + esc(v[0]) + '"' + (v[0] === 'Kore' ? ' selected' : '') + '>' +
-    esc(v[0] + ' — ' + v[1]) + '</option>').join('');
-}
+// NOTE — Voice Steppers / Voices / esc() / voiceOptions() တို့သည်
+// Browser စာမျက်နှာ script ထဲတွင် ရှိရမည့် Constants/Functions များဖြစ်သည်။
+// Module scope တွင်ထားပါက HTML ထဲသို့ မပါဝင်ဘဲ
+// "VOICE_STEPPER is not defined" ReferenceError ဖြစ်ပြီး Branch Workflow UI မပေါ်နိုင်ပါ။
+// → အောက် page <script> ၏ ထိပ်တွင် သတ်မှတ်ထားပါသည်။
 
 const HOME_HTML = `
 <div class="voice-screen active" id="voiceHome">
@@ -92,38 +61,47 @@ export const VOICE_HTML = `<!DOCTYPE html>
 <body>
 <div id="loginView" class="aics-login-overlay" style="display:none;"><div class="aics-login-box"><h2>Login လုပ်ရန် လိုအပ်ပါသည်</h2><p>Voice Studio ကို အသုံးပြုရန် Google နဲ့ Login ဝင်ပါ။</p><a href="/api/auth/login?next=/app/voice" class="btn btn-primary">Google နဲ့ Login</a></div></div>
 ${renderStudioShell({id:'voice',activeId:'voice',nameMy:'အသံ Studio',desc:'Text to voice, voice to text',icon:'🎙️',modelCat:'voice',steps:[],content:HOME_HTML})}
-<style id="voice-shell-overrides">
-/* Voice Studio owns its Home shell. Keep shared Studio shell backward-compatible. */
-.voice-studio-shell{}
-#aicsWork .voice-screen#voiceHome{display:block!important;visibility:visible!important;opacity:1!important;width:100%;min-height:420px;}
-#aicsWork .voice-screen#voiceWorkflow{display:none!important;}
-#aicsWork .voice-screen#voiceWorkflow.active{display:block!important;}
-/* Home: no shared stepper/action bar. Workflow controls are enabled by Voice JS. */
-#aicsApp.voice-home-active #aicsStepper{display:none!important;}
-#aicsApp.voice-home-active .aics-actions{display:none!important;}
-/* iPad/tablet: Voice uses the same compact drawer behavior as phone. */
-@media (min-width:769px) and (max-width:1199px){
-  .aics-app .aics-menu-btn{display:inline-flex!important;}
-  .aics-app .layout{display:block!important;min-height:calc(100vh - 63px)!important;}
-  .aics-app .layout > .sidebar{
-    position:fixed!important;left:-280px!important;top:63px!important;bottom:0!important;
-    width:280px!important;max-width:82vw!important;height:auto!important;min-height:0!important;
-    margin:0!important;border-radius:0 16px 16px 0!important;padding:16px 14px!important;
-    z-index:99!important;transition:left .3s!important;
-    box-shadow:4px 0 20px rgba(0,0,0,.5)!important;
-  }
-  .aics-app .layout > .sidebar.open,
-  .aics-app .layout > .sidebar.show{left:0!important;}
-  .aics-app .layout > .aics-main{width:100%!important;margin:0!important;padding:20px!important;}
-}
-@media (max-width:768px){
-  .aics-app .layout > .aics-main{padding:14px!important;}
-}
-</style>
 <div class="loading-overlay" id="voiceLoading"><div class="loading-box"><div class="spinner"></div><div id="voiceLoadingText">AI ဆောင်ရွက်နေပါသည်...</div></div></div>
 <div class="toast" id="toast"></div>
 ${sidebarScript()}
 <script>
+// ==== Voice Studio Browser-side Constants / Helpers ====
+// (Module scope တွင်မထားဘဲ ဤ page script ထဲတွင် သတ်မှတ်သည် —
+//  Browser page တွင် ဤ Variables/Functions ရှိမှသာ Branch Workflow UI render နိုင်သည်)
+const VOICES = [
+  ['Zephyr','တောက်ပ (Bright)'],['Puck','တက်ကြွ (Upbeat)'],['Charon','ရှင်းလင်းတိကျ (Informative)'],
+  ['Kore','ခိုင်မာတည်ငြိမ် (Firm)'],['Fenrir','စိတ်လှုပ်ရှားလွယ် (Excitable)'],['Leda','လူငယ်ဆန် (Youthful)'],
+  ['Orus','ခိုင်မာ (Firm)'],['Aoede','ပေါ့ပါးလန်းဆန်း (Breezy)'],['Callirrhoe','အေးဆေး (Easy-going)'],
+  ['Autonoe','တောက်ပ (Bright)'],['Enceladus','အသက်ရှူသံပါ (Breathy)'],['Iapetus','ရှင်းလင်း (Clear)'],
+  ['Umbriel','အေးဆေး (Easy-going)'],['Algieba','ချောမွေ့ (Smooth)'],['Despina','ချောမွေ့ (Smooth)'],
+  ['Erinome','ရှင်းလင်း (Clear)'],['Algenib','ရိုင်းရင့် (Gravelly)'],['Rasalgethi','ရှင်းလင်းတိကျ (Informative)'],
+  ['Laomedeia','တက်ကြွ (Upbeat)'],['Achernar','နူးညံ့ (Soft)'],['Alnilam','ခိုင်မာ (Firm)'],
+  ['Schedar','တညီတညာ (Even)'],['Gacrux','ရင့်ကျက် (Mature)'],['Pulcherrima','တိုက်ရိုက် (Forward)'],
+  ['Achird','ဖော်ရွေ (Friendly)'],['Zubenelgenubi','ပေါ့ပေါ့ပါးပါး (Casual)'],
+  ['Vindemiatrix','နူးညံ့သိမ်မွေ့ (Gentle)'],['Sadachbia','တက်ကြွရှင်သန် (Lively)'],
+  ['Sadaltager','ဗဟုသုတရှိ (Knowledgeable)'],['Sulafat','နွေးထွေး (Warm)']
+];
+const VOICE_STEPPER = [
+  {n:1,label:'စာသား'},{n:2,label:'AI အသံဖန်တီးနေသည်'},{n:3,label:'အသံ ရလဒ်'}
+];
+const MEDIA_STEPPER = [
+  {n:1,label:'အသံ / Video'},{n:2,label:'AI စာသားဖန်တီးနေသည်'},{n:3,label:'စာသား ရလဒ်'}
+];
+const SRT_STEPPER = [
+  {n:1,label:'Input'},{n:2,label:'AI SRT'},{n:3,label:'SRT ရလဒ်'}
+];
+const TRANSLATE_STEPPER = [
+  {n:1,label:'SRT'},{n:2,label:'AI ဘာသာပြန်'},{n:3,label:'ဘာသာပြန် ရလဒ်'}
+];
+function esc(s) {
+  const value = s == null ? '' : String(s);
+  return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/\"/g, '&quot;').replace(/'/g, '&#39;');
+}
+function voiceOptions() {
+  return VOICES.map(v => '<option value="' + esc(v[0]) + '"' + (v[0] === 'Kore' ? ' selected' : '') + '>' +
+    esc(v[0] + ' — ' + v[1]) + '</option>').join('');
+}
 var TOKEN=localStorage.getItem('aics_token')||'';
 var USER_PLAN='FREE';
 var VOICE_STATE={
@@ -161,7 +139,7 @@ function friendlyError(d,fallback){
 }
 function api(path,body){
   body=body||{};
-  var sel=document.getElementById((path.indexOf('/transcribe')>-1||path.indexOf('/srt')>-1)?'aiModelSel2':'aiModelSel');
+  var sel=document.getElementById((path.indexOf('/transcribe')>-1||path.indexOf('/srt')>-1)?'aiModelSel2':'aiModelSel')||document.getElementById('aiModelSel');
   if(sel&&sel.value)body.model=sel.value;
   var h={'Content-Type':'application/json'};if(TOKEN)h.Authorization='Bearer '+TOKEN;
   return fetch(path,{method:'POST',headers:h,body:JSON.stringify(body)}).then(function(r){
@@ -209,15 +187,8 @@ function renderStepper(items,current){
   });c.innerHTML=h;
 }
 function setScreen(active){
-  var app=document.getElementById('aicsApp');
-  var home=active==='home';
-  document.getElementById('voiceHome').classList.toggle('active',home);
-  document.getElementById('voiceWorkflow').classList.toggle('active',!home);
-  if(app) app.classList.toggle('voice-home-active',home);
-  var actions=document.querySelector('.aics-actions');
-  if(actions) actions.style.display=home?'none':'';
-  var stepper=document.getElementById('aicsStepper');
-  if(stepper) stepper.style.display=home?'none':'';
+  document.getElementById('voiceHome').classList.toggle('active',active==='home');
+  document.getElementById('voiceWorkflow').classList.toggle('active',active!=='home');
 }
 function goHome(clear){
   VOICE_REQUEST_ID++;
@@ -506,9 +477,11 @@ window.studioRestoreDraft=studioRestoreDraft;
     voiceStartMode('text-to-voice',true);
   }else if(restored && VOICE_STATE.voiceMode==='media-to-text' && VOICE_STATE.voiceResult && VOICE_STATE.voiceResult.text){
     setScreen('workflow');renderMediaResult();
+  }else if(restored && VOICE_STATE.voiceMode){
+    // Draft မှာ Branch ရွေးထားပြီး Result မရသေးလျှင် — ထို Branch ၏ Input UI ကို ပြန်ပြသည် (Branch state မပျောက်စေရ)
+    voiceStartMode(VOICE_STATE.voiceMode,true);
   }
   applyContentTransfer();
-  if(!VOICE_STATE.voiceMode) setScreen('home');
 })();
 </script>
 </body></html>`;
