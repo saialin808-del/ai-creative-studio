@@ -70,7 +70,7 @@ export async function generateShopVideo(env, { idea, type, plan, apiKey, images,
   const c = await getCMSData(env, CMS_VIDEO, plan, type);
   const system = c ? buildSystemPrompt(c) : '';
 
-  const prompt = [
+  let prompt = [
     system,
     'PRODUCT INFO:',
     String(idea).trim(),
