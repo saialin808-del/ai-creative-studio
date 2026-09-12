@@ -51,7 +51,7 @@ const STEP1_HTML = `
 <label>ဇာတ်လမ်းအကြောင်း *</label>
 <textarea id="field_0" placeholder="ဥပမာ — ရန်ကုန်မှာ အောင်မြင်မှုရဖို့ ကြိုးစားနေတဲ့ လူငယ်တစ်ယောက်ရဲ့ ခရီး..." style="min-height:110px;resize:vertical;"></textarea>
 </div>
-<button type="button" id="advToggle" onclick="document.getElementById('ideaFields').style.display=(document.getElementById('ideaFields').style.display==='none'?'grid':'none');this.querySelector('span').textContent=document.getElementById('ideaFields').style.display==='none'?'အပိုဆောင်းသတ်မှတ်ချက် ▼':'ချုံ့ရန် ▲'" style="width:100%;padding:11px;border-radius:14px;background:rgba(0,229,255,.08);border:1px solid rgba(0,229,255,.25);color:#00e5ff;font-size:13px;font-weight:600;cursor:pointer;margin-bottom:12px;"><span>ထပ်ဖြည့်ရန် ▼</span></button>
+<button type="button" id="advToggle" onclick="document.getElementById('ideaFields').style.display=(document.getElementById('ideaFields').style.display==='none'?'grid':'none');this.querySelector('span').textContent=document.getElementById('ideaFields').style.display==='none'?'အပိုဆောင်းသတ်မှတ်ချက် ▼':'ချုံ့ရန် ▲'" style="width:100%;padding:11px;border-radius:14px;background:rgba(0,229,255,.08);border:1px solid rgba(0,229,255,.25);color:#00e5ff;font-size:13px;font-weight:600;cursor:pointer;margin-bottom:12px;"><span>အပိုဆောင်းသတ်မှတ်ချက် ▼</span></button>
 <div id="ideaFields" class="adv-grid" style="margin-top:4px;display:none;"></div>
 <div class="error-box" id="genError"></div>
 </div>
