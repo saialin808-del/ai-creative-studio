@@ -731,7 +731,7 @@ function studioOnStep(n){
       {label:'&#8592; Back',cls:'ghost',fn:function(){window.studioGoStep(1);}},
       bReset(),
       {label:'&#128203; Copy Prompt',cls:'secondary',fn:copyPrompt},
-      {label:'&#128190; Save to My Creations',cls:'purple',fn:saveToCreations},
+      {label:'&#128190; ဖန်တီးမှုသိမ်းပါ',cls:'purple',fn:saveToCreations},
       {label:'&#128295; ပုံဖန်တီးရန် ပြင်ဆင်မည်',cls:'primary',fn:goPrepare}
     ]);
   }else if(n===4){
@@ -749,7 +749,7 @@ function studioOnStep(n){
       {label:'&#8592; Back',cls:'ghost',fn:function(){window.studioGoStep(4);}},
       bReset(),
       {label:'&#128203; Copy Prompt',cls:'secondary',fn:copyPrompt},
-      {label:'&#128190; Save to My Creations',cls:'purple',fn:saveToCreations},
+      {label:'&#128190; ဖန်တီးမှုသိမ်းပါ',cls:'purple',fn:saveToCreations},
       {label:'&#128190; Save Image',cls:'success',fn:downloadImage}
     ]);
     renderMap();

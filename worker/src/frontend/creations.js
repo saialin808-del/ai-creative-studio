@@ -95,7 +95,7 @@ ${renderSidebar('creations')}
   <div id="loadingState" class="loading-state">Loading...</div>
   <div id="emptyState" class="empty-state" style="display:none;">
     📭 Save ထားသော Creation များ မရှိသေးပါ။<br>
-    Studio တစ်ခုခုမှာ Generate လုပ်ပြီး "Save to My Creations" နှိပ်ကြည့်ပါ။
+    Studio တစ်ခုခုမှာ Generate လုပ်ပြီး "ဖန်တီးမှုသိမ်းပါ" နှိပ်ကြည့်ပါ။
   </div>
   <div id="toolbar" class="toolbar" style="display:none;">
     <input id="searchInput" class="search-input" type="text" placeholder="🔍 ရှာဖွေရန် (ခေါင်းစဉ် / အကြောင်းအရာ)..." oninput="renderList()">

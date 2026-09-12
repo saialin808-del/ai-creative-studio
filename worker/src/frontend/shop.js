@@ -85,7 +85,7 @@ const STEP3_HTML = `
 <textarea class="shop-result" id="resultContent" placeholder="(Generate လုပ်ပြီးရင် ဒီနေရာမှာ ပေါ်ပါမယ် — တိုက်ရိုက် ပြင်ဆင်နိုင်ပါတယ်)" oninput="onContentEdit()"></textarea>
 <div class="btn-row">
 <button class="btn btn-green btn-sm" onclick="copyResult()">&#128203; Copy</button>
-<button class="btn btn-purple btn-sm" onclick="saveContent()">&#128190; Save to Creations</button>
+<button class="btn btn-purple btn-sm" onclick="saveContent()">&#128190; ဖန်တီးမှုသိမ်းပါ</button>
 <button class="btn btn-secondary btn-sm" onclick="toggleChat()">&#129302; ပြင်ဆင်ချင်ပါသလား</button>
 </div>
 <div class="chat-section" id="chatSection">
@@ -1531,7 +1531,7 @@ function setActionsForCurrent(){
   if(window.studioCur&&window.studioCur()!==3)return;
   var list=[];
   if(shopState.view==='content'){
-    list=[bReset(),{label:'📝 Copy',cls:'secondary',fn:copyResult},{label:'💾 Save to Creations',cls:'purple',fn:saveContent}];
+    list=[bReset(),{label:'📝 Copy',cls:'secondary',fn:copyResult},{label:'💾 ဖန်တီးမှုသိမ်းပါ',cls:'purple',fn:saveContent}];
   }else if(shopState.view==='video'){
     list=[{label:'← Shop Content Result',cls:'ghost',fn:goContentResult},bReset()];
     if(shopState.video.step===3){

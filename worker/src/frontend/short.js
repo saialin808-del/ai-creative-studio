@@ -97,7 +97,7 @@ const STEP3_HTML = `
 <p style="color:var(--text3);font-size:12px;margin-top:6px;font-style:italic;">&#9997;&#65039; ဒီနေရာမှာ တိုက်ရိုက် နှိပ်ပြီး ကိုယ်တိုင် ပြင်ဆင်နိုင်ပါတယ် — ပြင်ထားတဲ့ Script ကို "Final Short Script" အဖြစ် Video အဆင့်ကို အလိုအလျောက် ပို့ပေးပါမယ်</p>
 <div class="btn-row">
 <button class="btn btn-success" onclick="copyShort()">&#128203; Copy Short</button>
-<button class="btn btn-purple" onclick="saveShort()">&#128190; Save to My Creations</button>
+<button class="btn btn-purple" onclick="saveShort()">&#128190; ဖန်တီးမှုသိမ်းပါ</button>
 <button class="btn btn-secondary" onclick="focusRevise()">&#9999;&#65039; ပြန်ပြင်ရန်</button>
 <button class="btn btn-primary" onclick="goToVideoForm()">&#127916; Video ဆက်ဖန်တီးရန်</button>
 </div>
@@ -914,7 +914,7 @@ function studioOnStep(n){
       {label:'&#8592; Back',cls:'ghost',fn:function(){window.studioGoStep(1);}},
       bReset(),
       {label:'&#128203; Copy Short',cls:'secondary',fn:copyShort},
-      {label:'&#128190; Save to My Creations',cls:'purple',fn:saveShort}
+      {label:'&#128190; ဖန်တီးမှုသိမ်းပါ',cls:'purple',fn:saveShort}
     ]);
     var ta=document.getElementById('shortResult');
     if(ta)autoExpand(ta);
@@ -932,8 +932,7 @@ function studioOnStep(n){
     studioSetActions([
       {label:'&#8592; Back',cls:'ghost',fn:function(){window.studioGoStep(4);}},
       {label:'&#128203; Copy All',cls:'secondary',fn:copyAllResult},
-      {label:'&#128190; Save All Result',cls:'purple',fn:saveAllResult},
-      {label:'&#128228; Export',cls:'success',fn:exportResult}
+      {label:'&#128190; ဖန်တီးမှုသိမ်းပါ',cls:'purple',fn:saveAllResult}
     ]);
     renderFinalResult();
   }

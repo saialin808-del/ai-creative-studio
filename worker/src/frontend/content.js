@@ -96,8 +96,7 @@ const STEP3_HTML = `
 <div class="result-card-body" id="voiceOut"></div>
 </div>
 <div class="btn-row">
-<button class="btn btn-purple" onclick="saveContentResult()">&#128190; Save to My Creations</button>
-<button class="btn btn-orange" onclick="exportResult()">&#128228; Export (.txt)</button>
+<button class="btn btn-purple" onclick="saveContentResult()">&#128190; ဖန်တီးမှုသိမ်းပါ</button>
 </div>
 </div>
 </div>
@@ -224,8 +223,7 @@ const STEP14_HTML = `
 </div>
 <div class="btn-row">
 <button class="btn btn-secondary" onclick="backToContentResult()">&#8592; Content ရလဒ်သို့ ပြန်ရန်</button>
-<button class="btn btn-purple" onclick="saveContentResult()">&#128190; Save to My Creations</button>
-<button class="btn btn-orange" onclick="exportResult()">&#128228; Export (.txt)</button>
+<button class="btn btn-purple" onclick="saveContentResult()">&#128190; ဖန်တီးမှုသိမ်းပါ</button>
 </div>
 </div>
 </div>`;
@@ -356,7 +354,7 @@ const STEP24_HTML = `
 </div>
 <div class="btn-row">
 <button class="btn btn-secondary" onclick="backToContentResult()">&#8592; Content ရလဒ်သို့ ပြန်ရန်</button>
-<button class="btn btn-purple" onclick="saveContentResult()">&#128190; Save to My Creations</button>
+<button class="btn btn-purple" onclick="saveContentResult()">&#128190; ဖန်တီးမှုသိမ်းပါ</button>
 </div>
 </div>`;
 
@@ -1230,7 +1228,7 @@ function studioOnStep(n){
   }else if(n===2){
     studioSetActions([]);
   }else if(n===3){
-    studioSetActions([{label:'Reset',cls:'ghost',fn:studioReset},{label:'&#128190; Save to Creations',cls:'purple',fn:saveContentResult},{label:'&#128228; Export',cls:'success',fn:exportResult}]);
+    studioSetActions([{label:'Reset',cls:'ghost',fn:studioReset},{label:'&#128190; ဖန်တီးမှုသိမ်းပါ',cls:'purple',fn:saveContentResult}]);
   }else if(n===11||n===21){
     studioSetActions([backHub]);
   }else if(n===12){
@@ -1240,7 +1238,7 @@ function studioOnStep(n){
   }else if(n===13||n===23){
     studioSetActions([]);
   }else if(n===14||n===24){
-    studioSetActions([backHub,{label:'&#128190; Save to Creations',cls:'purple',fn:saveContentResult}]);
+    studioSetActions([backHub,{label:'&#128190; ဖန်တီးမှုသိမ်းပါ',cls:'purple',fn:saveContentResult}]);
   }
 }
 window.studioOnStep=studioOnStep;
