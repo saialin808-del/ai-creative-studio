@@ -678,9 +678,10 @@ export function renderStudioShell(opts) {
     '  };\n' +
     '  window.studioCur = function () { return cur; };\n' +
     '  window.studioSetLoading = function (on) {\n' +
+    '    var onBool = (on && typeof on === "object") ? !!on.on : !!on;\n' +
     '    var btn = document.querySelector(\'.aics-step-btn.active\');\n' +
     '    if (!btn) return;\n' +
-    '    if (on) { btn.classList.add(\'aics-loading\'); try { btn.scrollIntoView({behavior:\'smooth\',inline:\'center\',block:\'nearest\'}); } catch(e){} }\n' +
+    '    if (onBool) { btn.classList.add(\'aics-loading\'); try { btn.scrollIntoView({behavior:\'smooth\',inline:\'center\',block:\'nearest\'}); } catch(e){} }\n' +
     '    else btn.classList.remove(\'aics-loading\');\n' +
     '  };\n' +
     '  window.aichAudChoices = [\'လူတိုင်း\', \'လူငယ်\', \'လူကြီး\', \'ကလေး\'];\n' +
