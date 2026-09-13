@@ -465,9 +465,9 @@ function aicsShellCss() {
     '.aics-step-btn.error{border-color:rgba(255,82,82,.65);box-shadow:0 0 14px rgba(255,82,82,.22);}\n' +
     '.aics-step-btn.error .aics-step-label{color:#ff8a8a;}\n' +
     '.aics-step-btn .aics-step-loading{display:none;font-size:11px;color:#00e5ff;font-weight:700;align-items:center;gap:5px;margin-top:3px;white-space:nowrap;}\n' +
-    '.aics-step-btn.loading .aics-step-loading{display:flex;}\n' +
-    '.aics-step-btn.loading{border-color:rgba(0,229,255,.6);box-shadow:0 0 18px rgba(0,229,255,.4);}\n' +
-    '.aics-step-btn.loading .aics-step-label{color:#00e5ff;}\n' +
+    '.aics-step-btn.aics-loading .aics-step-loading{display:flex;}\n' +
+    '.aics-step-btn.aics-loading{border-color:rgba(0,229,255,.6);box-shadow:0 0 18px rgba(0,229,255,.4);}\n' +
+    '.aics-step-btn.aics-loading .aics-step-label{color:#00e5ff;}\n' +
     '.aics-step-btn .aics-step-spinner{width:12px;height:12px;border:2px solid rgba(0,229,255,.25);border-top-color:#00e5ff;border-radius:50%;animation:spin .7s linear infinite;}\n' +
     '.aics-step-link{width:12px;height:1px;background:rgba(0,229,255,.22);flex-shrink:0;}\n' +
     '.aics-grid{display:block;}\n' +
@@ -680,8 +680,8 @@ export function renderStudioShell(opts) {
     '  window.studioSetLoading = function (on) {\n' +
     '    var btn = document.querySelector(\'.aics-step-btn.active\');\n' +
     '    if (!btn) return;\n' +
-    '    if (on) { btn.classList.add(\'loading\'); try { btn.scrollIntoView({behavior:\'smooth\',inline:\'center\',block:\'nearest\'}); } catch(e){} }\n' +
-    '    else btn.classList.remove(\'loading\');\n' +
+    '    if (on) { btn.classList.add(\'aics-loading\'); try { btn.scrollIntoView({behavior:\'smooth\',inline:\'center\',block:\'nearest\'}); } catch(e){} }\n' +
+    '    else btn.classList.remove(\'aics-loading\');\n' +
     '  };\n' +
     '  window.aichAudChoices = [\'လူတိုင်း\', \'လူငယ်\', \'လူကြီး\', \'ကလေး\'];\n' +
     '  window.aichAud = \'လူတိုင်း\';\n' +
