@@ -163,8 +163,8 @@ const STEP3_HTML = `
 <div class="card-title">&#127916; Video Result — Story Map</div>
 <div id="videoResultMap"></div>
 <div class="btn-row" style="margin-top:16px;">
-<button class="btn btn-green" onclick="copyAllVideo()">&#128203; All Copy</button>
-<button class="btn btn-purple" onclick="saveAllVideo()">&#128190; Save All to Creations</button>
+<button class="btn btn-green" onclick="copyAllVideo()">&#128203; Copy</button>
+<button class="btn btn-purple" onclick="saveAllVideo()">&#128190; ဖန်တီးမှုအားလုံးသိမ်း</button>
 </div>
 </div>
 </div>
@@ -1535,8 +1535,8 @@ function setActionsForCurrent(){
   }else if(shopState.view==='video'){
     list=[{label:'← Shop Content Result',cls:'ghost',fn:goContentResult},bReset()];
     if(shopState.video.step===3){
-      list.push({label:'📋 Copy All',cls:'secondary',fn:copyAllVideo});
-      list.push({label:'💾 Save All',cls:'purple',fn:saveAllVideo});
+      list.push({label:'📋 Copy',cls:'secondary',fn:copyAllVideo});
+      list.push({label:'💾 ဖန်တီးမှုအားလုံးသိမ်း',cls:'purple',fn:saveAllVideo});
     }
   }else if(shopState.view==='audio'){
     list=[{label:'← Shop Content Result',cls:'ghost',fn:goContentResult},bReset()];

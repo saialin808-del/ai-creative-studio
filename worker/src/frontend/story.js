@@ -894,7 +894,9 @@ function studioOnStep(n){
       {label:'&#8592; Back',cls:'ghost',fn:function(){window.studioGoStep(1);}},
       bReset(),
       {label:'&#128203; Copy Story',cls:'secondary',fn:copyStory},
-      {label:'&#128190; ဖန်တီးမှုသိမ်းပါ',cls:'purple',fn:saveStory}
+      {label:'&#128190; ဖန်တီးမှုသိမ်းပါ',cls:'purple',fn:saveStory},
+      {label:'&#128203; Copy All',cls:'secondary',fn:copyAllResult},
+      {label:'&#128190; ဖန်တီးမှုအားလုံးသိမ်း',cls:'purple',fn:saveAllResult}
     ]);
     var ta=document.getElementById('storyResult');
     if(ta)autoExpand(ta);
@@ -912,7 +914,7 @@ function studioOnStep(n){
     studioSetActions([
       {label:'&#8592; Back',cls:'ghost',fn:function(){window.studioGoStep(4);}},
       {label:'&#128203; Copy All',cls:'secondary',fn:copyAllResult},
-      {label:'&#128190; ဖန်တီးမှုသိမ်းပါ',cls:'purple',fn:saveAllResult}
+      {label:'&#128190; ဖန်တီးမှုအားလုံးသိမ်း',cls:'purple',fn:saveAllResult}
     ]);
     renderFinalResult();
   }
