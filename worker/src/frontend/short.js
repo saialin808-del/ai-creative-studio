@@ -273,7 +273,7 @@ select option{background:var(--bg-card);color:var(--text)}
 .final-scene-meta{font-size:12.5px;color:var(--text2);border-top:1px solid var(--border);padding-top:10px;margin-top:4px;display:flex;flex-wrap:wrap;gap:6px 16px;}
 .scene-image-area{margin-top:10px;text-align:center}
 .scene-image-area img{max-width:100%;border-radius:8px;border:1px solid var(--border)}
-@media(max-width:768px){.form-row{flex-direction:column}.revise-input-row{flex-direction:column;align-items:stretch}.action-row{flex-direction:column}.action-row .btn{width:100%}.vf-grid{grid-template-columns:1fr;}.adv-grid{grid-template-columns:1fr;}.btn-row .btn{flex:1 1 100%;}}
+@media(max-width:767px){.form-row{flex-direction:column}.revise-input-row{flex-direction:column;align-items:stretch}.action-row{flex-direction:column}.action-row .btn{width:100%}.vf-grid{grid-template-columns:1fr;}.adv-grid{grid-template-columns:1fr;}.btn-row .btn{flex:1 1 100%;}}
 </style>
 </head>
 <body>

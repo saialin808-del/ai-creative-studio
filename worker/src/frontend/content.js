@@ -513,7 +513,7 @@ textarea.result-card-body{white-space:pre-wrap;min-height:150px}
 .aics-process-sub{font-size:13px;color:var(--text2);margin-bottom:20px}
 .aics-transfer-box{background:var(--bg-input);border:1px solid var(--border);border-radius:10px;padding:14px;font-size:14px;line-height:1.7;white-space:pre-wrap;word-break:break-word;max-height:340px;overflow-y:auto;margin-bottom:14px}
 .aics-act:disabled{opacity:.5;cursor:not-allowed}
-@media(max-width:768px){.menu-btn{display:block}.sidebar{position:fixed;left:-260px;top:57px;bottom:0;z-index:99;transition:left .3s;box-shadow:4px 0 20px rgba(0,0,0,.5)}.sidebar.open{left:0}.main{padding:16px}.header-right .user-email{display:none}.form-row{flex-direction:column}.revise-input-row{flex-direction:column;align-items:stretch}.aics-out-cards{grid-template-columns:1fr}.aics-out-card{padding:16px}.aics-process-screen{padding:40px 14px}}
+@media(max-width:767px){.header-right .user-email{display:none}.form-row{flex-direction:column}.revise-input-row{flex-direction:column;align-items:stretch}.aics-out-cards{grid-template-columns:1fr}.aics-out-card{padding:16px}.aics-process-screen{padding:40px 14px}}
 </style>
 </head>
 <body>

@@ -472,7 +472,7 @@ audio{width:100%;margin-top:10px}
 .dir-radio input{width:auto;margin:0;accent-color:var(--cyan);min-height:0;padding:0}
 .dir-radio.selected{border-color:var(--cyan);background:rgba(0,229,255,.1);color:var(--text)}
 /* ===== Responsive ===== */
-@media(max-width:768px){
+@media(max-width:767px){
 .branch-action-grid{grid-template-columns:1fr}
 .sm-meta{gap:4px 12px}
 .audio-player-row audio{min-width:100%}

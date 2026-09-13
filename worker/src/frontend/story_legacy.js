@@ -114,7 +114,7 @@ select option{background:var(--bg-card);color:var(--text)}
 .login-prompt p{color:var(--text2);margin-bottom:20px}
 .empty-note{color:var(--text3);font-size:13px;padding:16px;background:var(--bg-input);border:1px dashed var(--border);border-radius:10px;text-align:center}
 .section-badge{background:var(--error);color:#fff;font-weight:700;padding:3px 10px;border-radius:6px;font-size:12px;margin-right:8px}
-@media(max-width:768px){.menu-btn{display:block}.sidebar{position:fixed;left:-260px;top:57px;bottom:0;z-index:99;transition:left .3s;box-shadow:4px 0 20px rgba(0,0,0,.5)}.sidebar.open{left:0}.main{padding:16px}.header-right .user-email{display:none}.revise-input-row{flex-direction:column;align-items:stretch}}
+@media(max-width:767px){.menu-btn{display:block}.sidebar{position:fixed;left:-260px;top:57px;bottom:0;z-index:99;transition:left .3s;box-shadow:4px 0 20px rgba(0,0,0,.5)}.sidebar.open{left:0}.main{padding:16px}.header-right .user-email{display:none}.revise-input-row{flex-direction:column;align-items:stretch}}
 </style>
 </head>
 <body>

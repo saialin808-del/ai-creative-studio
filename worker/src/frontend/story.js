@@ -263,7 +263,7 @@ select option{background:var(--bg-card);color:var(--text)}
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(100px);background:var(--bg-card2);border:1px solid var(--success);color:var(--success);padding:10px 20px;border-radius:8px;font-size:13px;z-index:1000;transition:transform .3s}
 .toast.show{transform:translateX(-50%) translateY(0)}
 .empty-note{color:var(--text3);font-size:13px;padding:16px;background:var(--bg-input);border:1px dashed var(--border);border-radius:10px;text-align:center}
-@media(max-width:768px){.menu-btn{display:block}.sidebar{position:fixed;left:-260px;top:57px;bottom:0;z-index:99;transition:left .3s;box-shadow:4px 0 20px rgba(0,0,0,.5)}.sidebar.open{left:0}.main{padding:16px}.header-right .user-email{display:none}.revise-input-row{flex-direction:column;align-items:stretch}}
+@media(max-width:767px){.header-right .user-email{display:none}.revise-input-row{flex-direction:column;align-items:stretch}}
 /* ===== Story Studio Workflow 01→06 — Additional Styles ===== */
 .vf-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
 .vf-grid .form-group{margin-bottom:14px;}
@@ -293,7 +293,7 @@ select option{background:var(--bg-card);color:var(--text)}
 .final-scene-box{margin-bottom:12px;}
 .final-box-label{font-size:12px;color:var(--cyan);font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:6px;}
 .final-scene-meta{font-size:12.5px;color:var(--text2);border-top:1px solid var(--border);padding-top:10px;margin-top:4px;display:flex;flex-wrap:wrap;gap:6px 16px;}
-@media(max-width:768px){.vf-grid{grid-template-columns:1fr;}}
+@media(max-width:767px){.vf-grid{grid-template-columns:1fr;}}
 </style>
 </head>
 <body>

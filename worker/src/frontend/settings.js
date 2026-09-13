@@ -22,10 +22,6 @@ export const SETTINGS_HTML = `<!DOCTYPE html>
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:'Noto Sans Myanmar','Roboto','Segoe UI',Arial,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line-height:1.6;}
 a{color:var(--cyan);text-decoration:none;}
-.hamburger{display:none;}
-.backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:99;}
-.backdrop.show{display:block;}
-.sidebar{position:fixed;left:14px;top:14px;width:220px;height:calc(100vh - 28px);background:#0d1425;border-radius:16px;padding:22px 14px;overflow-y:auto;z-index:100;transition:transform 0.3s,left 0.3s;}
 .brand{margin-bottom:22px;}
 .brand-title{font-weight:800;font-size:18px;letter-spacing:0.5px;background:linear-gradient(90deg,var(--purple),var(--cyan));-webkit-background-clip:text;background-clip:text;color:transparent;}
 .nav-label{font-size:11px;color:var(--text3);letter-spacing:1.5px;margin:18px 0 8px 10px;text-transform:uppercase;}
@@ -38,7 +34,6 @@ a{color:var(--cyan);text-decoration:none;}
 .license-badge.pro{background:#103a2a;color:var(--success);}
 .side-btn{display:block;width:100%;text-align:left;padding:10px 12px;border-radius:12px;background:#161d30;color:#ccc;border:1px solid var(--border);font-size:13px;cursor:pointer;margin-bottom:6px;text-decoration:none;transition:all 0.2s;}
 .side-btn:hover{background:#1e2740;border-color:var(--cyan);}
-.main-content{margin-left:262px;padding:24px;max-width:760px;}
 .page-title{font-size:22px;font-weight:700;color:var(--cyan);margin-bottom:8px;}
 .page-subtitle{color:var(--text2);font-size:13.5px;margin-bottom:22px;}
 .tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px;}
@@ -70,18 +65,18 @@ a{color:var(--cyan);text-decoration:none;}
 .toast.show{display:block;}
 .toast.success{border-color:var(--success);}
 .toast.error{border-color:var(--error);}
-@media(max-width:768px){
-  .sidebar{transform:translateX(-130%);}
-  .sidebar.open{transform:translateX(0);}
-  .hamburger{display:block;}
-  .main-content{margin-left:0;padding:70px 16px 24px 16px;}
-}
 </style>
 </head>
 <body>
-<button class="hamburger" onclick="toggleSidebar()" aria-label="Menu">&#9776;</button>
-${renderSidebar('settings')}
-<main class="main-content">
+<div class="aics-app" id="aicsApp">
+<header class="aics-header">
+<button class="aics-menu-btn" onclick="toggleSidebar()" aria-label="Menu">&#9776;</button>
+<div class="aics-brand"><span class="aics-brand-icon">🎨</span><span class="aics-title">AI Creative Studio</span></div>
+<div class="aics-pro" id="sidePlan">FREE</div>
+</header>
+<div class="layout">
+${renderSidebar('settings',{variant:'studio'})}
+<main class="main-content aics-main">
   <h1 class="page-title">🛠️ ဆက်တင်များ</h1>
   <p class="page-subtitle">သင့်အကောင့်၊ ဦးစားပေးချက်များနှင့် API Key ကို စီမံပါ — ဤအချက်များသည် သင့်အကောင့်တွင်သာ သက်ရောက်သည်။</p>
   <div class="tabs">
@@ -131,6 +126,7 @@ ${renderSidebar('settings')}
     <div class="loading-state">Loading...</div>
   </div>
 </main>
+</div>
 <div class="toast" id="toast"></div>
 ${sidebarScript()}
 <script>

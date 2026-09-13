@@ -206,7 +206,7 @@ select option{background:var(--bg-card);color:var(--text)}
 .map-loading{text-align:center;padding:30px 16px}
 .map-loading .spinner{width:34px;height:34px;border-width:4px;margin:0 auto 14px}
 .map-card .error-box{margin-top:12px}
-@media(max-width:768px){.map-img-actions{flex-direction:column}.map-img-actions .btn{width:100%}.card{padding:14px}.map-card-head{padding:12px 14px}.map-card-body{padding:12px 14px}}
+@media(max-width:767px){.map-img-actions{flex-direction:column}.map-img-actions .btn{width:100%}.card{padding:14px}.map-card-head{padding:12px 14px}.map-card-body{padding:12px 14px}}
 </style>
 </head>
 <body>
