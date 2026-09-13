@@ -1,19 +1,17 @@
-// AI Creative Studio — Story Studio Frontend (Workflow 01→06)
-// Workflow: 01 ဇာတ်လမ်းရေးရန် → 02 AI ရေးသားနေသည် → 03 ဇာတ်လမ်းရလဒ်
-//           → 04 Video ဇာတ်လမ်းဖန်တီးရန် → 05 AI ပြင်ဆင်နေသည် → 06 ရလဒ်
+// AI Creative Studio — Story Studio Frontend (Main Stepper + Video Branch Stepper)
+// Main: 01 ဇာတ်လမ်းအချက်အလက် → 02 AI ရေးသားနေသည် → 03 ဇာတ်လမ်းရလဒ်
+// Video Branch (Step 03 မှ): 01 Video ပြင်ဆင်ရန် → 02 AI ပြင်ဆင်နေသည် → 03 နောက်ဆုံးရလဒ်
 // Studio Isolation: ဤ File သည် Story Studio UI နှင့်သာ သက်ဆိုင်သည်။
 // Shared: renderSidebar / sidebarScript / renderStudioShell (frontend/shared.js)
 // ⚠️ API Contract ကို မပျက်စီးစေရ — /api/studio/story/generate, /revise, /video, /video-image ကို ဆက်ထိန်းထားသည်။
 
 import { renderSidebar, sidebarScript, renderStudioShell } from './shared.js';
 
+// Main Stepper (၃ ဆင့်) — Video Branch သည် အောက်က state machine တွင် သီးခြားစီ
 const STEPS = [
   { label: '01 ဇာတ်လမ်းအချက်အလက်' },
-  { label: '02 AI ရေးသားနေသည်', lock: true },
+  { label: '02 AI ရေးသားနေသည်', lock: true, loading: 'ဇာတ်လမ်းရေးသားနေသည်...' },
   { label: '03 ဇာတ်လမ်းရလဒ်', req: [2] },
-  { label: '04 Video ဇာတ်လမ်းပြင်ဆင်ရန်', req: [3] },
-  { label: '05 AI ပြင်ဆင်နေသည်', lock: true, req: [4] },
-  { label: '06 နောက်ဆုံးရလဒ်', req: [5] },
 ];
 
 const STEP1_HTML = `
@@ -559,7 +557,7 @@ function generateStory(){
   if(window.studioForceGoStep)window.studioForceGoStep(2);
   else window.studioGoStep(2);
   startStatusAnim('storyStatus');
-  if(window.studioSetLoading)window.studioSetLoading(true);
+  if(window.studioSetLoading)window.studioSetLoading({on:true});
   var byok=document.getElementById('byokInput')?document.getElementById('byokInput').value.trim():'';
   var body={idea:idea,type:selectedStoryType};
   if(byok)body.apiKey=byok;
@@ -568,7 +566,7 @@ function generateStory(){
       currentStory=data.story||'';
       currentStoryIdea=idea;
       stopStatusAnim('storyStatus',true);
-      if(window.studioSetLoading)window.studioSetLoading(false);
+      if(window.studioSetLoading)window.studioSetLoading({on:false});
       studioMarkDone(1);studioMarkDone(2);
       document.getElementById('reviseHistory').innerHTML='';
       var ta=document.getElementById('storyResult');
@@ -582,7 +580,7 @@ function generateStory(){
     .catch(function(err){
       console.error('Story Generate Error:', err);
       stopStatusAnim('storyStatus',false);
-      if(window.studioSetLoading)window.studioSetLoading(false);
+      if(window.studioSetLoading)window.studioSetLoading({on:false});
       storyBusy=false;
       showStepError('genError2','genRetry2',friendlyMsg(err,'story'));
       // Error → သက်ဆိုင်ရာ Input Step (01) သို့ Auto Back — Processing Step (02) ကို Done မသတ်မှတ်ရ
@@ -634,10 +632,11 @@ function goToVideoForm(){
   stopTypewriter();
   if(ta)currentStory=ta.value;
   if(!currentStory||!currentStory.trim()){showToastMsg('ဗီဒီယို ဖန်တီးရန် ဇာတ်လမ်း မရှိသေးပါ');return;}
-  studioMarkDone(3);
+  stMarkDone(3);
   videoStarted=true;
   fillVideoStoryField();
-  window.studioGoStep(4);
+  stSetMode('video');
+  stGoForce(4);
   autoSave();
 }
 function fillVideoStoryField(){
@@ -660,7 +659,7 @@ function generateVideoPlan(){
   if(window.studioForceGoStep)window.studioForceGoStep(5);
   else window.studioGoStep(5);
   startStatusAnim('planStatus');
-  if(window.studioSetLoading)window.studioSetLoading(true);
+  if(window.studioSetLoading)window.studioSetLoading({on:true});
   var continuity=document.getElementById('vidContinuity');
   var body={
     story:story,
@@ -681,7 +680,7 @@ function generateVideoPlan(){
       currentScenes=data.scenes||[];
       currentCharacters=data.characters||[];
       stopStatusAnim('planStatus',true);
-      if(window.studioSetLoading)window.studioSetLoading(false);
+      if(window.studioSetLoading)window.studioSetLoading({on:false});
       studioMarkDone(4);studioMarkDone(5);
       planBusy=false;
       if(btn)btn.disabled=false;
@@ -694,7 +693,7 @@ function generateVideoPlan(){
     .catch(function(err){
       console.error('Story Video Plan Error:', err);
       stopStatusAnim('planStatus',false);
-      if(window.studioSetLoading)window.studioSetLoading(false);
+      if(window.studioSetLoading)window.studioSetLoading({on:false});
       planBusy=false;
       if(btn)btn.disabled=false;
       showStepError('planError5','planRetry5',friendlyMsg(err,'video'));
@@ -905,7 +904,7 @@ function studioOnStep(n){
     var pb=document.getElementById('videoPlanBtn');
     if(pb)pb.disabled=false;
     studioSetActions([
-      {label:'&#8592; Back',cls:'ghost',fn:function(){window.studioGoStep(3);}},
+      {label:'&#8592; Content ရလဒ်သို့ ပြန်ရန်',cls:'ghost',fn:function(){stSetMode('main');stGoForce(3);}},
       bReset()
     ]);
   }else if(n===5){
@@ -927,6 +926,7 @@ function studioCollectDraft(){
   for(var i=0;i<FIELD_CONFIG.length;i++){var f=document.getElementById('field_'+i);fields[i]=f?f.value:'';}
   return {
     stepNow:window.studioCur?window.studioCur():1,
+    mode:ST_MODE,
     storyType:selectedStoryType,
     videoType:selectedVideoType,
     aud:(document.getElementById('audSel')?document.getElementById('audSel').value:''),
@@ -987,12 +987,19 @@ function studioRestoreDraft(d){
   if((videoStarted||was>=4)&&currentStory){studioMarkDone(3);}
   if(currentCharacters.length||currentScenes.length){studioMarkDone(4);studioMarkDone(5);}
   if(currentScenes.length||currentCharacters.length)renderFinalResult();
-  setTimeout(function(){
-    var c=window.studioCur?window.studioCur():1;
-    if(c===2){window.studioGoStep(currentStory?3:1);}
-    else if(c===5){window.studioGoStep((currentScenes.length||currentCharacters.length)?6:(currentStory?3:1));}
-    else if(c===4&&!currentStory){window.studioGoStep(1);}
-  },0);
+  // Restore mode (main vs video branch)
+  if(d.mode==='video'&&(videoStarted||was>=4)&&currentStory){ST_MODE='video';}
+  // Resolve target step
+  var target=was;
+  var tm=stMeta(target);
+  if(!tm||tm.lock||!stAllowed(target)){
+    var steps=stModeSteps();
+    target=steps[steps.length-1].n;
+    if(stMeta(target).lock)target=steps[steps.length-2].n;
+    if(!stAllowed(target))target=1;
+  }
+  stCur=target;
+  stShow(target);
 }
 window.studioRestoreDraft=studioRestoreDraft;
 
@@ -1006,6 +1013,101 @@ function autoSave(){
 function autoSaveImgCache(){
   try{localStorage.setItem('aics_draft_story_imgcache',JSON.stringify(imgCache));}catch(e){}
 }
+
+// ============================================================
+// Branch Stepper State Machine (Content Studio ပုံစံ — Main + Video Branch)
+// Main: 1,2,3 | Video Branch: 4,5,6
+// Shell ၏ stepper ကို boot ပြီးမှ ကိုယ်ပိုင် render နှင့် mode-switch ထပ်ဆောက်သည်
+// ============================================================
+var ST_MODE='main';
+var stCur=1;
+var stDone={};
+var ST_STEPS={
+  main:[
+    { n:1, label:'01 ဇာတ်လမ်းအချက်အလက်' },
+    { n:2, label:'02 AI ရေးသားနေသည်', lock:true, loading:'ဇာတ်လမ်းရေးသားနေသည်...' },
+    { n:3, label:'03 ဇာတ်လမ်းရလဒ်', req:[2] }
+  ],
+  video:[
+    { n:4, label:'01 Video ပြင်ဆင်ရန်', req:[3] },
+    { n:5, label:'02 AI ပြင်ဆင်နေသည်', lock:true, req:[4], loading:'Video ပြင်ဆင်နေသည်...' },
+    { n:6, label:'03 နောက်ဆုံးရလဒ်', req:[5] }
+  ]
+};
+function stMeta(n){
+  var modes=['main','video'];
+  for(var m=0;m<modes.length;m++){var s=ST_STEPS[modes[m]];for(var i=0;i<s.length;i++)if(s[i].n===n)return s[i];}
+  return null;
+}
+function stModeSteps(){return ST_STEPS[ST_MODE]||ST_STEPS.main;}
+function stAllowed(n){
+  if(stDone[n])return true;
+  var m=stMeta(n);if(!m)return false;
+  var req=m.req||[];
+  if(req.length===0)return true;
+  for(var i=0;i<req.length;i++)if(!stDone[req[i]])return false;
+  return true;
+}
+function stNav(n){
+  var m=stMeta(n);if(!m)return;
+  if(m.lock){showToastMsg('ဤအဆင့်သည် AI ဆောင်ရွက်နေချိန် အဆင့်ဖြစ်ပြီး ကိုယ်တိုင် ရွေးချယ်၍ မရပါ');return;}
+  if(!stAllowed(n)){showToastMsg('အရင်အဆင့်များ ပြီးမှ ဤအဆင့်သို့ ဆက်သွားနိုင်ပါသည်');return;}
+  stGoForce(n);
+}
+function stGoForce(n){stCur=n;stShow(n);}
+function stMarkDone(n){stDone[n]=true;stUpdateStepper();}
+function stUnmarkDone(n){stDone[n]=false;stUpdateStepper();}
+function stShow(n){
+  var steps=document.querySelectorAll('.aics-step');
+  for(var i=0;i<steps.length;i++){
+    var ds=steps[i].getAttribute('data-step');
+    steps[i].classList.toggle('active',parseInt(ds,10)===n);
+  }
+  var w=document.getElementById('aicsWork');if(w)w.scrollTop=0;
+  stUpdateStepper();
+  if(window.studioOnStep){try{window.studioOnStep(n);}catch(e){}}
+}
+function stUpdateStepper(){
+  var btns=document.querySelectorAll('.aics-step-btn');
+  for(var i=0;i<btns.length;i++){
+    var n=parseInt(btns[i].getAttribute('data-step'),10);
+    var m=stMeta(n);
+    btns[i].classList.remove('active','done','todo');
+    if(n===stCur)btns[i].classList.add('active');
+    else if(stDone[n])btns[i].classList.add('done');
+    else if(!stAllowed(n)||(m&&m.lock))btns[i].classList.add('todo');
+  }
+  if(window.studioScrollActiveStep)window.studioScrollActiveStep(true);
+}
+function stRenderStepper(){
+  var c=document.getElementById('aicsStepper');if(!c)return;
+  var steps=stModeSteps();
+  var html='<div class="aics-stepper-inner">';
+  for(var i=0;i<steps.length;i++){
+    var s=steps[i];
+    html+='<button class="aics-step-btn" data-step="'+s.n+'" onclick="stNav('+s.n+')">'+
+      '<span class="aics-step-txt"><span class="aics-step-label">'+s.label+'</span></span>'+
+      '<span class="aics-step-loading"><span class="aics-step-spinner"></span>'+(s.loading||'ဖန်တီးနေသည်...')+'</span></button>';
+    if(i<steps.length-1)html+='<span class="aics-step-link"></span>';
+  }
+  html+='</div>';
+  c.innerHTML=html;
+  stUpdateStepper();
+}
+function stSetMode(mode){ST_MODE=mode;stRenderStepper();}
+// Shell globals များကို mode-aware versions နဲ့ override
+window.studioGoStep=stNav;
+window.studioForceGoStep=stGoForce;
+window.studioMarkDone=stMarkDone;
+window.studioUnmarkDone=stUnmarkDone;
+window.studioCur=function(){return stCur;};
+// Boot — Shell ပြီးမှ Stepper ကို ကိုယ်ပိုင် Branch Stepper ဖြင့် ပြန်ဆောက်သည်
+function stBoot(){
+  stRenderStepper();
+  stShow(stCur);
+}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',stBoot);
+else stBoot();
 </script>
 </body>
 </html>`;

@@ -1,8 +1,8 @@
 // AI Creative Studio — Content Studio Frontend
 // Architecture: Content → Output Hub → Branch (Video / Audio)
 // Main Stepper: ① အကြောင်းအရာ → ② AI ရေးသားနေသည် → ③ Content ရလဒ်
-// Video Branch : ① Content → ② Video → ③ AI ပြင်ဆင်နေသည် → ④ Video ရလဒ်
-// Audio Branch : ① Content → ② Audio → ③ AI ပြင်ဆင်နေသည် → ④ Audio ရလဒ်
+// Video Branch : ① Video ပြင်ဆင်ရန် → ② AI ပြင်ဆင်နေသည် → ③ Video ရလဒ်
+// Audio Branch : ① Audio ပြင်ဆင်ရန် → ② AI ပြင်ဆင်နေသည် → ③ Audio ရလဒ်
 // Studio Isolation: ဤ File သည် Content Studio UI နှင့်သာ သက်ဆိုင်သည်။
 // Shared: renderSidebar / sidebarScript / renderStudioShell (frontend/shared.js) — မပြောင်းပါ
 // ⚠️ API Contract / Backend Routes မပြောင်းပါ — Frontend Flow သာ ပြောင်းပါသည်။
@@ -558,16 +558,14 @@ var CS_STEPS = {
     { n: 3,  label: '03 Content ရလဒ် / Output Hub', req: [2] }
   ],
   video: [
-    { n: 11, label: '01 Content' },
-    { n: 12, label: '02 Video ပြင်ဆင်ရန်', req: [11] },
-    { n: 13, label: '03 AI ပြင်ဆင်နေသည်', lock: true, req: [12], loading: 'Video ပြင်ဆင်နေသည်...' },
-    { n: 14, label: '04 Video ရလဒ်', req: [13] }
+    { n: 12, label: '01 Video ပြင်ဆင်ရန်', req: [11] },
+    { n: 13, label: '02 AI ပြင်ဆင်နေသည်', lock: true, req: [12], loading: 'Video ပြင်ဆင်နေသည်...' },
+    { n: 14, label: '03 Video ရလဒ်', req: [13] }
   ],
   audio: [
-    { n: 21, label: '01 Content' },
-    { n: 22, label: '02 Audio ပြင်ဆင်ရန်', req: [21] },
-    { n: 23, label: '03 AI ပြင်ဆင်နေသည်', lock: true, req: [22], loading: 'အသံ ပြင်ဆင်နေသည်...' },
-    { n: 24, label: '04 Audio ရလဒ်', req: [23] }
+    { n: 22, label: '01 Audio ပြင်ဆင်ရန်', req: [21] },
+    { n: 23, label: '02 AI ပြင်ဆင်နေသည်', lock: true, req: [22], loading: 'အသံ ပြင်ဆင်နေသည်...' },
+    { n: 24, label: '03 Audio ရလဒ်', req: [23] }
   ]
 };
 
@@ -645,6 +643,7 @@ function csUpdateStepper(){
     else if(csDone[n])btns[i].classList.add('done');
     else if(!csAllowed(n)||(m&&m.lock))btns[i].classList.add('todo');
   }
+  if(window.studioScrollActiveStep)window.studioScrollActiveStep(true);
 }
 function csRenderStepper(){
   var c=document.getElementById('aicsStepper'); if(!c)return;
@@ -708,14 +707,9 @@ function setGenButtonsDisabled(off){
 function setLoading(id,show){
   var el=document.getElementById(id);
   if(el){ if(show)el.classList.add('show'); else el.classList.remove('show'); }
-  // Branch stepper ပေါ် လက်ရှိ အဆင့်တွင် spinner ပြရန် (global .loading class နေရာမသုံး — display:none!important တိုက်မိနေ)
-  var btns=document.querySelectorAll('.aics-step-btn');
-  for(var i=0;i<btns.length;i++){
-    var n=parseInt(btns[i].getAttribute('data-step'),10);
-    if(n===csCur){
-      if(show)btns[i].classList.add('cs-busy');
-      else btns[i].classList.remove('cs-busy');
-    }
+  var meta=csMeta(csCur)||{};
+  if(window.studioSetLoading){
+    window.studioSetLoading({on:show,step:csCur,text:meta.loading||''});
   }
 }
 // ===== Loading checklist animation (Story Studio ပုံစံ) =====

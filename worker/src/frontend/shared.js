@@ -462,6 +462,8 @@ function aicsShellCss() {
     '.aics-step-btn.done .aics-step-label{color:#4ade80;}\n' +
     '.aics-step-btn.done .aics-step-label::before{content:"\\2713 ";color:#4ade80;font-weight:700;}\n' +
     '.aics-step-btn.todo{cursor:not-allowed;opacity:.4;}\n' +
+    '.aics-step-btn.error{border-color:rgba(255,82,82,.65);box-shadow:0 0 14px rgba(255,82,82,.22);}\n' +
+    '.aics-step-btn.error .aics-step-label{color:#ff8a8a;}\n' +
     '.aics-step-btn .aics-step-loading{display:none;font-size:11px;color:#00e5ff;font-weight:700;align-items:center;gap:5px;margin-top:3px;white-space:nowrap;}\n' +
     '.aics-step-btn.loading .aics-step-loading{display:flex;}\n' +
     '.aics-step-btn.loading{border-color:rgba(0,229,255,.6);box-shadow:0 0 18px rgba(0,229,255,.4);}\n' +
@@ -532,7 +534,7 @@ export function renderStudioShell(opts) {
   const steps = opts.steps || [];
   const content = opts.content || '';
   const stepsJson = JSON.stringify(steps.map(function (s, i) {
-    return { n: i + 1, label: s.label || 'Step ' + (i + 1), sub: s.sub || '', req: s.req || (i === 0 ? [] : [i]), lock: !!s.lock };
+    return { n: i + 1, label: s.label || 'Step ' + (i + 1), sub: s.sub || '', req: s.req || (i === 0 ? [] : [i]), lock: !!s.lock, loading: s.loading || '' };
   }));
 
   return (
@@ -597,7 +599,39 @@ export function renderStudioShell(opts) {
     '    for (var k = 0; k < STEPS.length; k++) if (STEPS[k].n === n) return STEPS[k];\n' +
     '    return null;\n' +
     '  }\n' +
-    '  function updateStepper() {\n' +
+    '  function scrollActiveStepIntoView(smooth) {
+    var btn = document.querySelector('.aics-step-btn.active');
+    if (!btn) return;
+    var container = btn.closest ? btn.closest('.aics-stepper') : el('aicsStepper');
+    if (!container) container = el('aicsStepper');
+    if (!container) return;
+    try {
+      var cr = container.getBoundingClientRect();
+      var br = btn.getBoundingClientRect();
+      var fullyVisible = br.left >= cr.left && br.right <= cr.right;
+      if (!fullyVisible) {
+        btn.scrollIntoView({behavior: smooth === false ? 'auto' : 'smooth', inline: 'center', block: 'nearest'});
+      }
+    } catch (e) {
+      try { btn.scrollIntoView({behavior:'smooth', inline:'center', block:'nearest'}); } catch (e2) {}
+    }
+  }
+  window.studioScrollElementIntoView = function (selector, containerSelector, smooth) {
+    var btn = typeof selector === 'string' ? document.querySelector(selector) : selector;
+    if (!btn) return;
+    var container = containerSelector ? document.querySelector(containerSelector) : (btn.closest ? btn.closest('.aics-stepper') : null);
+    if (!container) container = el('aicsStepper');
+    try {
+      var cr = container && container.getBoundingClientRect ? container.getBoundingClientRect() : null;
+      var br = btn.getBoundingClientRect();
+      if (!cr || br.left < cr.left || br.right > cr.right) {
+        btn.scrollIntoView({behavior: smooth === false ? 'auto' : 'smooth', inline: 'center', block: 'nearest'});
+      }
+    } catch (e) {}
+  };
+  window.studioScrollActiveStep = scrollActiveStepIntoView;
+
+  function updateStepper() {\n' +
     '    var btns = document.querySelectorAll(".aics-step-btn");\n' +
     '    for (var i = 0; i < btns.length; i++) {\n' +
     '      var n = parseInt(btns[i].getAttribute("data-step"), 10);\n' +

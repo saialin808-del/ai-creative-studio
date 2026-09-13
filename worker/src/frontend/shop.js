@@ -14,7 +14,7 @@ import { renderSidebar, sidebarScript, renderStudioShell } from './shared.js';
 // ===================== MAIN STEPPER (အမြဲမြင်ရမည် — ၃ ဆင့်) =====================
 const STEPS = [
   { label: '01 အကြောင်းအရာ' },
-  { label: '02 AI ရေးသားနေသည်', lock: true },
+  { label: '02 AI ရေးသားနေသည်', lock: true, loading: 'Shop Content ရေးသားနေသည်...' },
   { label: '03 Shop Content ရလဒ်', req: [2] },
 ];
 
@@ -785,11 +785,11 @@ function generateContent(){
   if(window.studioForceGoStep)window.studioForceGoStep(2);
   else window.studioGoStep(2);
   startStatusAnim('contentStatus');
-  if(window.studioSetLoading)window.studioSetLoading(true);
+  if(window.studioSetLoading)window.studioSetLoading({on:true});
   api('/api/studio/shop/content/generate',{method:'POST',body:{idea:idea,type:contentType,images:refImagesContent}})
   .then(function(d){
     stopStatusAnim('contentStatus',true);
-    if(window.studioSetLoading)window.studioSetLoading(false);
+    if(window.studioSetLoading)window.studioSetLoading({on:false});
     shopBusy=false;
     if(d.error){
       console.error('Shop Content Generate Error:', d.error);
@@ -818,7 +818,7 @@ function generateContent(){
   .catch(function(err){
     console.error('Shop Content Generate Error:', err);
     stopStatusAnim('contentStatus',false);
-    if(window.studioSetLoading)window.studioSetLoading(false);
+    if(window.studioSetLoading)window.studioSetLoading({on:false});
     shopBusy=false;
     showStepError('step2Err','step2Retry','❌ Content ဖန်တီးရာတွင် အခက်အခဲရှိနေပါသည်။\\nNetwork error — ခဏစောင့်ပြီး ပြန်ကြိုးစားပါ။');
     // Error → သက်ဆိုင်ရာ Input Step (01) သို့ Auto Back — Processing Step (02) ကို Done မသတ်မှတ်ရ
@@ -889,25 +889,25 @@ function renderBranchStepper(id,steps,cur,doneMap){
   c.innerHTML=html;
 }
 function videoBranchMeta(){
-  var steps=['Content','Video ပြင်ဆင်ရန်','AI ပြင်ဆင်နေသည်','Video ရလဒ်'];
+  var steps=['Video ပြင်ဆင်ရန်','AI ပြင်ဆင်နေသည်','Video ရလဒ်'];
   var cur,done;
-  if(shopState.video.step===1){cur=1;done=[0];}
-  else if(shopState.video.step===2){cur=2;done=[0,1];}
-  else{cur=3;done=[0,1,2];}
+  if(shopState.video.step===1){cur=0;done=[];}
+  else if(shopState.video.step===2){cur=1;done=[0];}
+  else{cur=2;done=[0,1];}
   return {steps:steps,cur:cur,done:done};
 }
 function audioBranchMeta(){
-  var steps=['Content','Audio ပြင်ဆင်ရန်','AI အသံဖန်တီးနေသည်','Audio ရလဒ်','SRT','AI SRT ပြုလုပ်နေသည်','SRT ရလဒ်','ဘာသာပြန်','AI ဘာသာပြန်နေသည်','ဘာသာပြန်ရလဒ်'];
+  var steps=['Audio ပြင်ဆင်ရန်','AI အသံဖန်တီးနေသည်','Audio ရလဒ်','SRT','AI SRT ပြုလုပ်နေသည်','SRT ရလဒ်','ဘာသာပြန်','AI ဘာသာပြန်နေသည်','ဘာသာပြန်ရလဒ်'];
   var cur,done;
   switch(shopState.audio.step){
-    case 1:cur=1;done=[0];break;
-    case 2:cur=2;done=[0,1];break;
-    case 3:cur=3;done=[0,1,2];break;
-    case 4:cur=5;done=[0,1,2,3,4];break;
-    case 5:cur=6;done=[0,1,2,3,4,5];break;
-    case 6:cur=8;done=[0,1,2,3,4,5,6,7];break;
-    case 7:cur=9;done=[0,1,2,3,4,5,6,7,8];break;
-    default:cur=1;done=[0];break;
+    case 1:cur=0;done=[];break;
+    case 2:cur=1;done=[0];break;
+    case 3:cur=2;done=[0,1];break;
+    case 4:cur=4;done=[0,1,2,3];break;
+    case 5:cur=5;done=[0,1,2,3,4];break;
+    case 6:cur=7;done=[0,1,2,3,4,5,6];break;
+    case 7:cur=8;done=[0,1,2,3,4,5,6,7];break;
+    default:cur=0;done=[];break;
   }
   return {steps:steps,cur:cur,done:done};
 }
