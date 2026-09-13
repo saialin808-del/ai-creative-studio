@@ -79,6 +79,7 @@ a{color:var(--cyan);text-decoration:none;}
 </style>
 </head>
 <body>
+<button class="hamburger" onclick="toggleSidebar()" aria-label="Menu">&#9776;</button>
 ${renderSidebar('settings')}
 <main class="main-content">
   <h1 class="page-title">🛠️ ဆက်တင်များ</h1>
