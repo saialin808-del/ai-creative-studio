@@ -599,39 +599,39 @@ export function renderStudioShell(opts) {
     '    for (var k = 0; k < STEPS.length; k++) if (STEPS[k].n === n) return STEPS[k];\n' +
     '    return null;\n' +
     '  }\n' +
-    '  function scrollActiveStepIntoView(smooth) {
-    var btn = document.querySelector('.aics-step-btn.active');
-    if (!btn) return;
-    var container = btn.closest ? btn.closest('.aics-stepper') : el('aicsStepper');
-    if (!container) container = el('aicsStepper');
-    if (!container) return;
-    try {
-      var cr = container.getBoundingClientRect();
-      var br = btn.getBoundingClientRect();
-      var fullyVisible = br.left >= cr.left && br.right <= cr.right;
-      if (!fullyVisible) {
-        btn.scrollIntoView({behavior: smooth === false ? 'auto' : 'smooth', inline: 'center', block: 'nearest'});
-      }
-    } catch (e) {
-      try { btn.scrollIntoView({behavior:'smooth', inline:'center', block:'nearest'}); } catch (e2) {}
-    }
-  }
-  window.studioScrollElementIntoView = function (selector, containerSelector, smooth) {
-    var btn = typeof selector === 'string' ? document.querySelector(selector) : selector;
-    if (!btn) return;
-    var container = containerSelector ? document.querySelector(containerSelector) : (btn.closest ? btn.closest('.aics-stepper') : null);
-    if (!container) container = el('aicsStepper');
-    try {
-      var cr = container && container.getBoundingClientRect ? container.getBoundingClientRect() : null;
-      var br = btn.getBoundingClientRect();
-      if (!cr || br.left < cr.left || br.right > cr.right) {
-        btn.scrollIntoView({behavior: smooth === false ? 'auto' : 'smooth', inline: 'center', block: 'nearest'});
-      }
-    } catch (e) {}
-  };
-  window.studioScrollActiveStep = scrollActiveStepIntoView;
+    '  function scrollActiveStepIntoView(smooth) {\n' +
+    '    var btn = document.querySelector(\'.aics-step-btn.active\');\n' +
+    '    if (!btn) return;\n' +
+    '    var container = btn.closest ? btn.closest(\'.aics-stepper\') : el(\'aicsStepper\');\n' +
+    '    if (!container) container = el(\'aicsStepper\');\n' +
+    '    if (!container) return;\n' +
+    '    try {\n' +
+    '      var cr = container.getBoundingClientRect();\n' +
+    '      var br = btn.getBoundingClientRect();\n' +
+    '      var fullyVisible = br.left >= cr.left && br.right <= cr.right;\n' +
+    '      if (!fullyVisible) {\n' +
+    '        btn.scrollIntoView({behavior: smooth === false ? \'auto\' : \'smooth\', inline: \'center\', block: \'nearest\'});\n' +
+    '      }\n' +
+    '    } catch (e) {\n' +
+    '      try { btn.scrollIntoView({behavior:\'smooth\', inline:\'center\', block:\'nearest\'}); } catch (e2) {}\n' +
+    '    }\n' +
+    '  }\n' +
+    '  window.studioScrollElementIntoView = function (selector, containerSelector, smooth) {\n' +
+    '    var btn = typeof selector === \'string\' ? document.querySelector(selector) : selector;\n' +
+    '    if (!btn) return;\n' +
+    '    var container = containerSelector ? document.querySelector(containerSelector) : (btn.closest ? btn.closest(\'.aics-stepper\') : null);\n' +
+    '    if (!container) container = el(\'aicsStepper\');\n' +
+    '    try {\n' +
+    '      var cr = container && container.getBoundingClientRect ? container.getBoundingClientRect() : null;\n' +
+    '      var br = btn.getBoundingClientRect();\n' +
+    '      if (!cr || br.left < cr.left || br.right > cr.right) {\n' +
+    '        btn.scrollIntoView({behavior: smooth === false ? \'auto\' : \'smooth\', inline: \'center\', block: \'nearest\'});\n' +
+    '      }\n' +
+    '    } catch (e) {}\n' +
+    '  };\n' +
+    '  window.studioScrollActiveStep = scrollActiveStepIntoView;\n' +
 
-  function updateStepper() {\n' +
+    '  function updateStepper() {\n' +
     '    var btns = document.querySelectorAll(".aics-step-btn");\n' +
     '    for (var i = 0; i < btns.length; i++) {\n' +
     '      var n = parseInt(btns[i].getAttribute("data-step"), 10);\n' +
