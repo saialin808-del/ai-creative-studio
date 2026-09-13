@@ -953,7 +953,8 @@ function renderVideoPlan(data){
       div.className='final-char-card';
       div.innerHTML='<div class="final-char-head"><span class="final-char-name">&#128100; '+escapeHtml(c.name||('Character '+(i+1)))+'</span></div>'+
                     '<div class="final-prompt-label">Character Reference</div>'+
-                    '<div class="final-prompt-text">'+escapeHtml(c.description||'')+'</div>';
+                    '<div class="final-prompt-text">'+escapeHtml(c.description||'')+'</div>'+
+                    '<div class="btn-row"><button class="btn-ghost" onclick="copyCharText('+i+')">&#128203; Copy Prompt</button></div>';
       charsList.appendChild(div);
     }
   }else{
@@ -975,11 +976,13 @@ function renderVideoPlan(data){
         }
         if(s.description){
           html+='<div class="final-scene-box"><div class="final-box-label">&#127757; Environment Reference</div>'+
-                '<div class="final-prompt-text">'+escapeHtml(s.description)+'</div></div>';
+                '<div class="final-prompt-text">'+escapeHtml(s.description)+'</div>'+
+                '<div class="btn-row"><button class="btn-ghost" onclick="copyEnvText('+idx+')">&#128203; Copy Environment Prompt</button></div></div>';
         }
         if(s.dialogue){
           html+='<div class="final-scene-box"><div class="final-box-label">&#128172; Dialogue</div>'+
-                '<div class="final-prompt-text">'+escapeHtml(s.dialogue)+'</div></div>';
+                '<div class="final-prompt-text">'+escapeHtml(s.dialogue)+'</div>'+
+                '<div class="btn-row"><button class="btn-ghost" onclick="copyDialogueText('+idx+')">&#128203; Copy Dialogue</button></div></div>';
         }
         html+='<div class="scene-image-area" id="sceneImg_'+idx+'">'+
               (imgCache['scene_'+idx]?'<img src="'+imgCache['scene_'+idx]+'"><div style="margin-top:8px;"><button class="btn-ghost" onclick="generateSceneImage('+idx+')">&#128260; ပြန်ဖန်တီးပါ</button></div>':'<button class="btn btn-secondary" onclick="generateSceneImage('+idx+')">&#128444; ဤဖြစ်စဉ်၏ ရုပ်ပုံဖန်တီးပါ</button>')+
@@ -995,6 +998,25 @@ function renderVideoPlan(data){
 function copySceneText(idx){
   if(!videoPlan||!videoPlan.scenes||!videoPlan.scenes[idx])return;
   var text=videoPlan.scenes[idx].visualPrompt||'';
+  if(navigator.clipboard)navigator.clipboard.writeText(text).then(function(){showToastMsg();});
+  else{var ta=document.createElement('textarea');ta.value=text;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);showToastMsg();}
+}
+function copyCharText(idx){
+  if(!videoPlan||!videoPlan.characters||!videoPlan.characters[idx])return;
+  var c=videoPlan.characters[idx];
+  var text=c.characterPrompt||c.prompt||c.description||'';
+  if(navigator.clipboard)navigator.clipboard.writeText(text).then(function(){showToastMsg();});
+  else{var ta=document.createElement('textarea');ta.value=text;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);showToastMsg();}
+}
+function copyEnvText(idx){
+  if(!videoPlan||!videoPlan.scenes||!videoPlan.scenes[idx])return;
+  var text=videoPlan.scenes[idx].description||'';
+  if(navigator.clipboard)navigator.clipboard.writeText(text).then(function(){showToastMsg();});
+  else{var ta=document.createElement('textarea');ta.value=text;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);showToastMsg();}
+}
+function copyDialogueText(idx){
+  if(!videoPlan||!videoPlan.scenes||!videoPlan.scenes[idx])return;
+  var text=videoPlan.scenes[idx].dialogue||'';
   if(navigator.clipboard)navigator.clipboard.writeText(text).then(function(){showToastMsg();});
   else{var ta=document.createElement('textarea');ta.value=text;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);showToastMsg();}
 }
