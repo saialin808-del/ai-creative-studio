@@ -22,7 +22,7 @@ export const SETTINGS_HTML = `<!DOCTYPE html>
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:'Noto Sans Myanmar','Roboto','Segoe UI',Arial,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line-height:1.6;}
 a{color:var(--cyan);text-decoration:none;}
-.hamburger{display:none;position:fixed;top:14px;left:14px;z-index:200;background:var(--card);border:1px solid #333;color:#fff;font-size:18px;width:42px;height:42px;border-radius:10px;cursor:pointer;}
+.hamburger{display:none;}
 .backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:99;}
 .backdrop.show{display:block;}
 .sidebar{position:fixed;left:14px;top:14px;width:220px;height:calc(100vh - 28px);background:#0d1425;border-radius:16px;padding:22px 14px;overflow-y:auto;z-index:100;transition:transform 0.3s,left 0.3s;}

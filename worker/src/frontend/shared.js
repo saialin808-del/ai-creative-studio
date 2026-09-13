@@ -119,7 +119,7 @@ function responsiveStyles() {
     '.aics-app .side-btn{display:flex;align-items:center;gap:8px;width:100%;box-sizing:border-box;text-align:left;padding:8px 10px;min-height:38px;border-radius:10px;background:#161d30;color:#c6cede;border:1px solid rgba(0,229,255,.12);font-size:12.5px;cursor:pointer;margin-bottom:5px;text-decoration:none;transition:all .2s;font-family:inherit;}\n' +
     '.aics-app .side-btn:hover{background:#1e2740;border-color:#00e5ff;color:#fff;}\n' +
     '.aics-app .layout > .aics-main{flex:1 1 auto;min-width:0;max-width:none;margin:0;padding:20px 24px;box-sizing:border-box;}\n' +
-    '.aics-app .aics-menu-btn{display:none;}\n' +
+    '.aics-app .aics-menu-btn{display:none;position:fixed;top:14px;left:14px;z-index:300;width:44px;height:44px;border-radius:10px;background:#151b2b;border:1px solid #2a3350;color:#fff;font-size:20px;cursor:pointer;align-items:center;justify-content:center;box-shadow:0 2px 12px rgba(0,0,0,.45);padding:0;line-height:1;}\n' +
     '/* Sidebar ကို Flex Column ဖြစ်စေပြီး Nav အလယ်တွင် Scroll လုပ်နိုင်၊ အောက်ခလုတ်များ အမြဲမြင်ရအောင် (Phase 8) */\n' +
     '.sidebar{display:flex;flex-direction:column;}\n' +
     '.sidebar-nav{flex:1 1 auto;overflow-y:auto;min-height:0;}\n' +
@@ -165,7 +165,7 @@ function responsiveStyles() {
     '  .aics-app .layout{display:block;min-height:calc(100vh - 58px);}\n' +
     '  .aics-app .layout > .sidebar{display:flex !important;position:fixed;left:-280px;top:57px;bottom:0;width:256px;max-width:82vw;height:auto;min-height:0;flex:0 0 auto;margin:0;border-radius:0 16px 16px 0;padding:16px 14px;z-index:99;overflow:hidden;transition:left .3s;box-shadow:4px 0 20px rgba(0,0,0,.5);}\n' +
     '  .aics-app .layout > .aics-main{width:100%;max-width:none;margin:0;padding:14px;}\n' +
-    '  .aics-app .aics-menu-btn{display:inline-flex;}\n' +
+    '  .aics-app .aics-menu-btn{display:flex;}\n' +
     '  /* Voice/Shop မူလ CSS တွင် Sidebar ကို ဖျောက်ထားသော Bug ကို ပြင် → Drawer ပြုလုပ်သည် */\n' +
     '  .layout > .sidebar{display:flex !important;}\n' +
     '  .layout > .sidebar{position:fixed;left:-280px;top:57px;bottom:0;z-index:99;width:256px;max-width:82vw;margin:0;border-radius:0 16px 16px 0;padding:16px 14px;transition:left .3s;box-shadow:4px 0 20px rgba(0,0,0,.5);}\n' +
@@ -181,7 +181,42 @@ function responsiveStyles() {
     '  .nav-item,.side-btn{min-height:46px;}\n' +
     '  .btn,button,select,input,textarea{min-height:44px;}\n' +
     '  .card{padding:14px;}\n' +
-    '  .quick-grid,.recent-grid{grid-template-columns:1fr;}\n' +
+    '  .quick-grid,.recent-grid{grid-template-columns:repeat(2,minmax(0,1fr));}\n' +
+    '}\n' +
+    '/* ===== Responsive Stability v2 — single source of truth ===== */\n' +
+    '/* Shared shell geometry: every page uses the same sidebar/main contract. */\n' +
+    '.aics-app,.aics-app *{box-sizing:border-box;}\n' +
+    '.layout{width:100%;min-width:0;}\n' +
+    '.layout > .sidebar{box-sizing:border-box;flex:0 0 220px;width:220px;min-width:0;}\n' +
+    '.layout > .main,.layout > main.main,.layout > .aics-main{box-sizing:border-box;flex:1 1 auto;min-width:0;width:auto;}\n' +
+    '.aics-header{min-height:63px;}\n' +
+    '.aics-menu-btn,.hamburger,.menu-btn{box-sizing:border-box;align-items:center;justify-content:center;line-height:1;touch-action:manipulation;}\n' +
+    '/* Tablet / iPad: keep the sidebar compact and content fluid. */\n' +
+    '@media (min-width:768px) and (max-width:1199px){\n' +
+    '  .layout{display:flex;align-items:stretch;}\n' +
+    '  .layout > .sidebar{position:sticky;top:71px;flex:0 0 190px;width:190px;height:calc(100vh - 85px);min-height:0;margin:12px 10px;padding:12px 10px;}\n' +
+    '  .layout > .main,.layout > main.main,.layout > .aics-main{min-width:0;max-width:none;margin:0;padding:20px;}\n' +
+    '  .main-content{margin-left:0;max-width:none;min-width:0;}\n' +
+    '  .quick-grid,.recent-grid{grid-template-columns:repeat(2,minmax(0,1fr));}\n' +
+    '  .aics-main{padding:20px;}\n' +
+    '  .aics-header{padding:10px 16px;}\n' +
+    '  .aics-title{font-size:16px;}\n' +
+    '  .aics-desc{max-width:220px;}\n' +
+    '}\n' +
+    '/* Phone: fixed menu anchor + drawer. No page-local offsets are allowed to win. */\n' +
+    '@media (max-width:767px){\n' +
+    '  .aics-header{min-height:57px;padding:8px 12px 8px 64px;}\n' +
+    '  .aics-menu-btn{display:flex;position:fixed;top:8px;left:12px;width:44px;height:44px;z-index:300;}\n' +
+    '  .hamburger,.menu-btn{display:flex;position:fixed;top:8px;left:12px;width:44px;height:44px;z-index:300;}\n' +
+    '  .aics-app .layout{display:block;min-height:calc(100vh - 57px);}\n' +
+    '  .layout > .sidebar,.aics-app .layout > .sidebar{position:fixed;left:-280px;top:57px;bottom:0;width:256px;max-width:82vw;height:auto;min-height:0;margin:0;padding:16px 14px;z-index:299;border-radius:0 16px 16px 0;transition:left .25s ease,transform .25s ease;transform:none;overflow:hidden;}\n' +
+    '  .layout > .sidebar.open,.aics-app .layout > .sidebar.open{left:0;transform:none;}\n' +
+    '  .layout > .main,.layout > main.main,.layout > .aics-main{width:100%;max-width:none;margin:0;padding:14px;}\n' +
+    '  .main-content{width:100%;max-width:none;margin-left:0;padding:64px 14px 20px;}\n' +
+    '  .header{padding-left:64px;}\n' +
+    '  .quick-grid,.recent-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;}\n' +
+    '  .studio-card,.project-card{min-width:0;}\n' +
+    '  .aics-main{padding:14px;}\n' +
     '}\n' +
     '</style>';
 }
