@@ -114,6 +114,11 @@ a{color:var(--cyan);text-decoration:none;}
   .aics-title{font-size:15px;}
   .aics-brand-icon{font-size:17px;}
   .aics-pro{padding:5px 12px;font-size:11px;}
+  .quick-grid,.recent-grid{grid-template-columns:repeat(2,1fr);gap:10px;}
+  .studio-card{padding:14px;min-height:90px;}
+  .studio-card .title{font-size:14px;}
+  .studio-card .desc{font-size:11px;}
+  .studio-card .bg-icon{font-size:80px;}
 }
 </style>
 </head>
