@@ -113,10 +113,6 @@ const STEP3_HTML = `
 
 <!-- ===== VIEW: VIDEO BRANCH ===== -->
 <div id="viewVideo" style="display:none;">
-<div class="shop-view-head">
-<button class="btn btn-secondary btn-sm" onclick="goContentResult()">&#8592; Shop Content Result</button>
-<span class="shop-view-title">&#127916; Video Branch</span>
-</div>
 <div class="shop-branch-stepper" id="videoBranchStepper"></div>
 
 <div class="card" id="videoSetupCard">
@@ -171,10 +167,6 @@ const STEP3_HTML = `
 
 <!-- ===== VIEW: AUDIO BRANCH ===== -->
 <div id="viewAudio" style="display:none;">
-<div class="shop-view-head">
-<button class="btn btn-secondary btn-sm" onclick="goContentResult()">&#8592; Shop Content Result</button>
-<span class="shop-view-title">&#128266; Audio Branch</span>
-</div>
 <div class="shop-branch-stepper" id="audioBranchStepper"></div>
 
 <div class="card" id="audioSetupCard">
