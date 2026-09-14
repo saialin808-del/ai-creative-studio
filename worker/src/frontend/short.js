@@ -414,7 +414,7 @@ function generateShort(){
       shortBusy=false;
       if(window.studioUnmarkDone)window.studioUnmarkDone(2);
       var em=friendlyMsg(err,'short');
-      showToastMsg('⚠️ '+(em.replace(/\n/g,' ')));
+      showToastMsg('⚠️ '+(em.replace(/\\n/g,' ')));
       // Error → Result နေရာတွင် unified error card (Retry / Back) ဖြင့် ပြသည်
       if(window.studioShowResultError)window.studioShowResultError(em,generateShort,function(){stGoForce(1);});
     });
@@ -548,7 +548,7 @@ function generateShortVideoPlan(){
       if(btn)btn.disabled=false;
       if(window.studioUnmarkDone)window.studioUnmarkDone(5);
       var em=friendlyMsg(err,'video');
-      showToastMsg('⚠️ '+(em.replace(/\n/g,' ')));
+      showToastMsg('⚠️ '+(em.replace(/\\n/g,' ')));
       // Error → Result နေရာတွင် unified error card (Retry / Back) ဖြင့် ပြသည်
       if(window.studioShowResultError)window.studioShowResultError(em,generateShortVideoPlan,function(){stGoForce(4);});
     });

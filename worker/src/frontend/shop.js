@@ -671,12 +671,12 @@ function generateContent(){
       if(window.studioUnmarkDone)window.studioUnmarkDone(2);
       showToast('⚠️ Content ဖန်တီး၍ မရပါ — ခဏစောင့်ပြီး ပြန်ကြိုးစားပါ','error');
       // Error → Result နေရာတွင် unified error card (Retry / Back) ဖြင့် ပြသည်
-      if(window.studioShowResultError)window.studioShowResultError('❌ Content ဖန်တီးရာတွင် အခက်အခဲရှိနေပါသည်။\n'+friendlyApiError(d),generateContent,function(){if(window.studioGoStep)window.studioGoStep(1);});
+      if(window.studioShowResultError)window.studioShowResultError('❌ Content ဖန်တီးရာတွင် အခက်အခဲရှိနေပါသည်။\\n'+friendlyApiError(d),generateContent,function(){if(window.studioGoStep)window.studioGoStep(1);});
       return;
     }
     var text=d.content||'';
-    if(d.speakingStyle)text+='\n\n[SPEAKING STYLE]\n'+d.speakingStyle;
-    if(d.voiceStyle)text+='\n\n[VOICE STYLE]\n'+d.voiceStyle;
+    if(d.speakingStyle)text+='\\n\\n[SPEAKING STYLE]\\n'+d.speakingStyle;
+    if(d.voiceStyle)text+='\\n\\n[VOICE STYLE]\\n'+d.voiceStyle;
     shopState.content.result=text;
     studioMarkDone(1);
     studioMarkDone(2);
@@ -695,7 +695,7 @@ function generateContent(){
     if(window.studioUnmarkDone)window.studioUnmarkDone(2);
     showToast('⚠️ Content ဖန်တီး၍ မရပါ — ခဏစောင့်ပြီး ပြန်ကြိုးစားပါ','error');
     // Error → Result နေရာတွင် unified error card (Retry / Back) ဖြင့် ပြသည်
-    if(window.studioShowResultError)window.studioShowResultError('❌ Content ဖန်တီးရာတွင် အခက်အခဲရှိနေပါသည်။\nNetwork error — ခဏစောင့်ပြီး ပြန်ကြိုးစားပါ။',generateContent,function(){if(window.studioGoStep)window.studioGoStep(1);});
+    if(window.studioShowResultError)window.studioShowResultError('❌ Content ဖန်တီးရာတွင် အခက်အခဲရှိနေပါသည်။\\nNetwork error — ခဏစောင့်ပြီး ပြန်ကြိုးစားပါ။',generateContent,function(){if(window.studioGoStep)window.studioGoStep(1);});
   });
 }
 function retryContent(){
@@ -921,7 +921,7 @@ function generateVideo(){
       console.error('Shop Video Generate Error:', d.error);
       showToast('⚠️ Video ဖန်တီး၍ မရပါ — ခဏစောင့်ပြီး ပြန်ကြိုးစားပါ','error');
       // Error → Result နေရာတွင် unified error card (Retry / Back) ဖြင့် ပြသည်
-      if(window.studioShowResultError)window.studioShowResultError('❌ Video ဖန်တီးရာတွင် အခက်အခဲရှိနေပါသည်။\n'+friendlyApiError(d),generateVideo,function(){shopState.video.step=1;showVideoPhase();setActionsForCurrent();autoSave();});
+      if(window.studioShowResultError)window.studioShowResultError('❌ Video ဖန်တီးရာတွင် အခက်အခဲရှိနေပါသည်။\\n'+friendlyApiError(d),generateVideo,function(){shopState.video.step=1;showVideoPhase();setActionsForCurrent();autoSave();});
       return;
     }
     shopState.video.result={product:d.product||null,characters:d.characters||[],scenes:d.scenes||[]};
@@ -937,7 +937,7 @@ function generateVideo(){
     shopBusy=false;
     showToast('⚠️ Video ဖန်တီး၍ မရပါ — ခဏစောင့်ပြီး ပြန်ကြိုးစားပါ','error');
     // Error → Result နေရာတွင် unified error card (Retry / Back) ဖြင့် ပြသည်
-    if(window.studioShowResultError)window.studioShowResultError('❌ Video ဖန်တီးရာတွင် အခက်အခဲရှိနေပါသည်။\nNetwork error — ခဏစောင့်ပြီး ပြန်ကြိုးစားပါ။',generateVideo,function(){shopState.video.step=1;showVideoPhase();setActionsForCurrent();autoSave();});
+    if(window.studioShowResultError)window.studioShowResultError('❌ Video ဖန်တီးရာတွင် အခက်အခဲရှိနေပါသည်။\\nNetwork error — ခဏစောင့်ပြီး ပြန်ကြိုးစားပါ။',generateVideo,function(){shopState.video.step=1;showVideoPhase();setActionsForCurrent();autoSave();});
   });
 }
 function retryVideo(){
@@ -1161,7 +1161,7 @@ function generateAudio(){
       console.error('Shop Audio Generate Error:', d.error);
       showToast('⚠️ အသံဖန်တီး၍ မရပါ — ခဏစောင့်ပြီး ပြန်ကြိုးစားပါ','error');
       // Error → Result နေရာတွင် unified error card (Retry / Back) ဖြင့် ပြသည်
-      if(window.studioShowResultError)window.studioShowResultError('❌ အသံဖန်တီးရာတွင် အခက်အခဲရှိနေပါသည်။\n'+friendlyApiError(d),generateAudio,function(){shopState.audio.step=1;showAudioPhase();setActionsForCurrent();autoSave();});
+      if(window.studioShowResultError)window.studioShowResultError('❌ အသံဖန်တီးရာတွင် အခက်အခဲရှိနေပါသည်။\\n'+friendlyApiError(d),generateAudio,function(){shopState.audio.step=1;showAudioPhase();setActionsForCurrent();autoSave();});
       return;
     }
     var blob=base64ToBlob(d.data,d.mimeType||'audio/wav');
@@ -1185,7 +1185,7 @@ function generateAudio(){
     shopBusy=false;
     showToast('⚠️ အသံဖန်တီး၍ မရပါ — ခဏစောင့်ပြီး ပြန်ကြိုးစားပါ','error');
     // Error → Result နေရာတွင် unified error card (Retry / Back) ဖြင့် ပြသည်
-    if(window.studioShowResultError)window.studioShowResultError('❌ အသံဖန်တီးရာတွင် အခက်အခဲရှိနေပါသည်။\nNetwork error — ခဏစောင့်ပြီး ပြန်ကြိုးစားပါ။',generateAudio,function(){shopState.audio.step=1;showAudioPhase();setActionsForCurrent();autoSave();});
+    if(window.studioShowResultError)window.studioShowResultError('❌ အသံဖန်တီးရာတွင် အခက်အခဲရှိနေပါသည်။\\nNetwork error — ခဏစောင့်ပြီး ပြန်ကြိုးစားပါ။',generateAudio,function(){shopState.audio.step=1;showAudioPhase();setActionsForCurrent();autoSave();});
   });
 }
 function retryAudio(){
@@ -1246,7 +1246,7 @@ function generateSrt(){
       console.error('Shop SRT Generate Error:', d.error);
       showToast('⚠️ SRT ဖန်တီး၍ မရပါ — ခဏစောင့်ပြီး ပြန်ကြိုးစားပါ','error');
       // Error → Result နေရာတွင် unified error card (Retry / Back) ဖြင့် ပြသည်
-      if(window.studioShowResultError)window.studioShowResultError('❌ စာတန်းထိုးဖန်တီးရာတွင် အခက်အခဲရှိနေပါသည်။\n'+friendlyApiError(d),generateSrt,function(){shopState.audio.step=3;showAudioPhase();setActionsForCurrent();autoSave();});
+      if(window.studioShowResultError)window.studioShowResultError('❌ စာတန်းထိုးဖန်တီးရာတွင် အခက်အခဲရှိနေပါသည်။\\n'+friendlyApiError(d),generateSrt,function(){shopState.audio.step=3;showAudioPhase();setActionsForCurrent();autoSave();});
       return;
     }
     shopState.audio.srt.text=d.srt||'';
@@ -1264,7 +1264,7 @@ function generateSrt(){
     shopBusy=false;
     showToast('⚠️ SRT ဖန်တီး၍ မရပါ — ခဏစောင့်ပြီး ပြန်ကြိုးစားပါ','error');
     // Error → Result နေရာတွင် unified error card (Retry / Back) ဖြင့် ပြသည်
-    if(window.studioShowResultError)window.studioShowResultError('❌ စာတန်းထိုးဖန်တီးရာတွင် အခက်အခဲရှိနေပါသည်။\nNetwork error — ခဏစောင့်ပြီး ပြန်ကြိုးစားပါ။',generateSrt,function(){shopState.audio.step=3;showAudioPhase();setActionsForCurrent();autoSave();});
+    if(window.studioShowResultError)window.studioShowResultError('❌ စာတန်းထိုးဖန်တီးရာတွင် အခက်အခဲရှိနေပါသည်။\\nNetwork error — ခဏစောင့်ပြီး ပြန်ကြိုးစားပါ။',generateSrt,function(){shopState.audio.step=3;showAudioPhase();setActionsForCurrent();autoSave();});
   });
 }
 function retrySrt(){
@@ -1351,7 +1351,7 @@ function translateSrt(){
       console.error('Shop Translate Error:', d.error);
       showToast('⚠️ ဘာသာပြန်၍ မရပါ — ခဏစောင့်ပြီး ပြန်ကြိုးစားပါ','error');
       // Error → Result နေရာတွင် unified error card (Retry / Back) ဖြင့် ပြသည်
-      if(window.studioShowResultError)window.studioShowResultError('❌ ဘာသာပြန်ဖန်တီးရာတွင် အခက်အခဲရှိနေပါသည်။\n'+friendlyApiError(d),translateSrt,function(){shopState.audio.step=5;showAudioPhase();setActionsForCurrent();autoSave();});
+      if(window.studioShowResultError)window.studioShowResultError('❌ ဘာသာပြန်ဖန်တီးရာတွင် အခက်အခဲရှိနေပါသည်။\\n'+friendlyApiError(d),translateSrt,function(){shopState.audio.step=5;showAudioPhase();setActionsForCurrent();autoSave();});
       return;
     }
     shopState.audio.translation.srt=d.srt||'';
@@ -1369,7 +1369,7 @@ function translateSrt(){
     shopBusy=false;
     showToast('⚠️ ဘာသာပြန်၍ မရပါ — ခဏစောင့်ပြီး ပြန်ကြိုးစားပါ','error');
     // Error → Result နေရာတွင် unified error card (Retry / Back) ဖြင့် ပြသည်
-    if(window.studioShowResultError)window.studioShowResultError('❌ ဘာသာပြန်ဖန်တီးရာတွင် အခက်အခဲရှိနေပါသည်။\nNetwork error — ခဏစောင့်ပြီး ပြန်ကြိုးစားပါ။',translateSrt,function(){shopState.audio.step=5;showAudioPhase();setActionsForCurrent();autoSave();});
+    if(window.studioShowResultError)window.studioShowResultError('❌ ဘာသာပြန်ဖန်တီးရာတွင် အခက်အခဲရှိနေပါသည်။\\nNetwork error — ခဏစောင့်ပြီး ပြန်ကြိုးစားပါ။',translateSrt,function(){shopState.audio.step=5;showAudioPhase();setActionsForCurrent();autoSave();});
   });
 }
 function retryTrans(){

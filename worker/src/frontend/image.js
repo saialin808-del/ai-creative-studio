@@ -314,7 +314,7 @@ function preparePrompt(){
       prepareBusy=false;
       if(window.studioUnmarkDone)window.studioUnmarkDone(2);
       var em=friendlyMsg(err,'prepare');
-      showToast('⚠️ '+(em.replace(/\n/g,' ')),true);
+      showToast('⚠️ '+(em.replace(/\\n/g,' ')),true);
       // Error → Result နေရာတွင် unified error card (Retry / Back) ဖြင့် ပြသည်
       if(window.studioShowResultError)window.studioShowResultError(em,preparePrompt,function(){stGoForce(1);});
     });
@@ -401,7 +401,7 @@ function startGenerate(){
       generateBusy=false;
       if(window.studioUnmarkDone)window.studioUnmarkDone(5);
       var em=friendlyMsg(err,'generate');
-      showToast('⚠️ '+(em.replace(/\n/g,' ')),true);
+      showToast('⚠️ '+(em.replace(/\\n/g,' ')),true);
       // Error → Result နေရာတွင် unified error card (Retry / Back) ဖြင့် ပြသည်
       if(window.studioShowResultError)window.studioShowResultError(em,startGenerate,function(){stGoForce(4);});
     });
