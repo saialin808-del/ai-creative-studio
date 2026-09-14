@@ -24,7 +24,7 @@ const STEP1_HTML = `
 <div class="card">
 <div class="card-title">&#128230; အကြောင်းအရာ — ကုန်ပစ္စည်း အချက်အလက်</div>
 <p class="hint">Type ရွေးပြီး အောက်ကနေရာလေးများကို ဖြည့်ရေးပါ — AI Marketing Content ဖန်တီးပေးပါမယ်။</p>
-<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;">
+<div class="aics-form-row" style="margin-bottom:16px;">
 <div class="form-group" style="flex:1;min-width:170px;margin-bottom:0;">
 <label>ဈေးကွန်တင့် အမျိုးအစား</label>
 <select id="contentTypeSel" onchange="contentType=this.value;">
@@ -99,6 +99,7 @@ ${aicsResultLoadingHtml('contentLoading','AI က သင့်အတွက် Sho
 
 <!-- ===== VIEW: VIDEO BRANCH ===== -->
 <div id="viewVideo" style="display:none;">
+<div class="aics-branch-context"><div><div class="aics-branch-context-title">🎬 Video Branch</div><div class="aics-branch-context-sub">Shop Content ကို အခြေခံပြီး Product Video workflow</div></div><button type="button" class="btn btn-secondary btn-sm" onclick="goContentResult()">← Content Result</button></div>
 <div class="shop-branch-stepper" id="videoBranchStepper"></div>
 
 <div class="card" id="videoSetupCard">
@@ -141,6 +142,7 @@ ${aicsResultLoadingHtml('videoLoading','AI က သင့်အတွက် Video
 
 <!-- ===== VIEW: AUDIO BRANCH ===== -->
 <div id="viewAudio" style="display:none;">
+<div class="aics-branch-context"><div><div class="aics-branch-context-title">🔊 Audio Branch</div><div class="aics-branch-context-sub">Voice → SRT → Translation workflow</div></div><button type="button" class="btn btn-secondary btn-sm" onclick="goContentResult()">← Content Result</button></div>
 <div class="shop-branch-stepper" id="audioBranchStepper"></div>
 
 <div class="card" id="audioSetupCard">
@@ -330,8 +332,7 @@ select option{background:var(--bg-card);color:var(--text)}
 /* ===== Branch Stepper (Video / Audio) ===== */
 /* Main + Branch = Stepper တစ်ခုတည်း — အောက်က branch stepper container များကို ဖျောက်ပြီး
    #aicsStepper တစ်ခုတည်းတွင် Main + Branch ကို ဆက်ပေါင်းပြသည် */
-.aics-work .shop-branch-stepper{display:none!important}
-.aics-work .shop-branch-stepper{margin:8px 0 12px;background:#0f1830;border:1px solid rgba(123,92,255,.3);border-radius:10px;padding:6px 8px;overflow-x:auto}
+.aics-work .shop-branch-stepper{margin:8px 0 16px;background:#0f1830;border:1px solid rgba(123,92,255,.3);border-radius:10px;padding:6px 8px;overflow-x:auto}
 .aics-work .shop-branch-inner{display:flex;align-items:center;gap:3px;min-width:max-content}
 .aics-work .shop-bstep{display:flex;align-items:center;gap:5px;padding:6px 9px;border-radius:8px;border:1px solid transparent;color:#5a6478;font-size:12px;white-space:nowrap}
 .aics-work .shop-bstep .shop-bstep-marker{width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;background:#1a2138;color:#5a6478;flex-shrink:0}
@@ -404,6 +405,9 @@ select option{background:var(--bg-card);color:var(--text)}
 .aics-work .dir-radio{display:inline-flex;align-items:center;gap:6px;background:var(--bg-input);border:1px solid var(--border);border-radius:20px;padding:8px 14px;font-size:12.5px;color:var(--text2);cursor:pointer;user-select:none}
 .aics-work .dir-radio input{width:auto;margin:0;accent-color:var(--cyan);min-height:0;padding:0}
 .aics-work .dir-radio.selected{border-color:var(--cyan);background:rgba(0,229,255,.1);color:var(--text)}
+/* ===== Accessibility / Motion ===== */
+.aics-work button:focus-visible,.aics-work input:focus-visible,.aics-work textarea:focus-visible,.aics-work select:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
+@media(prefers-reduced-motion:reduce){.aics-work *{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
 /* ===== Responsive ===== */
 @media(max-width:767px){
 .aics-work .branch-action-grid{grid-template-columns:1fr}

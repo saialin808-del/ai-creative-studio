@@ -1017,6 +1017,19 @@ function stNav(n){
 function stGoForce(n){stCur=n;stShow(n);}
 function stMarkDone(n){stDone[n]=true;stUpdateStepper();}
 function stUnmarkDone(n){stDone[n]=false;stUpdateStepper();}
+function updateBranchContext(){
+  var work=document.getElementById('aicsWork');
+  if(!work)return;
+  var old=document.getElementById('aicsBranchContext');
+  if(old)old.remove();
+  if(ST_MODE!=='video')return;
+  var step=stCur>=4?2:1;
+  var el=document.createElement('div');
+  el.id='aicsBranchContext';
+  el.className='aics-branch-context';
+  el.innerHTML='<div><div class=\"aics-branch-context-title\">🎬 Video Branch · '+('Video Branch')+'</div><div class=\"aics-branch-context-sub\">Main result ကိုအခြေခံပြီး Video workflow ဆက်လုပ်နေပါသည်</div></div><button type=\"button\" class=\"aics-act ghost\" style=\"min-height:36px;padding:7px 12px;font-size:11.5px;\" onclick=\"stGoForce(2)\">← Main Result</button>';
+  work.insertBefore(el,work.firstChild);
+}
 function stShow(n){
   var steps=document.querySelectorAll('.aics-step');
   for(var i=0;i<steps.length;i++){
@@ -1025,6 +1038,7 @@ function stShow(n){
   }
   var w=document.getElementById('aicsWork');if(w)w.scrollTop=0;
   stUpdateStepper();
+  updateBranchContext();
   if(window.studioOnStep){try{window.studioOnStep(n);}catch(e){}}
 }
 function stUpdateStepper(){
