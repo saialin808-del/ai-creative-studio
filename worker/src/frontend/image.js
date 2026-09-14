@@ -872,6 +872,12 @@ function stMeta(n){
   return null;
 }
 function stModeSteps(){return ST_STEPS[ST_MODE]||ST_STEPS.main;}
+// Main + Branch = Stepper တစ်ခုတည်း — Branch ဝင်လျှင် Main steps ကို မဖျောက်ဘဲ ဆက်ပေါင်းပြသည်
+function stVisibleSteps(){
+  var main=ST_STEPS.main||[];
+  if(ST_MODE==='main'||!ST_STEPS[ST_MODE])return main.slice();
+  return main.concat(ST_STEPS[ST_MODE]);
+}
 function stAllowed(n){
   if(stDone[n])return true;
   var m=stMeta(n);if(!m)return false;
@@ -913,12 +919,13 @@ function stUpdateStepper(){
 }
 function stRenderStepper(){
   var c=document.getElementById('aicsStepper');if(!c)return;
-  var steps=stModeSteps();
+  var steps=stVisibleSteps();
   var html='<div class="aics-stepper-inner">';
   for(var i=0;i<steps.length;i++){
     var s=steps[i];
+    var label=((i+1<10)?'0':'')+(i+1)+' '+String(s.label).replace(/^\\d+\\s*/,'');
     html+='<button class="aics-step-btn" data-step="'+s.n+'" onclick="stNav('+s.n+')">'+
-      '<span class="aics-step-txt"><span class="aics-step-label">'+s.label+'</span></span>'+
+      '<span class="aics-step-txt"><span class="aics-step-label">'+label+'</span></span>'+
       '<span class="aics-step-loading"><span class="aics-step-spinner"></span>'+(s.loading||'ဖန်တီးနေသည်...')+'</span></button>';
     if(i<steps.length-1)html+='<span class="aics-step-link"></span>';
   }

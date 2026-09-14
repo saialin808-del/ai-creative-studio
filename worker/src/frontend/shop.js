@@ -390,6 +390,9 @@ select option{background:var(--bg-card);color:var(--text)}
 .toast.success{border-color:var(--success);color:var(--success)}
 /* ===== Main Stepper: done state ✓ ကို shared.js ၏ ::before ဖြင့် ပြသသည် (duplicate မဖြစ်စေရန် local rule ကို ဖယ်သည်) ===== */
 /* ===== Branch Stepper (Video / Audio) ===== */
+/* Main + Branch = Stepper တစ်ခုတည်း — အောက်က branch stepper container များကို ဖျောက်ပြီး
+   #aicsStepper တစ်ခုတည်းတွင် Main + Branch ကို ဆက်ပေါင်းပြသည် */
+.aics-work .shop-branch-stepper{display:none!important}
 .aics-work .shop-branch-stepper{margin:8px 0 12px;background:#0f1830;border:1px solid rgba(123,92,255,.3);border-radius:10px;padding:6px 8px;overflow-x:auto}
 .aics-work .shop-branch-inner{display:flex;align-items:center;gap:3px;min-width:max-content}
 .aics-work .shop-bstep{display:flex;align-items:center;gap:5px;padding:6px 9px;border-radius:8px;border:1px solid transparent;color:#5a6478;font-size:12px;white-space:nowrap}
@@ -501,6 +504,10 @@ var twRunning=false;
 var statusTimers={};
 var audioDuration='';
 var saveTimer=null;
+
+// ===================== SHOP MAIN STEPS (Main + Branch Combined Stepper အတွက်) =====================
+// Module-level STEPS (shell) နှင့် တူညီသော data — page script ထဲတွင် သုံးနိုင်ရန် ဤနေရာတွင် ထည့်သည်
+var SHOP_MAIN_STEPS=${JSON.stringify(STEPS.map(function(s){return {label:s.label,lock:!!s.lock,loading:s.loading||''};}))};
 
 // ===================== SHOP STATE (Branch အလိုက် သီးခြား) =====================
 // shopContent သည် source/root data ဖြစ်သည်။
@@ -880,6 +887,68 @@ function renderBranchStepper(id,steps,cur,doneMap){
   html+='</div>';
   c.innerHTML=html;
 }
+// ===================== Combined Stepper (Main + Branch = ONE line) =====================
+// Main Stepper ကို မဖျောက်ဘဲ Branch steps များကို Main steps နောက်တွင် ဆက်ပေါင်းပြသည်
+function shopStepDefs(){
+  var defs=[];
+  var i;
+  var hasResult=!!(shopState.content.result&&shopState.content.result.trim());
+  var shellCur=(window.studioCur)?window.studioCur():1;
+  // Main steps (SHOP_MAIN_STEPS — shell STEPS နှင့် တူညီသည် — 01/02/03)
+  for(i=0;i<SHOP_MAIN_STEPS.length;i++){
+    var s=SHOP_MAIN_STEPS[i];
+    var n=i+1;
+    var cls='';
+    if(n===shellCur)cls='active';
+    else if((n===1||n===2)&&hasResult)cls='done';
+    else if(n===2||(n===3&&!hasResult))cls='todo';
+    defs.push({n:n,label:s.label,loading:s.loading||'',main:true,state:cls,lock:!!s.lock});
+  }
+  // Branch steps (active branch ရှိလျှင် Main နောက်တွင် ဆက်ပေါင်းသည်)
+  var meta=null;
+  if(shopState.view==='video')meta=videoBranchMeta();
+  else if(shopState.view==='audio')meta=audioBranchMeta();
+  if(meta){
+    var n0=defs.length;
+    for(i=0;i<meta.steps.length;i++){
+      var loading=((shopState.view==='video'&&i===1)||(shopState.view==='audio'&&(i===1||i===4||i===7)))?'AI ပြင်ဆင်နေသည်...':'';
+      var st='todo';
+      if(i===meta.cur)st='active';
+      else if(meta.done.indexOf(i)!==-1)st='done';
+      defs.push({n:n0+i+1,label:meta.steps[i],loading:loading,main:false,state:st});
+    }
+  }
+  return defs;
+}
+function renderShopStepper(){
+  var c=document.getElementById('aicsStepper');if(!c)return;
+  var defs=shopStepDefs();
+  var html='<div class="aics-stepper-inner">';
+  for(var i=0;i<defs.length;i++){
+    var d=defs[i];
+    var label=((i+1<10)?'0':'')+(i+1)+' '+String(d.label).replace(/^\\d+\\s*/,'');
+    var cls='aics-step-btn';
+    if(d.state)cls+=' '+d.state;
+    var loadingSpan='<span class="aics-step-loading"><span class="aics-step-spinner"></span>'+(d.loading||'ဖန်တီးနေသည်...')+'</span>';
+    if(d.main){
+      html+='<button type="button" class="'+cls+'" data-step="'+d.n+'" onclick="shopMainNav('+d.n+')">'+
+        '<span class="aics-step-txt"><span class="aics-step-label">'+label+'</span></span>'+loadingSpan+'</button>';
+    }else{
+      if(d.state==='active'&&d.loading)cls+=' aics-loading';
+      html+='<button type="button" class="'+cls+'" data-step="'+d.n+'" onclick="shopBranchStepHint()">'+
+        '<span class="aics-step-txt"><span class="aics-step-label">'+label+'</span></span>'+loadingSpan+'</button>';
+    }
+    if(i<defs.length-1)html+='<span class="aics-step-link"></span>';
+  }
+  html+='</div>';
+  c.innerHTML=html;
+}
+function shopMainNav(n){
+  if(window.studioGoStep)window.studioGoStep(n);
+  // Shell update ပြီးနောက် Branch steps state ကို ပြန်ထိန်းရန် ပြန် render သည်
+  renderShopStepper();
+}
+function shopBranchStepHint(){showToast('ဤအဆင့်သို့ တိုက်ရိုက် မသွားနိုင်ပါ — အောက်ရှိ ခလုတ်များဖြင့် ဆက်လုပ်ပါ');}
 function videoBranchMeta(){
   var steps=['Video ပြင်ဆင်ရန်','AI ပြင်ဆင်နေသည်','Video ရလဒ်'];
   var cur,done;
@@ -909,9 +978,8 @@ function showBranchViews(){
   document.getElementById('viewContent').style.display=shopState.view==='content'?'':'none';
   document.getElementById('viewVideo').style.display=shopState.view==='video'?'':'none';
   document.getElementById('viewAudio').style.display=shopState.view==='audio'?'':'none';
-  // Branch mode ဝင်လျှင် Main Stepper ကို ဖျောက်ပြီး Branch Stepper တစ်ခုတည်း ပြသည် (Content Studio နဲ့ တူညီစေ)
-  var mainSp=document.getElementById('aicsStepper');
-  if(mainSp){mainSp.style.display=(shopState.view==='content')?'':'none';}
+  // Main + Branch = Stepper တစ်ခုတည်း — Main Stepper ကို မဖျောက်ဘဲ Branch steps ကို ဆက်ပေါင်းသည်
+  renderShopStepper();
   if(shopState.view==='video')showVideoPhase();
   else if(shopState.view==='audio')showAudioPhase();
 }
@@ -951,7 +1019,7 @@ function goAudioBranch(){
 // ===================== VIDEO BRANCH =====================
 function showVideoPhase(){
   var meta=videoBranchMeta();
-  renderBranchStepper('videoBranchStepper',meta.steps,meta.cur,meta.done);
+  renderShopStepper();
   document.getElementById('videoSetupCard').style.display=shopState.video.step===1?'':'none';
   document.getElementById('videoLoadingCard').style.display=shopState.video.step===2?'':'none';
   document.getElementById('videoResultCard').style.display=shopState.video.step===3?'':'none';
@@ -1182,7 +1250,7 @@ function saveAllVideo(){
 // ===================== AUDIO BRANCH =====================
 function showAudioPhase(){
   var meta=audioBranchMeta();
-  renderBranchStepper('audioBranchStepper',meta.steps,meta.cur,meta.done);
+  renderShopStepper();
   document.getElementById('audioSetupCard').style.display=shopState.audio.step===1?'':'none';
   document.getElementById('audioLoadingCard').style.display=shopState.audio.step===2?'':'none';
   document.getElementById('audioResultCard').style.display=shopState.audio.step===3?'':'none';
@@ -1556,6 +1624,8 @@ function studioOnStep(n){
     studioSetActions([bReset(),{label:'✨ Generate Content',cls:'primary',fn:generateContent}]);
   }else if(n===2){
     studioSetActions([]);
+    // Main AI loading ချိန် Branch steps state မပျောက်စေရန် Stepper ကို ပြန် render သည်
+    renderShopStepper();
   }else if(n===3){
     showBranchViews();
     setActionsForCurrent();
