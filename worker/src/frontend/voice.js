@@ -51,7 +51,7 @@ export const VOICE_HTML = `<!DOCTYPE html>
 .aics-work .choice-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.aics-work .choice-card{background:var(--card2);border:1px solid var(--border);border-radius:13px;padding:16px;text-align:left;color:var(--text);cursor:pointer}.aics-work .choice-card:hover{border-color:var(--cyan)}.aics-work .choice-card strong{display:block;color:var(--cyan);font-size:15px;margin-bottom:4px}.aics-work .choice-card span{color:var(--muted);font-size:12px}
 .aics-work .process{text-align:center;padding:30px 15px}.aics-work .process-icon{font-size:34px;margin-bottom:7px}.aics-work .process h2{font-size:18px;color:var(--cyan);margin-bottom:16px}.aics-work .status-list{max-width:470px;margin:auto;text-align:left;background:var(--input);border:1px solid var(--border);border-radius:12px;padding:14px}.aics-work .status-line{padding:6px 0;color:var(--muted)}.aics-work .status-line.current{color:var(--cyan);font-weight:700}.aics-work .status-line.done{color:var(--success)}
 .aics-work .audio-box{background:var(--input);border:1px solid var(--border);border-radius:12px;padding:16px}.aics-work .audio-box audio{width:100%}.aics-work .result-text{background:var(--input);border:1px solid var(--border);border-radius:10px;padding:13px;white-space:pre-wrap;min-height:120px}.aics-work .srt-box{font-family:'Courier New',monospace;font-size:12.5px;line-height:1.6;min-height:230px}.aics-work .result-label{font-weight:700;color:var(--cyan);margin:12px 0 7px}.aics-work .pro-note{color:var(--warn);font-size:12px;margin-top:10px}.aics-work .error-box{background:rgba(255,82,82,.08);border:1px solid rgba(255,82,82,.3);color:#ffb0b0;border-radius:10px;padding:12px;margin-top:12px}.aics-work .top-actions{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:12px}.aics-work .source-note{font-size:11.5px;color:var(--muted);background:rgba(123,92,255,.08);border:1px solid rgba(123,92,255,.2);border-radius:8px;padding:8px 10px;margin-bottom:12px}
-.loading-overlay{position:fixed;inset:0;background:rgba(5,8,17,.72);backdrop-filter:blur(5px);z-index:10000;display:none;align-items:center;justify-content:center;padding:20px}.loading-overlay.show{display:flex}.loading-box{width:min(420px,92vw);background:var(--card);border:1px solid var(--strong);border-radius:16px;padding:24px;text-align:center;box-shadow:0 15px 50px rgba(0,0,0,.45)}.spinner{width:28px;height:28px;border:3px solid rgba(0,229,255,.2);border-top-color:var(--cyan);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 12px}@keyframes spin{to{transform:rotate(360deg)}}
+.spinner{width:28px;height:28px;border:3px solid rgba(0,229,255,.2);border-top-color:var(--cyan);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 12px}@keyframes spin{to{transform:rotate(360deg)}}
 .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:11000;background:var(--card2);border:1px solid var(--strong);padding:11px 18px;border-radius:10px;display:none;box-shadow:0 6px 24px rgba(0,0,0,.4)}.toast.show{display:block}.toast.error{border-color:var(--error);color:#ffb0b0}.toast.success{border-color:var(--success);color:#9fffc4}
 @media(max-width:700px){.aics-work .mode-grid,.aics-work .choice-grid{grid-template-columns:1fr}.aics-work .mode-card{min-height:155px}.aics-work .vcard{padding:15px}.aics-work .voice-stepper{justify-content:flex-start}.aics-work .vlink{width:18px;flex-basis:18px}.btn{flex:0 1 auto}.aics-work .top-actions .btn{width:100%}}
 @media(min-width:701px) and (max-width:900px){.aics-work .mode-grid{grid-template-columns:1fr;max-width:620px}}
@@ -61,7 +61,6 @@ export const VOICE_HTML = `<!DOCTYPE html>
 <body>
 <div id="loginView" class="aics-login-overlay" style="display:none;"><div class="aics-login-box"><h2>Login လုပ်ရန် လိုအပ်ပါသည်</h2><p>Voice Studio ကို အသုံးပြုရန် Google နဲ့ Login ဝင်ပါ။</p><a href="/api/auth/login?next=/app/voice" class="btn btn-primary">Google နဲ့ Login</a></div></div>
 ${renderStudioShell({id:'voice',activeId:'voice',nameMy:'အသံ Studio',desc:'Text to voice, voice to text',icon:'🎙️',modelCat:'voice',steps:[],content:HOME_HTML})}
-<div class="loading-overlay" id="voiceLoading"><div class="loading-box"><div class="spinner"></div><div id="voiceLoadingText">AI ဆောင်ရွက်နေပါသည်...</div></div></div>
 <div class="toast" id="toast"></div>
 ${sidebarScript()}
 <script>
@@ -81,6 +80,7 @@ const VOICES = [
   ['Vindemiatrix','နူးညံ့သိမ်မွေ့ (Gentle)'],['Sadachbia','တက်ကြွရှင်သန် (Lively)'],
   ['Sadaltager','ဗဟုသုတရှိ (Knowledgeable)'],['Sulafat','နွေးထွေး (Warm)']
 ];
+// Unified Result Loading — AI processing-status steps များကို Stepper ထဲတွင် မပြတော့ဘဲ Result section အတွင်း၌သာ ပြသည်
 const VOICE_STEPPER = [
   {n:1,label:'စာသား'},{n:2,label:'အသံရလဒ်'}
 ];
@@ -88,7 +88,7 @@ const MEDIA_STEPPER = [
   {n:1,label:'အသံ / Video'},{n:2,label:'စာသားရလဒ်'}
 ];
 const SRT_STEPPER = [
-  {n:1,label:'အချက်အလက်'},{n:2,label:'SRT ရလဒ်'}
+  {n:1,label:'SRT'},{n:2,label:'SRT ရလဒ်'}
 ];
 const TRANSLATE_STEPPER = [
   {n:1,label:'SRT'},{n:2,label:'ဘာသာပြန်ရလဒ်'}
@@ -152,10 +152,31 @@ function api(path,body){
 }
 function base64Blob(b,m){var bin=atob(b),a=new Uint8Array(bin.length);for(var i=0;i<bin.length;i++)a[i]=bin.charCodeAt(i);return new Blob([a],{type:m});}
 var VOICE_LOADING_STEP=0;
+// Loading UI ကို Result section အတွင်း၌သာ ပြသည် — full-screen overlay မသုံးတော့ပါ
 function showLoading(text){
-  // Loading ကို full-screen overlay ဖြင့် မပြတော့ဘဲ Result နေရာတွင် unified loading card ဖြင့် ပြသည်
+  VOICE_LOADING_STEP=2;
+  if(window.studioSetLoading)window.studioSetLoading({on:true,step:VOICE_LOADING_STEP,text:text,buttonSelector:'#voiceStepper .vstep[data-step="'+VOICE_LOADING_STEP+'"]',containerSelector:'#voiceStepper'});
 }
-function hideLoading(){}
+function hideLoading(){
+  if(window.studioSetLoading&&VOICE_LOADING_STEP){
+    window.studioSetLoading({on:false,step:VOICE_LOADING_STEP,buttonSelector:'#voiceStepper .vstep[data-step="'+VOICE_LOADING_STEP+'"]',containerSelector:'#voiceStepper'});
+  }
+  VOICE_LOADING_STEP=0;
+}
+// Unified Result Loading Card (Shared .aics-result-loading ပုံစံဖြင့် — Result အတွင်းတွင် ပြသည်)
+function shortHint(t){
+  t=(t==null?'':String(t)).replace(/\s+/g,' ').trim();
+  return t.length>90?t.slice(0,87)+'…':t;
+}
+function resultLoadingCard(msg,hint){
+  var h='<div class="aics-result-loading show" style="margin-bottom:0;">'+
+    '<div class="aics-result-loading-inner">'+
+    '<div class="aics-result-loading-spinner"></div>'+
+    '<div class="aics-result-loading-msg">'+esc(msg)+'</div>';
+  if(hint&&String(hint).trim())h+='<div class="aics-result-loading-hint">“'+esc(shortHint(hint))+'”</div>';
+  h+='</div></div>';
+  return '<div class="vcard"><div class="vtitle">✨ '+esc(msg)+'</div>'+h+'</div>';
+}
 function saveDraft(){
   try{localStorage.setItem(voiceDraftKey,JSON.stringify({
     state:VOICE_STATE,tts:val('ttsText'),speaking:val('speakingStyle'),voice:val('voiceName'),
@@ -217,10 +238,7 @@ function voiceRenderCombinedStepper(phase,step){
     offset=main.length*2;
     steps=steps.concat(TRANSLATE_STEPPER.map(function(s){return {n:s.n+offset,label:s.label};}));
   }
-  // AI processing step ကို Stepper မှာ မပြတော့ဘဲ Input → Result သာ ပြသည်
-  // (internal step 2=processing / 3=result → display result step)
-  var disp=(step>=2)?2:1;
-  renderStepper(steps,disp+offset);
+  renderStepper(steps,step+offset);
 }
 function setScreen(active){
   document.getElementById('voiceHome').classList.toggle('active',active==='home');
@@ -277,8 +295,9 @@ function submitTextToVoice(){
   var btn=document.getElementById('voiceNextBtn');if(btn.disabled)return;btn.disabled=true;
   var requestId=++VOICE_REQUEST_ID;
   VOICE_STATE.voiceInput={text:text,speakingStyle:val('speakingStyle'),voiceStyle:val('voiceName'),instruction:val('voiceInstruction'),audience:val('audience')};
-  renderVoiceProcessing();
-  showLoading('✨ AI အသံဖန်တီးနေသည်...');
+  // Unified: Result section အတွင်း loading ပြသည် (processing step မရှိ)
+  renderVoiceResultLoading(text);
+  showLoading('✨ AI က သင့်အတွက် အသံကို ပြင်ဆင်နေသည်...');
   api('/api/studio/voice/tts',{text:composeVoiceText(),voiceName:val('voiceName')}).then(function(d){
     if(requestId!==VOICE_REQUEST_ID)return;
     hideLoading();
@@ -290,13 +309,13 @@ function submitTextToVoice(){
     toast('✓ Voice ဖန်တီးပြီးပါပြီ','success');saveDraft();
   }).catch(function(e){if(requestId===VOICE_REQUEST_ID){hideLoading();renderVoiceError('tts',e);}});
 }
-function renderVoiceProcessing(){
+// Unified Result Loading (Result section အတွင်းတွင် loading card ပြသည်)
+function renderVoiceResultLoading(hint){
   VOICE_STATE.voiceStep=2;voiceRenderCombinedStepper('main',2);
-  var vi=VOICE_STATE.voiceInput||{};
-function renderVoiceResult(){
-  document.getElementById('voiceWorkflowBody').innerHTML=workflowTop('📝 စာသား → အသံ')+voiceResultLoading('AI က သင့်အတွက် အသံကို ဖန်တီးနေသည်...', '“'+(window.studioPreviewText?window.studioPreviewText(vi.text||''):(vi.text||''))+'”');
+  document.getElementById('voiceWorkflowBody').innerHTML=workflowTop('📝 စာသား → အသံ')+resultLoadingCard('AI က သင့်အတွက် အသံကို ပြင်ဆင်နေသည်...',hint);
 }
-  VOICE_STATE.voiceStep=3;voiceRenderCombinedStepper('main',3);
+function renderVoiceResult(){
+  VOICE_STATE.voiceStep=2;voiceRenderCombinedStepper('main',2);
   var url=URL.createObjectURL(base64Blob(LAST_AUDIO.base64,LAST_AUDIO.mime));LAST_AUDIO.url=url;
   document.getElementById('voiceWorkflowBody').innerHTML=workflowTop('🎧 အသံ ရလဒ်')+\`
   <div class="vcard"><div class="vtitle">🎧 အသံ ရလဒ်</div>
@@ -334,21 +353,23 @@ function submitSrt(source){
   var b=source==='voice'?LAST_AUDIO:MEDIA_AUDIO;if(!b.base64){toast('SRT ထုတ်ဖို့ Audio/Video မရှိသေးပါ','error');return;}
   VOICE_STATE.errorState=null;
   var requestId=++VOICE_REQUEST_ID;
-  VOICE_STATE.processingState='srt';renderSrtProcessing();
-  showLoading('✨ AI စာတန်းထိုးဖန်တီးနေသည်...');
+  VOICE_STATE.processingState='srt';
+  // Unified: Result section အတွင်း loading ပြသည်
+  renderSrtResultLoading();
+  showLoading('✨ AI က သင့်အတွက် SRT စာတန်းထိုးကို ပြင်ဆင်နေသည်...');
   api('/api/studio/voice/srt',{audioBase64:b.base64,mimeType:b.mime,type:'2'}).then(function(d){
     if(requestId!==VOICE_REQUEST_ID)return;
     hideLoading();
     if(d.error)throw new Error(d.error+'|'+(d.detail||''));VOICE_STATE.srtResult=d.srt||'';renderSrtResult(source);toast('✓ SRT ပြီးပါပြီ','success');saveDraft();
   }).catch(function(e){if(requestId===VOICE_REQUEST_ID){hideLoading();renderGenericError('srt',source,e);}});
 }
-function renderSrtProcessing(){
+// Unified Result Loading (SRT Result section အတွင်းတွင် loading card ပြသည်)
+function renderSrtResultLoading(){
   VOICE_STATE.voiceStep=2;voiceRenderCombinedStepper('srt',2);
-  var sub=VOICE_STATE.voiceInput?VOICE_STATE.voiceInput.text:(MEDIA_AUDIO.fileName||'');
-function renderSrtResult(source){
-  document.getElementById('voiceWorkflowBody').innerHTML=workflowTop('📄 SRT')+voiceResultLoading('AI က သင့်အတွက် စာတန်းထိုး (SRT) ကို ဖန်တီးနေသည်...', '“'+(window.studioPreviewText?window.studioPreviewText(sub):sub)+'”');
+  document.getElementById('voiceWorkflowBody').innerHTML=workflowTop('📄 SRT')+resultLoadingCard('AI က သင့်အတွက် SRT စာတန်းထိုးကို ပြင်ဆင်နေသည်...','');
 }
-  VOICE_STATE.voiceStep=3;voiceRenderCombinedStepper('srt',3);
+function renderSrtResult(source){
+  VOICE_STATE.voiceStep=2;voiceRenderCombinedStepper('srt',2);
   document.getElementById('voiceWorkflowBody').innerHTML=workflowTop('📄 SRT ရလဒ်')+\`
   <div class="vcard"><div class="vtitle">📄 SRT ရလဒ်</div><p class="hint">Timestamp များကို မူရင်းအတိုင်း ထိန်းသိမ်းထားပါသည်။ လိုအပ်သလို စာသားကို ပြင်နိုင်ပါသည်။</p>
     <textarea class="srt-box" id="srtEditor" oninput="autoGrow(this)">\${esc(VOICE_STATE.srtResult)}</textarea>
@@ -378,21 +399,23 @@ function submitTranslation(source){
   VOICE_STATE.errorState=null;
   VOICE_STATE.translationDirection=val('translationDirection')||VOICE_STATE.translationDirection;
   var requestId=++VOICE_REQUEST_ID;
-  VOICE_STATE.processingState='translation';renderTranslationProcessing();
-  showLoading('✨ AI ဘာသာပြန်ဖန်တီးနေသည်...');
+  VOICE_STATE.processingState='translation';
+  // Unified: Result section အတွင်း loading ပြသည်
+  renderTranslationResultLoading(srt);
+  showLoading('✨ AI က သင့်အတွက် ဘာသာပြန်ကို ပြင်ဆင်နေသည်...');
   api('/api/studio/voice/translate-srt',{srtText:srt,direction:VOICE_STATE.translationDirection,type:'2'}).then(function(d){
     if(requestId!==VOICE_REQUEST_ID)return;
     hideLoading();
     if(d.error)throw new Error(d.error+'|'+(d.detail||''));translatedSrt=d.srt||'';VOICE_STATE.translationResult=translatedSrt;renderTranslationResult(source);toast('✓ ဘာသာပြန်ပြီးပါပြီ','success');saveDraft();
   }).catch(function(e){if(requestId===VOICE_REQUEST_ID){hideLoading();renderGenericError('translation',source,e);}});
 }
-function renderTranslationProcessing(){
+// Unified Result Loading (ဘာသာပြန် Result section အတွင်းတွင် loading card ပြသည်)
+function renderTranslationResultLoading(hint){
   VOICE_STATE.voiceStep=2;voiceRenderCombinedStepper('translation',2);
-  var sub=VOICE_STATE.srtResult||'';
-function renderTranslationResult(source){
-  document.getElementById('voiceWorkflowBody').innerHTML=workflowTop('🌐 ဘာသာပြန်')+voiceResultLoading('AI က သင့်အတွက် ဘာသာပြန်ကို ဖန်တီးနေသည်...', '“'+(window.studioPreviewText?window.studioPreviewText(sub):sub)+'”');
+  document.getElementById('voiceWorkflowBody').innerHTML=workflowTop('🌐 ဘာသာပြန်')+resultLoadingCard('AI က သင့်အတွက် ဘာသာပြန်ကို ပြင်ဆင်နေသည်...',hint);
 }
-  VOICE_STATE.voiceStep=3;voiceRenderCombinedStepper('translation',3);
+function renderTranslationResult(source){
+  VOICE_STATE.voiceStep=2;voiceRenderCombinedStepper('translation',2);
   var s=VOICE_STATE.translationResult||translatedSrt;
   document.getElementById('voiceWorkflowBody').innerHTML=workflowTop('🌐 ဘာသာပြန် ရလဒ်')+\`
   <div class="vcard"><div class="vtitle">🌐 ဘာသာပြန် ရလဒ်</div><p class="hint">မူရင်း SRT Number နှင့် Timestamp များကို မပြောင်းထားပါ။</p>
@@ -410,15 +433,6 @@ function renderGenericError(kind,source,e){
   // Error → သက်ဆိုင်ရာ Input / Setup Step သို့ Auto Back — Processing Step တွင် မရပ်ပါ
   if(kind==='srt'){renderSrtInput(source);}
   else{renderTranslationInput(source);}
-}
-// Unified Result Loading card — shared.js ရှိ .aics-result-loading pattern အတိုင်း ဖြစ်သည်
-function voiceResultLoading(title,sub){
-  return '<div class="aics-result-loading"><div class="arl-card">'+
-    '<div class="arl-head">&#10024; ရလဒ်</div>'+
-    '<div class="arl-spinner"></div>'+
-    '<div class="arl-msg">'+esc(title)+'</div>'+
-    (sub?'<div class="arl-sub">'+esc(sub)+'</div>':'')+
-    '</div></div>';
 }
 function renderMediaInput(){
   VOICE_STATE.voiceStep=1;voiceRenderCombinedStepper('main',1);
@@ -453,8 +467,9 @@ function submitMedia(type){
   readMedia(function(){
     if(type==='srt'){startSrtMedia();return;}
     var requestId=++VOICE_REQUEST_ID;
-    renderMediaProcessing();
-    showLoading('✨ AI စာသားဖန်တီးနေသည်...');
+    // Unified: Result section အတွင်း loading ပြသည်
+    renderMediaResultLoading(MEDIA_AUDIO.fileName||'');
+    showLoading('✨ AI က သင့်အတွက် စာသားကို ဖန်တီးနေသည်...');
     api('/api/studio/voice/transcribe',{audioBase64:MEDIA_AUDIO.base64,mimeType:MEDIA_AUDIO.mime,type:'1'}).then(function(d){
       if(requestId!==VOICE_REQUEST_ID)return;
       hideLoading();
@@ -462,9 +477,10 @@ function submitMedia(type){
     }).catch(function(e){if(requestId===VOICE_REQUEST_ID){hideLoading();renderMediaError(e);}});
   });
 }
-function renderMediaProcessing(){
+// Unified Result Loading (စာသား Result section အတွင်းတွင် loading card ပြသည်)
+function renderMediaResultLoading(hint){
   VOICE_STATE.voiceStep=2;voiceRenderCombinedStepper('main',2);
-  document.getElementById('voiceWorkflowBody').innerHTML=workflowTop('🎧 အသံ / Video → စာသား')+voiceResultLoading('AI က သင့်အတွက် စာသားကို ဖန်တီးနေသည်...', '“'+(window.studioPreviewText?window.studioPreviewText(MEDIA_AUDIO.fileName||''):(MEDIA_AUDIO.fileName||''))+'”');
+  document.getElementById('voiceWorkflowBody').innerHTML=workflowTop('🎧 အသံ / Video → စာသား')+resultLoadingCard('AI က သင့်အတွက် စာသားကို ဖန်တီးနေသည်...',hint);
 }
 function renderMediaError(e){
   var msg=friendlyError({error:(e.message||'').split('|')[0]},'စာသားဖန်တီးရာတွင် အခက်အခဲရှိနေပါသည်။ ခဏအကြာတွင် ထပ်မံကြိုးစားပါ။');
@@ -475,7 +491,7 @@ function renderMediaError(e){
   renderMediaInput();
 }
 function renderMediaResult(){
-  VOICE_STATE.voiceStep=3;voiceRenderCombinedStepper('main',3);
+  VOICE_STATE.voiceStep=2;voiceRenderCombinedStepper('main',2);
   document.getElementById('voiceWorkflowBody').innerHTML=workflowTop('📝 စာသား ရလဒ်')+\`
   <div class="vcard"><div class="vtitle">📝 စာသား ရလဒ်</div><p class="hint">စာသားကို လိုအပ်သလို ပြင်ဆင်နိုင်ပါသည်။</p>
     <textarea id="textResult" class="result-text" oninput="autoGrow(this)">\${esc((VOICE_STATE.voiceResult&&VOICE_STATE.voiceResult.text)||'')}</textarea>

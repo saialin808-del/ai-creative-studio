@@ -1,17 +1,18 @@
 // AI Creative Studio — Short Studio Frontend (Main Stepper + Video Branch Stepper)
-// Main: 01 Short အချက်အလက် → 02 Short Script ရလဒ် (AI processing ကို Result နေရာတွင် ပြသည်)
-// Video Branch (Step 03 မှ): 01 Video ပြင်ဆင်ရန် → 02 MAP / နောက်ဆုံးရလဒ် (AI processing ကို Result နေရာတွင် ပြသည်)
+// Main: 01 Short အချက်အလက် → 02 Short Script ရလဒ်
+// Video Branch (Step 02 မှ): 01 Video ပြင်ဆင်ရန် → 02 MAP / နောက်ဆုံးရလဒ်
+// AI processing-status steps များကို Stepper ထဲတွင် မပြတော့ပါ — loading ကို Result section အတွင်း၌သာ ပြသည် (Unified)
 // Studio Isolation: ဤ File သည် Short Studio UI နှင့်သာ သက်ဆိုင်သည်။
 // Story Studio ၏ State/Data/API/Result ကို တိုက်ရိုက်မသုံးပါ — Short-specific သီးခြားထားသည်။
 // Shared: renderSidebar / sidebarScript / renderStudioShell (frontend/shared.js) — မျှဝေသုံးသော UI အခွံသာ။
 // ⚠️ API Contract ကို မပျက်စီးစေရ — /api/studio/short/{generate,revise,video,video-image} ကို ဆက်ထိန်းသည်။
 
-import { renderSidebar, sidebarScript, renderStudioShell } from './shared.js';
+import { renderSidebar, sidebarScript, renderStudioShell, aicsResultLoadingHtml } from './shared.js';
 
-// Main Stepper (၂ ဆင့်) — AI processing loading ကို Result နေရာတွင် ပြသည်
+// Main Stepper (၂ ဆင့် — AI Processing Step မရှိ) — Video Branch သည် အောက်က state machine တွင် သီးခြားစီ
 const STEPS = [
   { label: '01 Short အချက်အလက်' },
-  { label: '02 Short Script ရလဒ်', req: [2] },
+  { label: '02 Short Script ရလဒ်', req: [1] },
 ];
 
 const STEP1_HTML = `
@@ -68,10 +69,15 @@ const STEP1_HTML = `
 </div>
 </div>`;
 
+// ============================================================
+// Step 02 — Short Script ရလဒ် (Result — loading ကို ဤနေရာတွင်သာ ပြသည်)
+// ============================================================
 const STEP3_HTML = `
-<div class="aics-step" data-step="3">
+<div class="aics-step" data-step="2">
 <div class="card">
 <div class="card-title">&#128241; Short Script ရလဒ်</div>
+${aicsResultLoadingHtml('shortLoading','AI က သင့်အတွက် Short Script ကို ရေးသားနေသည်...')}
+<div id="shortResultBody">
 <textarea class="result-textarea" id="shortResult" placeholder="Short Script ဒီနေရာမှာ ပေါ်လာပါမယ်..." oninput="onShortEdit()"></textarea>
 <p style="color:var(--text3);font-size:12px;margin-top:6px;font-style:italic;">&#9997;&#65039; ဒီနေရာမှာ တိုက်ရိုက် နှိပ်ပြီး ကိုယ်တိုင် ပြင်ဆင်နိုင်ပါတယ် — ပြင်ထားတဲ့ Script ကို "Final Short Script" အဖြစ် Video အဆင့်ကို အလိုအလျောက် ပို့ပေးပါမယ်</p>
 <div class="btn-row">
@@ -79,6 +85,12 @@ const STEP3_HTML = `
 <button class="btn btn-purple" onclick="saveShort()">&#128190; ဖန်တီးမှုသိမ်းပါ</button>
 <button class="btn btn-secondary" onclick="focusRevise()">&#9999;&#65039; ပြန်ပြင်ရန်</button>
 <button class="btn btn-primary" onclick="goToVideoForm()">&#127916; Video ဆက်ဖန်တီးရန်</button>
+</div>
+</div>
+<div class="error-box" id="genError2"></div>
+<div class="retry-row" id="genRetry2">
+<button class="btn btn-primary" onclick="generateShort()">&#128260; ပြန်ကြိုးစားရန်</button>
+<button class="btn btn-secondary" onclick="stGoForce(1)">&#8592; ပြန်ပြင်ရန်</button>
 </div>
 </div>
 <div class="card revise-section" id="revise-section">
@@ -94,10 +106,10 @@ const STEP3_HTML = `
 </div>`;
 
 const STEP4_HTML = `
-<div class="aics-step" data-step="4">
+<div class="aics-step" data-step="3">
 <div class="card">
 <div class="card-title">&#127916; Short Video ဖန်တီးရန်</div>
-<p style="color:var(--text2);font-size:13px;margin-bottom:14px;">Step 03 မှာ ရရှိထားသော Final Short Script ကို အလိုအလျောက် ထည့်ပေးထားပါသည် — Video အတွက် ဆက်တင်များရွေးပြီး ဖန်တီးပါ။</p>
+<p style="color:var(--text2);font-size:13px;margin-bottom:14px;">Step 02 မှာ ရရှိထားသော Final Short Script ကို အလိုအလျောက် ထည့်ပေးထားပါသည် — Video အတွက် ဆက်တင်များရွေးပြီး ဖန်တီးပါ။</p>
 <div class="form-group">
 <label>&#128241; အသုံးပြုမည့် Short Script</label>
 <textarea id="videoScriptInput" style="min-height:150px;" oninput="autoExpand(this)"></textarea>
@@ -132,8 +144,14 @@ const STEP4_HTML = `
 </div>`;
 
 const STEP6_HTML = `
-<div class="aics-step" data-step="6">
+<div class="aics-step" data-step="4">
+${aicsResultLoadingHtml('planLoading','AI က သင့်အတွက် Short Video ကို ပြင်ဆင်နေသည်...')}
 <div id="finalResult"></div>
+<div class="error-box" id="planError5"></div>
+<div class="retry-row" id="planRetry5">
+<button class="btn btn-primary" onclick="generateShortVideoPlan()">&#128260; ပြန်ကြိုးစားရန်</button>
+<button class="btn btn-secondary" onclick="stGoForce(3)">&#8592; ပြန်ပြင်ရန်</button>
+</div>
 </div>`;
 
 const CONTENT_HTML = STEP1_HTML + STEP3_HTML + STEP4_HTML + STEP6_HTML;
@@ -386,37 +404,43 @@ function generateShort(){
   var stMeta=SHORT_TYPES[parseInt(selectedShortType,10)-1];
   if(stMeta&&stMeta.pro&&!isPro){showToastMsg('ဒီ Type ကို Pro User သာ အသုံးပြုနိုင်ပါသည်။');return;}
   var idea=collected.text;
-  hideError('genError');
+  hideError('genError');hideStepError('genError2','genRetry2');
   shortBusy=true;
   currentShort='';
-  // Unified Result Loading — Processing Step ကို Stepper မှာ မပြတော့ဘဲ Result နေရာတွင် Loading ပြသည်
-  stGoForce(3);
-  if(window.studioSetActions)window.studioSetActions([]);
-  var ideaPreview=document.getElementById('field_0')?document.getElementById('field_0').value:'';
-  if(window.studioShowResultLoading)window.studioShowResultLoading('AI က သင့်အတွက် Short Script ကို ရေးသားနေသည်...', '“'+(window.studioPreviewText?window.studioPreviewText(ideaPreview):'')+'”');
+  studioMarkDone(1);
+  // Unified: Result section အတွင်း loading ပြသည် (processing step မရှိ)
+  if(window.aicsResultLoading)window.aicsResultLoading.show('shortLoading','AI က သင့်အတွက် Short Script ကို ရေးသားနေသည်...',idea);
+  var sb=document.getElementById('shortResultBody');if(sb)sb.style.display='none';
+  if(window.studioForceGoStep)window.studioForceGoStep(2);
+  else window.studioGoStep(2);
+  if(window.studioSetLoading)window.studioSetLoading({on:true});
   apiCall('/api/studio/short/generate',{idea:idea,type:selectedShortType})
     .then(function(data){
       currentShort=data.short||'';
       currentShortIdea=idea;
-      if(window.studioHideResultLoading)window.studioHideResultLoading();
+      if(window.aicsResultLoading)window.aicsResultLoading.hide('shortLoading');
+      if(window.studioSetLoading)window.studioSetLoading({on:false});
+      var sb2=document.getElementById('shortResultBody');if(sb2)sb2.style.display='';
       studioMarkDone(1);studioMarkDone(2);
       document.getElementById('reviseHistory').innerHTML='';
       var ta=document.getElementById('shortResult');
       typewriteShort(currentShort,ta);
       shortBusy=false;
-      if(window.studioOnStep){try{window.studioOnStep(3);}catch(e){}}
+      if(window.studioForceGoStep)window.studioForceGoStep(2);
+      else window.studioGoStep(2);
       showToastMsg('✓ Short Script ရေးပြီးပါပြီ');
       autoSave();
     })
     .catch(function(err){
       console.error('Short Generate Error:', err);
-      if(window.studioHideResultLoading)window.studioHideResultLoading();
+      if(window.aicsResultLoading)window.aicsResultLoading.hide('shortLoading');
+      if(window.studioSetLoading)window.studioSetLoading({on:false});
       shortBusy=false;
+      var sb3=document.getElementById('shortResultBody');if(sb3)sb3.style.display='none';
+      showStepError('genError2','genRetry2',friendlyMsg(err,'short'));
+      // Error → Result section အတွင်းတွင် error + retry ပြသည် (existing error UI ကို ထိန်းထားသည်)
       if(window.studioUnmarkDone)window.studioUnmarkDone(2);
-      var em=friendlyMsg(err,'short');
-      showToastMsg('⚠️ '+(em.replace(/\\n/g,' ')));
-      // Error → Result နေရာတွင် unified error card (Retry / Back) ဖြင့် ပြသည်
-      if(window.studioShowResultError)window.studioShowResultError(em,generateShort,function(){stGoForce(1);});
+      showToastMsg('⚠️ '+(friendlyMsg(err,'short').replace(/\\n/g,' ')));
     });
 }
 
@@ -483,11 +507,11 @@ function goToVideoForm(){
   stopTypewriter();
   if(ta)currentShort=ta.value;
   if(!currentShort||!currentShort.trim()){showToastMsg('ဗီဒီယို ဖန်တီးရန် Short Script မရှိသေးပါ');return;}
-  stMarkDone(3);
+  stMarkDone(2);
   videoStarted=true;
   fillVideoScriptField();
   stSetMode('video');
-  stGoForce(4);
+  stGoForce(3);
   autoSave();
 }
 function fillVideoScriptField(){
@@ -501,16 +525,17 @@ function fillVideoScriptField(){
 function generateShortVideoPlan(){
   if(planBusy)return;
   var script=document.getElementById('videoScriptInput').value.trim();
-  if(!script){showError('planError','Short Script ထည့်ရန် လိုအပ်ပါသည် — Step 03 မှာ Script ရေးပြီးမှ ဆက်လုပ်ပါ');return;}
-  hideError('planError');
+  if(!script){showError('planError','Short Script ထည့်ရန် လိုအပ်ပါသည် — Step 02 မှာ Script ရေးပြီးမှ ဆက်လုပ်ပါ');return;}
+  hideError('planError');hideStepError('planError5','planRetry5');
   planBusy=true;
   var btn=document.getElementById('shortVideoBtn');
   if(btn)btn.disabled=true;
-  studioMarkDone(4);
-  // Unified Result Loading — Processing Step ကို Stepper မှာ မပြတော့ဘဲ Result နေရာတွင် Loading ပြသည်
-  stGoForce(6);
-  if(window.studioSetActions)window.studioSetActions([]);
-  if(window.studioShowResultLoading)window.studioShowResultLoading('AI က သင့်အတွက် Short Video ကို ပြင်ဆင်နေသည်...', '“'+(window.studioPreviewText?window.studioPreviewText(script):'')+'”');
+  studioMarkDone(3);
+  // Unified: Video Result section အတွင်း loading ပြသည်
+  if(window.aicsResultLoading)window.aicsResultLoading.show('planLoading','AI က သင့်အတွက် Short Video ကို ပြင်ဆင်နေသည်...',script);
+  if(window.studioForceGoStep)window.studioForceGoStep(4);
+  else window.studioGoStep(4);
+  if(window.studioSetLoading)window.studioSetLoading({on:true});
   var continuity=document.getElementById('vidContinuity');
   var body={
     idea:script,
@@ -532,25 +557,27 @@ function generateShortVideoPlan(){
     .then(function(data){
       currentScenes=data.scenes||[];
       currentCharacters=data.characters||[];
-      if(window.studioHideResultLoading)window.studioHideResultLoading();
-      studioMarkDone(4);studioMarkDone(5);
+      if(window.aicsResultLoading)window.aicsResultLoading.hide('planLoading');
+      if(window.studioSetLoading)window.studioSetLoading({on:false});
+      studioMarkDone(3);studioMarkDone(4);
       planBusy=false;
       if(btn)btn.disabled=false;
+      if(window.studioForceGoStep)window.studioForceGoStep(4);
+      else window.studioGoStep(4);
       renderFinalResult();
-      if(window.studioOnStep){try{window.studioOnStep(6);}catch(e){}}
       showToastMsg('✓ Short Video ပြင်ဆင်ပြီးပါပြီ');
       autoSave();
     })
     .catch(function(err){
       console.error('Short Video Plan Error:', err);
-      if(window.studioHideResultLoading)window.studioHideResultLoading();
+      if(window.aicsResultLoading)window.aicsResultLoading.hide('planLoading');
+      if(window.studioSetLoading)window.studioSetLoading({on:false});
       planBusy=false;
       if(btn)btn.disabled=false;
-      if(window.studioUnmarkDone)window.studioUnmarkDone(5);
-      var em=friendlyMsg(err,'video');
-      showToastMsg('⚠️ '+(em.replace(/\\n/g,' ')));
-      // Error → Result နေရာတွင် unified error card (Retry / Back) ဖြင့် ပြသည်
-      if(window.studioShowResultError)window.studioShowResultError(em,generateShortVideoPlan,function(){stGoForce(4);});
+      showStepError('planError5','planRetry5',friendlyMsg(err,'video'));
+      // Error → Result section အတွင်းတွင် error + retry ပြသည် (existing error UI ကို ထိန်းထားသည်)
+      if(window.studioUnmarkDone)window.studioUnmarkDone(4);
+      showToastMsg('⚠️ '+(friendlyMsg(err,'video').replace(/\\n/g,' ')));
     });
 }
 
@@ -784,6 +811,35 @@ function exportResult(){
   showToastMsg('✓ Export ပြီးပါပြီ');
 }
 
+// ===================== Status Animation (Loading Steps 02/05) =====================
+var statusTimers={};
+function startStatusAnim(id){
+  stopStatusAnim(id,false);
+  var box=document.getElementById(id);if(!box)return;
+  var lines=box.querySelectorAll('.st-line');
+  var cur=0,started=false;
+  for(var k=0;k<lines.length;k++){lines[k].className='st-line';var m=lines[k].querySelector('.st-marker');if(m)m.textContent='○';}
+  statusTimers[id]=setInterval(function(){
+    if(!started){lines[0].className='st-line active';var m0=lines[0].querySelector('.st-marker');if(m0)m0.textContent='●';started=true;return;}
+    if(cur<lines.length){
+      lines[cur].className='st-line done';
+      var md=lines[cur].querySelector('.st-marker');if(md)md.textContent='✓';
+      cur++;
+      if(cur<lines.length){lines[cur].className='st-line active';var ma=lines[cur].querySelector('.st-marker');if(ma)ma.textContent='●';}
+    }
+  },1100);
+}
+function stopStatusAnim(id,allDone){
+  if(statusTimers[id]){clearInterval(statusTimers[id]);delete statusTimers[id];}
+  var box=document.getElementById(id);if(!box)return;
+  var lines=box.querySelectorAll('.st-line');
+  if(allDone){
+    for(var k=0;k<lines.length;k++){
+      lines[k].className='st-line done';
+      var m=lines[k].querySelector('.st-marker');if(m)m.textContent='✓';
+    }
+  }
+}
 
 // ===================== Error Helpers (Myanmar — Technical error ကို မပြပါ) =====================
 function friendlyMsg(err,kind){
@@ -834,8 +890,6 @@ function studioOnStep(n){
   if(n===1){
     studioSetActions([bReset(),{label:'&#10024; Generate Short',cls:'primary',fn:generateShort}]);
   }else if(n===2){
-    studioSetActions([]);
-  }else if(n===3){
     studioSetActions([
       {label:'&#8592; Back',cls:'ghost',fn:function(){window.studioGoStep(1);}},
       bReset(),
@@ -846,19 +900,17 @@ function studioOnStep(n){
     ]);
     var ta=document.getElementById('shortResult');
     if(ta)autoExpand(ta);
-  }else if(n===4){
+  }else if(n===3){
     fillVideoScriptField();
     var pb=document.getElementById('shortVideoBtn');
     if(pb)pb.disabled=false;
     studioSetActions([
-      {label:'&#8592; Script ရလဒ်သို့ ပြန်ရန်',cls:'ghost',fn:function(){stSetMode('main');stGoForce(3);}},
+      {label:'&#8592; Script ရလဒ်သို့ ပြန်ရန်',cls:'ghost',fn:function(){stSetMode('main');stGoForce(2);}},
       bReset()
     ]);
-  }else if(n===5){
-    studioSetActions([]);
-  }else if(n===6){
+  }else if(n===4){
     studioSetActions([
-      {label:'&#8592; Back',cls:'ghost',fn:function(){window.studioGoStep(4);}},
+      {label:'&#8592; Back',cls:'ghost',fn:function(){window.studioGoStep(3);}},
       {label:'&#128203; Copy All',cls:'secondary',fn:copyAllResult},
       {label:'&#128190; ဖန်တီးမှုအားလုံးသိမ်း',cls:'purple',fn:saveAllResult}
     ]);
@@ -937,11 +989,11 @@ function studioRestoreDraft(d){
   currentScenes=d.scenes||[];
   var was=d.stepNow||1;
   if(currentShort){studioMarkDone(1);studioMarkDone(2);}
-  if((videoStarted||was>=4)&&currentShort){studioMarkDone(3);studioMarkDone(4);}
-  if(currentCharacters.length||currentScenes.length){studioMarkDone(4);studioMarkDone(5);}
+  if((videoStarted||was>=3)&&currentShort){studioMarkDone(2);}
+  if(currentCharacters.length||currentScenes.length){studioMarkDone(3);studioMarkDone(4);}
   if(currentScenes.length||currentCharacters.length)renderFinalResult();
   // Restore mode (main vs video branch)
-  if(d.mode==='video'&&(videoStarted||was>=4)&&currentShort){ST_MODE='video';}
+  if(d.mode==='video'&&(videoStarted||was>=3)&&currentShort){ST_MODE='video';}
   // Resolve target step
   var target=was;
   var tm=stMeta(target);
@@ -985,11 +1037,11 @@ var stDone={};
 var ST_STEPS={
   main:[
     { n:1, label:'01 Short အချက်အလက်' },
-    { n:3, label:'03 Short Script ရလဒ်', req:[2] }
+    { n:2, label:'02 Short Script ရလဒ်', req:[1] }
   ],
   video:[
-    { n:4, label:'01 Video ပြင်ဆင်ရန်', req:[3] },
-    { n:6, label:'03 MAP / နောက်ဆုံးရလဒ်', req:[5] }
+    { n:3, label:'01 Video ပြင်ဆင်ရန်', req:[2] },
+    { n:4, label:'02 MAP / နောက်ဆုံးရလဒ်', req:[3] }
   ]
 };
 function stMeta(n){

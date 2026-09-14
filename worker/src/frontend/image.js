@@ -1,16 +1,17 @@
 // AI Creative Studio — Image Studio Frontend (Main Stepper + Image Branch Stepper)
-// Main: 01 အချက်အလက် → 02 Prompt ရလဒ် (AI processing ကို Result နေရာတွင် ပြသည်)
-// Image Branch (Step 03 မှ): 01 ပုံဖန်တီးရန် ပြင်ဆင်ရန် → 02 Image ရလဒ် (AI processing ကို Result နေရာတွင် ပြသည်)
+// Main: 01 အချက်အလက် → 02 Prompt ရလဒ်
+// Image Branch (Step 02 မှ): 01 ပုံဖန်တီးရန် ပြင်ဆင်ရန် → 02 Image ရလဒ်
+// AI processing-status steps များကို Stepper ထဲတွင် မပြတော့ပါ — loading ကို Result section အတွင်း၌သာ ပြသည် (Unified)
 // Studio Isolation: ဤ File သည် Image Studio UI နှင့်သာ သက်ဆိုင်သည်။
 // Shared: renderSidebar / sidebarScript / renderStudioShell (frontend/shared.js)
 // ⚠️ API Contract ကို မပျက်စီးစေရ — /api/studio/image/prompt (map field ပါ), /api/studio/image/generate ကို ဆက်ထိန်းသည်။
 
-import { renderSidebar, sidebarScript, renderStudioShell } from './shared.js';
+import { renderSidebar, sidebarScript, renderStudioShell, aicsResultLoadingHtml } from './shared.js';
 
-// Main Stepper (၂ ဆင့်) — AI processing loading ကို Result နေရာတွင် ပြသည်
+// Main Stepper (၂ ဆင့် — AI Processing Step မရှိ) — Image Branch သည် အောက်က state machine တွင် သီးခြားစီ
 const STEPS = [
   { label: '01 အချက်အလက်' },
-  { label: '02 Prompt ရလဒ်', req: [2] },
+  { label: '02 Prompt ရလဒ်', req: [1] },
 ];
 
 const STEP1_HTML = `
@@ -48,21 +49,30 @@ const STEP1_HTML = `
 </div>
 </div>`;
 
+// ============================================================
+// Step 02 — Prompt ရလဒ် (Result — loading ကို ဤနေရာတွင်သာ ပြသည်)
+// ============================================================
 const STEP3_HTML = `
-<div class="aics-step" data-step="3">
+<div class="aics-step" data-step="2">
 <div class="card">
 <div class="card-title">&#128221; Image Prompt Result</div>
+${aicsResultLoadingHtml('promptLoading','AI က သင့်အတွက် Image Prompt ကို ပြင်ဆင်နေသည်...')}
 <p style="color:var(--text2);font-size:13px;margin-bottom:14px;">AI က သင့်အချက်အလက်ကို အခြေခံပြီး Image Prompt ပြင်ဆင်ပေးပြီးပါပြီ — အောက်က Prompt ကို တိုက်ရိုက် ပြင်ဆင်နိုင်ပါတယ်။</p>
 <textarea class="result-textarea" id="promptResult" placeholder="Prompt ဒီနေရာမှာ ပေါ်ပါမယ် — တိုက်ရိုက်ပြင်နိုင်ပါတယ်" oninput="onPromptEdit(this)"></textarea>
 <p class="hint-note">&#9997; ပြင်ဆင်ထားသော Prompt ကို နောက်အဆင့်သို့ အလိုအလျောက် ပို့ပေးပါမည် — Copy / Paste မလိုပါ</p>
+<div class="error-box" id="prepareErr2"></div>
+<div class="retry-row" id="prepareRetry">
+<button class="btn btn-primary" onclick="preparePrompt()">&#128260; ပြန်ကြိုးစားရန်</button>
+<button class="btn btn-secondary" onclick="stGoForce(1)">&#8592; ပြန်ပြင်ရန်</button>
+</div>
 </div>
 </div>`;
 
 const STEP4_HTML = `
-<div class="aics-step" data-step="4">
+<div class="aics-step" data-step="3">
 <div class="card">
 <div class="card-title">&#128295; Image ဖန်တီးရန် ပြင်ဆင်ခြင်း</div>
-<p style="color:var(--text2);font-size:13px;margin-bottom:14px;">Step 03 မှာ သင်ပြင်ဆင်ထားသော နောက်ဆုံး Prompt ကို အလိုအလျောက် ထည့်ပေးထားပါသည် — လိုအပ်ရင် ထပ်ပြင်ပြီး "AI ပုံဖန်တီးရန်" နှိပ်ပါ။</p>
+<p style="color:var(--text2);font-size:13px;margin-bottom:14px;">Step 02 မှာ သင်ပြင်ဆင်ထားသော နောက်ဆုံး Prompt ကို အလိုအလျောက် ထည့်ပေးထားပါသည် — လိုအပ်ရင် ထပ်ပြင်ပြီး "AI ပုံဖန်တီးရန်" နှိပ်ပါ။</p>
 <div class="form-group">
 <label>&#128221; အသုံးပြုမည့် နောက်ဆုံး Prompt</label>
 <textarea id="prepPromptInput" placeholder="Prompt ဒီနေရာမှာ အလိုအလျောက် ရောက်ပါမယ်" style="min-height:160px;" oninput="autoExpand(this)"></textarea>
@@ -72,8 +82,14 @@ const STEP4_HTML = `
 </div>`;
 
 const STEP6_HTML = `
-<div class="aics-step" data-step="6">
+<div class="aics-step" data-step="4">
+${aicsResultLoadingHtml('imageLoading','AI က သင့်အတွက် ပုံကို ဖန်တီးနေသည်...')}
 <div id="imageMapArea"></div>
+<div class="error-box" id="genErr5"></div>
+<div class="retry-row" id="genRetry5">
+<button class="btn btn-primary" onclick="startGenerate()">&#128260; ပြန်ကြိုးစားရန်</button>
+<button class="btn btn-secondary" onclick="stGoForce(3)">&#8592; ပြန်ပြင်ရန်</button>
+</div>
 </div>`;
 
 const STEPS_HTML = STEP1_HTML + STEP3_HTML + STEP4_HTML + STEP6_HTML;
@@ -198,6 +214,7 @@ var typewriterTimer=null;
 var prepareBusy=false;
 var generateBusy=false;
 var regenBusy=false;
+var statusTimers={};
 
 // ===== IMAGE MAP State (Instruction Section 11) =====
 var imageMap={
@@ -280,15 +297,17 @@ function preparePrompt(){
   if(!idea){showError('prepareErr','ပုံဖော်ပြချင်တဲ့ အကြောင်းအရာ အနည်းဆုံး ဖြည့်ရေးပါ');return;}
   if(!checkTypeAllowed())return;
   hideError('prepareErr');
+  hideStepError('prepareErr2','prepareRetry');
   var aud=document.getElementById('audSel');
   originalIdea=idea;
-  if(aud&&aud.value)idea+='\\n\\nAudience: '+aud.value;
+  if(aud&&aud.value)idea+='\n\nAudience: '+aud.value;
   prepareBusy=true;
   stopTypewriter();
-  // Unified Result Loading — Processing Step ကို Stepper မှာ မပြတော့ဘဲ Result နေရာတွင် Loading ပြသည်
-  stGoForce(3);
-  if(window.studioSetActions)window.studioSetActions([]);
-  if(window.studioShowResultLoading)window.studioShowResultLoading('AI က သင့်အတွက် Image Prompt ကို ပြင်ဆင်နေသည်...', '“'+(window.studioPreviewText?window.studioPreviewText(originalIdea):'')+'”');
+  studioMarkDone(1);
+  // Unified: Result (Prompt Result) section အတွင်း loading ပြသည်
+  if(window.aicsResultLoading)window.aicsResultLoading.show('promptLoading','AI က သင့်အတွက် Image Prompt ကို ပြင်ဆင်နေသည်...',originalIdea);
+  if(window.studioForceGoStep)window.studioForceGoStep(2);else window.studioGoStep(2);
+  if(window.studioSetLoading)window.studioSetLoading({on:true});
   var body={idea:idea,type:selectedImageType};
   if(refImages.length>0){
     body.images=refImages.map(function(img){return{base64:img.base64,mimeType:img.mimeType};});
@@ -298,25 +317,26 @@ function preparePrompt(){
       var promptText=(data&&data.prompt)?data.prompt:'';
       applyMapData((data&&data.map)?data.map:null,promptText);
       latestPrompt=promptText||buildFinalPromptFromMap();
-      if(window.studioHideResultLoading)window.studioHideResultLoading();
+      if(window.aicsResultLoading)window.aicsResultLoading.hide('promptLoading');
+      if(window.studioSetLoading)window.studioSetLoading({on:false});
       prepareBusy=false;
       studioMarkDone(1);
       studioMarkDone(2);
       var ta=document.getElementById('promptResult');
       if(ta)typewrite(latestPrompt,ta);
-      if(window.studioOnStep){try{window.studioOnStep(3);}catch(e){}}
+      if(window.studioForceGoStep)window.studioForceGoStep(2);else window.studioGoStep(2);
       showToast('✓ Image Prompt ပြင်ဆင်ပြီးပါပြီ');
       autoSave();
     })
     .catch(function(err){
       console.error('Image Prompt Prepare Error:', err);
-      if(window.studioHideResultLoading)window.studioHideResultLoading();
+      if(window.aicsResultLoading)window.aicsResultLoading.hide('promptLoading');
+      if(window.studioSetLoading)window.studioSetLoading({on:false});
       prepareBusy=false;
+      showStepError('prepareErr2','prepareRetry',friendlyMsg(err,'prepare'));
+      // Error → Result section အတွင်းတွင် error + retry ပြသည် (existing error UI ကို ထိန်းထားသည်)
       if(window.studioUnmarkDone)window.studioUnmarkDone(2);
-      var em=friendlyMsg(err,'prepare');
-      showToast('⚠️ '+(em.replace(/\\n/g,' ')),true);
-      // Error → Result နေရာတွင် unified error card (Retry / Back) ဖြင့် ပြသည်
-      if(window.studioShowResultError)window.studioShowResultError(em,preparePrompt,function(){stGoForce(1);});
+      showToast('⚠️ '+(friendlyMsg(err,'prepare').replace(/\\n/g,' ')),true);
     });
 }
 
@@ -364,9 +384,9 @@ function goPrepare(){
   finalPromptManual=false;
   var pta=document.getElementById('prepPromptInput');
   if(pta){pta.value=prepPrompt;autoExpand(pta);}
-  stMarkDone(3);
+  stMarkDone(2);
   stSetMode('image');
-  stGoForce(4);
+  stGoForce(3);
   autoSave();
 }
 
@@ -377,33 +397,36 @@ function startGenerate(){
   var p=ta?(ta.value||'').trim():'';
   if(!p){showError('genErr','ပုံဖန်တီးဖို့ Prompt လိုအပ်ပါသည် — အရင်ဆုံး Prompt ပြင်ဆင်ပါ');return;}
   hideError('genErr');
+  hideStepError('genErr5','genRetry5');
   generateBusy=true;
   prepPrompt=p;
-  // Unified Result Loading — Processing Step ကို Stepper မှာ မပြတော့ဘဲ Result နေရာတွင် Loading ပြသည်
-  stGoForce(6);
-  if(window.studioSetActions)window.studioSetActions([]);
-  if(window.studioShowResultLoading)window.studioShowResultLoading('AI က သင့်အတွက် ပုံကို ဖန်တီးနေသည်...', '“'+(window.studioPreviewText?window.studioPreviewText(p):'')+'”');
+  studioMarkDone(3);
+  // Unified: Image Result section အတွင်း loading ပြသည်
+  if(window.aicsResultLoading)window.aicsResultLoading.show('imageLoading','AI က သင့်အတွက် ပုံကို ဖန်တီးနေသည်...',p);
+  if(window.studioForceGoStep)window.studioForceGoStep(4);else window.studioGoStep(4);
+  if(window.studioSetLoading)window.studioSetLoading({on:true});
   apiCall('/api/studio/image/generate',{prompt:p})
     .then(function(data){
       imageMap.finalImage={data:data.data,mimeType:data.mimeType};
-      if(window.studioHideResultLoading)window.studioHideResultLoading();
+      if(window.aicsResultLoading)window.aicsResultLoading.hide('imageLoading');
+      if(window.studioSetLoading)window.studioSetLoading({on:false});
       generateBusy=false;
+      studioMarkDone(3);
       studioMarkDone(4);
-      studioMarkDone(5);
+      if(window.studioForceGoStep)window.studioForceGoStep(4);else window.studioGoStep(4);
       renderMap();
-      if(window.studioOnStep){try{window.studioOnStep(6);}catch(e){}}
       showToast('✓ ပုံဖန်တီးပြီးပါပြီ');
       autoSave();
     })
     .catch(function(err){
       console.error('Image Generate Error:', err);
-      if(window.studioHideResultLoading)window.studioHideResultLoading();
+      if(window.aicsResultLoading)window.aicsResultLoading.hide('imageLoading');
+      if(window.studioSetLoading)window.studioSetLoading({on:false});
       generateBusy=false;
-      if(window.studioUnmarkDone)window.studioUnmarkDone(5);
-      var em=friendlyMsg(err,'generate');
-      showToast('⚠️ '+(em.replace(/\\n/g,' ')),true);
-      // Error → Result နေရာတွင် unified error card (Retry / Back) ဖြင့် ပြသည်
-      if(window.studioShowResultError)window.studioShowResultError(em,startGenerate,function(){stGoForce(4);});
+      showStepError('genErr5','genRetry5',friendlyMsg(err,'generate'));
+      // Error → Result section အတွင်းတွင် error + retry ပြသည် (existing error UI ကို ထိန်းထားသည်)
+      if(window.studioUnmarkDone)window.studioUnmarkDone(4);
+      showToast('⚠️ '+(friendlyMsg(err,'generate').replace(/\\n/g,' ')),true);
     });
 }
 
@@ -598,6 +621,35 @@ function onPromptEdit(ta){
   if(ta){latestPrompt=ta.value;autoExpand(ta);}
 }
 
+// ===================== Status Animation =====================
+function startStatusAnim(id){
+  stopStatusAnim(id,false);
+  var box=document.getElementById(id);if(!box)return;
+  var lines=box.querySelectorAll('.st-line');
+  var cur=0,started=false;
+  for(var k=0;k<lines.length;k++){lines[k].className='st-line';var m=lines[k].querySelector('.st-marker');if(m)m.textContent='○';}
+  statusTimers[id]=setInterval(function(){
+    if(!started){lines[0].className='st-line active';var m0=lines[0].querySelector('.st-marker');if(m0)m0.textContent='●';started=true;return;}
+    if(cur<lines.length){
+      lines[cur].className='st-line done';
+      var md=lines[cur].querySelector('.st-marker');if(md)md.textContent='✓';
+      cur++;
+      if(cur<lines.length){lines[cur].className='st-line active';var ma=lines[cur].querySelector('.st-marker');if(ma)ma.textContent='●';}
+    }
+  },1100);
+}
+function stopStatusAnim(id,allDone){
+  if(statusTimers[id]){clearInterval(statusTimers[id]);delete statusTimers[id];}
+  var box=document.getElementById(id);if(!box)return;
+  var lines=box.querySelectorAll('.st-line');
+  if(allDone){
+    for(var k=0;k<lines.length;k++){
+      lines[k].className='st-line done';
+      var m=lines[k].querySelector('.st-marker');if(m)m.textContent='✓';
+    }
+  }
+}
+
 // ===================== Error Helpers =====================
 function friendlyMsg(err,kind){
   var m=(err&&err.message)?String(err.message):'';
@@ -648,8 +700,6 @@ function studioOnStep(n){
   if(n===1){
     studioSetActions([bReset(),{label:'✨ Image Prompt ဖန်တီးရန်',cls:'primary',fn:preparePrompt}]);
   }else if(n===2){
-    studioSetActions([]);
-  }else if(n===3){
     var ta=document.getElementById('promptResult');
     if(ta)autoExpand(ta);
     studioSetActions([
@@ -659,19 +709,17 @@ function studioOnStep(n){
       {label:'&#128190; ဖန်တီးမှုသိမ်းပါ',cls:'purple',fn:saveToCreations},
       {label:'&#128295; ပုံဖန်တီးရန် ပြင်ဆင်မည်',cls:'primary',fn:goPrepare}
     ]);
-  }else if(n===4){
+  }else if(n===3){
     var pta=document.getElementById('prepPromptInput');
     if(pta&&!pta.value){pta.value=prepPrompt||'';autoExpand(pta);}
     studioSetActions([
-      {label:'&#8592; Prompt ရလဒ်သို့ ပြန်ရန်',cls:'ghost',fn:function(){stSetMode('main');stGoForce(3);}},
+      {label:'&#8592; Prompt ရလဒ်သို့ ပြန်ရန်',cls:'ghost',fn:function(){stSetMode('main');stGoForce(2);}},
       bReset(),
       {label:'&#10024; AI ပုံဖန်တီးရန်',cls:'primary',fn:startGenerate}
     ]);
-  }else if(n===5){
-    studioSetActions([]);
-  }else if(n===6){
+  }else if(n===4){
     studioSetActions([
-      {label:'&#8592; Back',cls:'ghost',fn:function(){window.studioGoStep(4);}},
+      {label:'&#8592; Back',cls:'ghost',fn:function(){window.studioGoStep(3);}},
       bReset(),
       {label:'&#128203; Copy Prompt',cls:'secondary',fn:copyPrompt},
       {label:'&#128190; ဖန်တီးမှုသိမ်းပါ',cls:'purple',fn:saveToCreations},
@@ -739,8 +787,8 @@ function studioRestoreDraft(d){
     imageMap.finalPrompt=latestPrompt||buildFinalPromptFromMap();
   }
   if(latestPrompt){studioMarkDone(1);studioMarkDone(2);}
-  if(prepPrompt||latestPrompt){studioMarkDone(3);}
-  if(imageMap.finalImage){studioMarkDone(4);studioMarkDone(5);}
+  if(prepPrompt||latestPrompt){studioMarkDone(2);}
+  if(imageMap.finalImage){studioMarkDone(3);studioMarkDone(4);}
   if(d.map&&(imageMap.subject.description||imageMap.style.description||imageMap.finalPrompt))renderMap();
   // Restore mode (main vs image branch)
   if(d.mode==='image'&&(prepPrompt||latestPrompt)){ST_MODE='image';}
@@ -784,11 +832,11 @@ var stDone={};
 var ST_STEPS={
   main:[
     { n:1, label:'01 အချက်အလက်' },
-    { n:3, label:'03 Prompt ရလဒ်', req:[2] }
+    { n:2, label:'02 Prompt ရလဒ်', req:[1] }
   ],
   image:[
-    { n:4, label:'01 ပုံဖန်တီးရန် ပြင်ဆင်ရန်', req:[3] },
-    { n:6, label:'03 Image ရလဒ်', req:[5] }
+    { n:3, label:'01 ပုံဖန်တီးရန် ပြင်ဆင်ရန်', req:[2] },
+    { n:4, label:'02 Image ရလဒ်', req:[3] }
   ]
 };
 function stMeta(n){

@@ -391,6 +391,25 @@ export function sidebarScript() {
     '    })(sels[k]);\n' +
     '  }\n' +
     '})();\n' +
+    '// ===== Unified Result Loading UI — shared page-script helper (all Studios) =====\n' +
+    '// Loading state ကို Result section အတွင်းတွင်သာ ပြချေဖျက်ရန် တစ်နေရာတည်းမှ ထိန်းချုပ်သည်\n' +
+    'window.aicsResultLoading = {\n' +
+    '  show: function (id, msg, hint) {\n' +
+    '    var box = document.getElementById(id); if (!box) return;\n' +
+    '    if (msg) { var m = box.querySelector(\'.aics-result-loading-msg\'); if (m) m.textContent = msg; }\n' +
+    '    var h = box.querySelector(\'.aics-result-loading-hint\');\n' +
+    '    if (h) {\n' +
+    '      var t = hint == null ? \'\' : String(hint).replace(/\\s+/g, \' \').trim();\n' +
+    '      if (t) { if (t.length > 90) t = t.slice(0, 87) + \'…\'; h.textContent = \'“\' + t + \'”\'; h.style.display = \'\'; }\n' +
+    '      else { h.textContent = \'\'; h.style.display = \'none\'; }\n' +
+    '    }\n' +
+    '    box.classList.add(\'show\');\n' +
+    '  },\n' +
+    '  hide: function (id) {\n' +
+    '    var box = document.getElementById(id); if (!box) return;\n' +
+    '    box.classList.remove(\'show\');\n' +
+    '  }\n' +
+    '};\n' +
     '</script>';
 }
 
@@ -470,20 +489,14 @@ function aicsShellCss() {
     '.aics-step-btn.aics-loading .aics-step-label{color:#00e5ff;}\n' +
     '.aics-step-btn .aics-step-spinner{width:12px;height:12px;border:2px solid rgba(0,229,255,.25);border-top-color:#00e5ff;border-radius:50%;animation:spin .7s linear infinite;}\n' +
     '.aics-step-link{width:12px;height:1px;background:rgba(0,229,255,.22);flex-shrink:0;}\n' +
-    '.aics-result-loading{display:block;margin:0 0 16px;}\n' +
-    '.aics-result-loading .arl-card{background:linear-gradient(160deg,#0d1424,#111a2e);border:1px solid rgba(0,229,255,.18);border-radius:14px;padding:28px 20px 26px;text-align:center;}\n' +
-    '.aics-result-loading .arl-head{font-size:11px;font-weight:700;letter-spacing:.7px;text-transform:uppercase;color:#5a6478;margin-bottom:16px;}\n' +
-    '.aics-result-loading .arl-spinner{width:32px;height:32px;border:3px solid rgba(0,229,255,.22);border-top-color:#00e5ff;border-radius:50%;animation:aics-spin .8s linear infinite;margin:0 auto 14px;}\n' +
-    '.aics-result-loading .arl-msg{font-size:15px;font-weight:600;color:#e8ecf4;line-height:1.5;}\n' +
-    '.aics-result-loading .arl-sub{margin-top:10px;font-size:13px;color:#8b95a8;font-style:italic;word-break:break-word;white-space:pre-wrap;}\n' +
-    '.aics-result-loading .arl-err{margin-top:4px;font-size:13.5px;color:#ff8a8a;line-height:1.6;white-space:pre-line;word-break:break-word;}\n' +
-    '.aics-result-loading .arl-btns{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:16px;}\n' +
-    '.aics-result-loading .arl-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:38px;padding:8px 18px;border-radius:10px;border:none;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;}\n' +
-    '.aics-result-loading .arl-btn.primary{background:linear-gradient(135deg,#00e5ff,#00b8d4);color:#080c18;box-shadow:0 2px 12px rgba(0,229,255,.3);}\n' +
-    '.aics-result-loading .arl-btn.primary:hover{opacity:.92;}\n' +
-    '.aics-result-loading .arl-btn.secondary{background:#111a2e;color:#00e5ff;border:1px solid rgba(0,229,255,.35);}\n' +
-    '.aics-result-loading .arl-btn.secondary:hover{background:rgba(0,229,255,.12);}\n' +
-    '@keyframes aics-spin{to{transform:rotate(360deg)}}\n' +
+    '/* ===== Unified Result Loading UI (Shared across ALL Studios — Result-section loading) ===== */\n' +
+    '/* AI processing-status steps များကို Stepper ထဲတွင် မပြတော့ဘဲ — Result section အတွင်း၌သာ တူညီသော loading UI ပြသည် */\n' +
+    '.aics-result-loading{display:none;align-items:center;justify-content:center;padding:36px 14px;margin-bottom:16px;background:linear-gradient(135deg,rgba(123,92,255,.10),rgba(0,229,255,.06));border:1px dashed rgba(0,229,255,.35);border-radius:14px;box-sizing:border-box;}\n' +
+    '.aics-result-loading.show{display:flex;}\n' +
+    '.aics-result-loading-inner{display:flex;flex-direction:column;align-items:center;gap:10px;max-width:560px;width:100%;text-align:center;}\n' +
+    '.aics-result-loading-spinner{width:30px;height:30px;flex:0 0 30px;border:3px solid rgba(0,229,255,.2);border-top-color:#00e5ff;border-radius:50%;animation:spin .8s linear infinite;}\n' +
+    '.aics-result-loading-msg{color:#e8ecf4;font-size:14.5px;font-weight:600;line-height:1.5;}\n' +
+    '.aics-result-loading-hint{color:#7fd8ff;font-size:13px;font-style:italic;opacity:.88;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}\n' +
     '.aics-grid{display:block;}\n' +
     '.aics-work{min-width:0;}\n' +
     '.aics-step{display:none;}\n' +
@@ -531,12 +544,32 @@ function aicsShellCss() {
     '  .aics-stepper{padding:6px 8px;}\n' +
     '  .aics-step-btn{padding:7px 10px;}\n' +
     '  .aics-step-btn .aics-step-label{font-size:12.5px;}\n' +
-    '  .aics-result-loading .arl-card{padding:22px 14px;}\n' +
-    '  .aics-result-loading .arl-spinner{width:26px;height:26px;margin-bottom:12px;}\n' +
-    '  .aics-result-loading .arl-msg{font-size:14px;}\n' +
-    '  .aics-result-loading .arl-btn{flex:1;min-width:120px;}\n' +
+    '  .aics-result-loading{padding:24px 12px;}\n' +
+    '  .aics-result-loading-msg{font-size:13.5px;}\n' +
+    '  .aics-result-loading-spinner{width:26px;height:26px;flex-basis:26px;}\n' +
     '}\n' +
     '</style>'
+  );
+}
+
+// ============================================================
+// UNIFIED RESULT LOADING UI — Shared component (all Studios)
+// ------------------------------------------------------------
+// Studio တိုင်း၏ Result section အတွင်း တူညီသော loading card ကို ပြရန် —
+// processing-status steps (AI ရေးသားနေသည် / AI ပြင်ဆင်နေသည် / ...) များကို
+// Stepper ထဲတွင် မပြတော့ဘဲ Result နေရာတွင်သာ loading ပြသည်။
+// id: loading block ၏ element id | msg: Studio အလိုက် personalized loading message
+// hint ကို page script မှ window.aicsResultLoading.show(id,msg,hint) ဖြင့် ထည့်နိုင်သည်
+// ============================================================
+export function aicsResultLoadingHtml(id, msg) {
+  return (
+    '<div class="aics-result-loading" id="' + id + '">' +
+    '<div class="aics-result-loading-inner">' +
+    '<div class="aics-result-loading-spinner"></div>' +
+    '<div class="aics-result-loading-msg">' + msg + '</div>' +
+    '<div class="aics-result-loading-hint"></div>' +
+    '</div>' +
+    '</div>'
   );
 }
 
@@ -695,62 +728,9 @@ export function renderStudioShell(opts) {
     '    updateStepper();\n' +
     '  };\n' +
     '  window.studioCur = function () { return cur; };\n' +
-    '  window.studioSetLoading = function (on) {\n' +
-    '    var onBool = (on && typeof on === "object") ? !!on.on : !!on;\n' +
-    '    var btn = document.querySelector(\'.aics-step-btn.active\');\n' +
-    '    if (!btn) return;\n' +
-    '    if (onBool) { btn.classList.add(\'aics-loading\'); try { btn.scrollIntoView({behavior:\'smooth\',inline:\'center\',block:\'nearest\'}); } catch(e){} }\n' +
-    '    else btn.classList.remove(\'aics-loading\');\n' +
-    '  };\n' +
-    '  // ==== Unified Result Loading UI (Studio အားလုံး အတွက် အတူတူ pattern) ====\n' +
-    '  function shEsc(s) { return String(s == null ? \'\' : s).replace(/&/g, \'&amp;\').replace(/</g, \'&lt;\').replace(/>/g, \'&gt;\').replace(/"/g, \'&quot;\').replace(/\'/g, \'&#39;\'); }\n' +
-    '  function aicsResultHost() {\n' +
-    '    var old = document.getElementById(\'aicsResultLoading\');\n' +
-    '    if (old && old.parentNode) old.parentNode.removeChild(old);\n' +
-    '    var host = document.createElement(\'div\');\n' +
-    '    host.id = \'aicsResultLoading\';\n' +
-    '    host.className = \'aics-result-loading\';\n' +
-    '    var parent = document.querySelector(\'.aics-step.active\') || document.getElementById(\'aicsWork\');\n' +
-    '    if (!parent) return null;\n' +
-    '    parent.insertBefore(host, parent.firstChild);\n' +
-    '    return host;\n' +
-    '  }\n' +
-    '  // loading: Result နေရာအတွင်းမှာ spinner + Studio-specific message (+ user input preview) ကို ပြသည်\n' +
-    '  window.studioShowResultLoading = function (message, sub) {\n' +
-    '    var host = aicsResultHost(); if (!host) return;\n' +
-    '    var html = \'<div class="arl-card">\' +\n' +
-    '      \'<div class="arl-head">&#10024; ရလဒ်</div>\' +\n' +
-    '      \'<div class="arl-spinner"></div>\' +\n' +
-    '      \'<div class="arl-msg">\' + shEsc(message || \'AI ဖန်တီးနေသည်...\') + \'</div>\' +\n' +
-    '      (sub ? \'<div class="arl-sub">\' + shEsc(sub) + \'</div>\' : \'\') +\n' +
-    '      \'</div>\';\n' +
-    '    host.innerHTML = html;\n' +
-    '  };\n' +
-    '  // error: Result နေရာအတွင်းမှာ error message + Retry / Back buttons (existing error handling ကို မပျက်စေရ)\n' +
-    '  window.studioShowResultError = function (message, retryFn, backFn) {\n' +
-    '    var host = aicsResultHost(); if (!host) return;\n' +
-    '    var html = \'<div class="arl-card">\' +\n' +
-    '      \'<div class="arl-head">&#9888;&#65039; မအောင်မြင်ပါ</div>\' +\n' +
-    '      \'<div class="arl-err">\' + shEsc(message || \'လုပ်ဆောင်၍ မရပါ။ ခဏစောင့်ပြီး ပြန်ကြိုးစားပါ။\') + \'</div>\' +\n' +
-    '      \'<div class="arl-btns">\' +\n' +
-    '      (typeof retryFn === \'function\' ? \'<button type="button" class="arl-btn primary" id="arlRetryBtn">&#8635; ပြန်ကြိုးစားရန်</button>\' : \'\') +\n' +
-    '      (typeof backFn === \'function\' ? \'<button type="button" class="arl-btn secondary" id="arlBackBtn">&#8592; နောက်သို့</button>\' : \'\') +\n' +
-    '      \'</div></div>\';\n' +
-    '    host.innerHTML = html;\n' +
-    '    var r = document.getElementById(\'arlRetryBtn\'); if (r) r.onclick = function () { retryFn(); };\n' +
-    '    var b = document.getElementById(\'arlBackBtn\'); if (b) b.onclick = function () { backFn(); };\n' +
-    '  };\n' +
-    '  window.studioHideResultLoading = function () {\n' +
-    '    var old = document.getElementById(\'aicsResultLoading\');\n' +
-    '    if (old && old.parentNode) old.parentNode.removeChild(old);\n' +
-    '  };\n' +
-    '  // user input preview အတွက် — ရှည်လွန်းလျှင် အတိုချုံးပေးသည် (ဘေးကင်းရန် escape လုပ်ထားသည်)\n' +
-    '  window.studioPreviewText = function (v, max) {\n' +
-    '    max = max || 80;\n' +
-    '    v = String(v == null ? \'\' : v).replace(/\\s+/g, \' \').trim();\n' +
-    '    if (v.length > max) v = v.slice(0, max) + \'…\';\n' +
-    '    return v;\n' +
-    '  };\n' +
+    '  // Unified loading: loading ကို Result section အတွင်း၌သာ ပြသည် (aicsResultLoading) —\n' +
+    '  // Stepper ပေါ်တွင် spinner မပြတော့ပါ (compat no-op)\n' +
+    '  window.studioSetLoading = function () {};\n' +
     '  window.aichAudChoices = [\'လူတိုင်း\', \'လူငယ်\', \'လူကြီး\', \'ကလေး\'];\n' +
     '  window.aichAud = \'လူတိုင်း\';\n' +
     '  window.aichBuildAud = function (containerId, selected) {\n' +

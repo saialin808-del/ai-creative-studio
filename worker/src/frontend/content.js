@@ -1,20 +1,20 @@
 // AI Creative Studio — Content Studio Frontend
 // Architecture: Content → Output Hub → Branch (Video / Audio)
-// Main Stepper: ① အကြောင်းအရာ → ② Content ရလဒ် (AI processing ကို Result နေရာတွင် ပြသည်)
-// Video Branch : ① Video ပြင်ဆင်ရန် → ② Video ရလဒ် (AI processing ကို Result နေရာတွင် ပြသည်)
-// Audio Branch : ① Audio ပြင်ဆင်ရန် → ② Audio ရလဒ် (AI processing ကို Result နေရာတွင် ပြသည်)
+// Main Stepper: ① အကြောင်းအရာ → ② Content ရလဒ်
+// Video Branch : ① Video ပြင်ဆင်ရန် → ② Video ရလဒ်
+// Audio Branch : ① Audio ပြင်ဆင်ရန် → ② Audio ရလဒ်
+// AI processing-status steps များကို Stepper ထဲတွင် မပြတော့ပါ — loading ကို Result section အတွင်း၌သာ ပြသည် (Unified)
 // Studio Isolation: ဤ File သည် Content Studio UI နှင့်သာ သက်ဆိုင်သည်။
 // Shared: renderSidebar / sidebarScript / renderStudioShell (frontend/shared.js) — မပြောင်းပါ
 // ⚠️ API Contract / Backend Routes မပြောင်းပါ — Frontend Flow သာ ပြောင်းပါသည်။
 // Stepper = လက်ရှိသွားနေသော လမ်းကြောင်း | MAP = System တစ်ခုလုံး၏ workflow (Internal)
 
-import { renderSidebar, sidebarScript, renderStudioShell } from './shared.js';
+import { renderSidebar, sidebarScript, renderStudioShell, aicsResultLoadingHtml } from './shared.js';
 
-// ===== Shell Stepper (Main — 2 Steps; Shell အတွက် Req Metadata) =====
-// AI processing loading ကို Stepper ထဲမှာ မပြတော့ဘဲ Result နေရာတွင် ပြသည်
+// ===== Shell Stepper (Main — 2 Steps; Shell အတွက် Lock/Req Metadata) =====
 const STEPS = [
   { label: '01 အကြောင်းအရာ' },
-  { label: '02 Content ရလဒ် / Output Hub', req: [2] },
+  { label: '02 Content ရလဒ် / Output Hub', req: [1] },
 ];
 
 // ============================================================
@@ -46,17 +46,20 @@ const STEP1_HTML = `
 <textarea id="ideaInput" placeholder="ဥပမာ — ကော်ဖီဆိုင်တစ်ဆင်အတွက် social media content ရေးပါ..." style="min-height:130px;"></textarea>
 </div>
 <button class="btn btn-primary" id="genBtn" onclick="generateContent()" style="margin-top:4px;">&#10024; Generate Content</button>
+<div class="loading" id="genLoading"><div class="spinner"></div> AI က ရေးနေပါသည်...</div>
 <div class="error-box" id="genError"></div>
 </div>
 </div>`;
 
 // ============================================================
-// Step 03 — Content ရလဒ်
+// Step 02 — Content ရလဒ် (+ Output Hub) — loading ကို ဤနေရာတွင်သာ ပြသည်
 // ============================================================
 const STEP3_HTML = `
-<div class="aics-step" data-step="3">
+<div class="aics-step" data-step="2">
 <div class="card">
 <div class="card-title">&#128221; Content (ရလဒ်)</div>
+${aicsResultLoadingHtml('contentLoading','AI က သင့်အကြောင်းအရာကို ရေးသားနေသည်...')}
+<div id="contentResultBody">
 <div id="noResultHint" class="empty-note">Result မရှိသေးပါ — "Create" အဆင့်မှာ Generate နှိပ်ပါ</div>
 <div class="result-grid" id="resultGrid" style="display:none;">
 <div class="result-card">
@@ -76,8 +79,14 @@ const STEP3_HTML = `
 </div>
 </div>
 </div>
+<div class="error-box" id="genError2"></div>
+<div class="btn-row" id="genRetryRow" style="display:none;justify-content:center;">
+<button class="btn btn-secondary" onclick="csNav(1)">&#8592; ပြန်ပြင်ရန်</button>
+<button class="btn btn-primary" onclick="generateContent()">&#128260; ပြန်ကြိုးစားရန်</button>
 </div>
-<div class="aics-step" data-step="3b">
+</div>
+</div>
+<div class="aics-step" data-step="2b">
 <div class="card">
 <div class="card-title">&#128172; Edit — Quick Actions</div>
 <p style="color:var(--text2);font-size:13px;margin-bottom:12px;">လိုချင်တဲ့ ပြင်ဆင်မှုကို တစ်ချက်နှိပ်ရုံဖြင့် AI က ပြင်ပေးပါမယ် — သို့မဟုတ် အောက်မှာ ကိုယ်တိုင် ညွှန်ကြားချက် ရေးနိုင်ပါတယ်။</p>
@@ -93,7 +102,7 @@ const STEP3_HTML = `
 </div>
 </div>
 </div>
-<div class="aics-step" data-step="3c">
+<div class="aics-step" data-step="2c">
 <div class="aics-out-hub">
 <div class="aics-out-hub-title">&#128640; ဆက်လက်ဖန်တီးရန်</div>
 <p class="aics-out-hub-sub">သင့် Content ကို နောက်ထပ် Output အဖြစ် ဆက်လက်ဖန်တီးနိုင်ပါသည် — တစ်ခုချင်း သီးသန့် ရွေးနိုင်ပြီး ပြီးတိုင်း ဤနေရာသို့ ပြန်လာနိုင်ပါသည်။</p>
@@ -115,21 +124,8 @@ const STEP3_HTML = `
 </div>`;
 
 // ============================================================
-// Video Branch — Step 11 (Content ✓) / 12 (Video Input) / 13 (AI) / 14 (Result)
+// Video Branch — Step 12 (Video Input) / 14 (Result) — AI Processing Step မရှိ
 // ============================================================
-const STEP11_HTML = `
-<div class="aics-step" data-step="11">
-<div class="card">
-<div class="card-title">&#9989; Content (Video အတွက်)</div>
-<p class="voice-hint">သင့် Content ရလဒ်ကို အလိုအလျောက် ယူထားပါသည် — copy/paste မလိုပါ။</p>
-<div class="aics-transfer-box" id="videoContentPreview"></div>
-<div class="btn-row">
-<button class="btn btn-primary" onclick="csNav(12)">Video အဆင့်သို့ ဆက်သွားရန် &#8594;</button>
-<button class="btn btn-secondary" onclick="backToContentResult()">&#8592; Content ရလဒ်သို့ ပြန်ရန်</button>
-</div>
-</div>
-</div>`;
-
 const STEP12_HTML = `
 <div class="aics-step" data-step="12">
 <div class="card">
@@ -156,6 +152,7 @@ const STEP12_HTML = `
 </div>
 </details>
 <button class="btn btn-primary" id="videoGenBtn" onclick="generateVideo()">&#9654; Video Plan ဖန်တီးမယ်</button>
+<div class="loading" id="videoGenLoading"><div class="spinner"></div> ဗီဒီယိုအစီအစဉ် ရေးဆွဲနေပါသည်...</div>
 <div class="error-box" id="videoError"></div>
 </div>
 </div>
@@ -165,6 +162,7 @@ const STEP14_HTML = `
 <div class="aics-step" data-step="14">
 <div class="card">
 <div class="card-title">&#127916; Video ရလဒ်</div>
+${aicsResultLoadingHtml('videoLoading','AI က သင့်အတွက် Video ကို ပြင်ဆင်နေသည်...')}
 <div id="videoResult" style="display:none;">
 <div class="card" id="charactersCard" style="display:none;margin-top:16px;">
 <div class="card-title">&#128100; ဇာတ်ကောင်များ (Characters)</div>
@@ -175,6 +173,11 @@ const STEP14_HTML = `
 <div id="scenesList"></div>
 </div>
 </div>
+<div class="error-box" id="videoError2"></div>
+<div class="btn-row" id="videoRetryRow" style="display:none;justify-content:center;">
+<button class="btn btn-secondary" onclick="csNav(12)">&#8592; ပြန်ပြင်ရန်</button>
+<button class="btn btn-primary" onclick="generateVideo()">&#128260; ပြန်ကြိုးစားရန်</button>
+</div>
 <div class="btn-row">
 <button class="btn btn-secondary" onclick="backToContentResult()">&#8592; Content ရလဒ်သို့ ပြန်ရန်</button>
 <button class="btn btn-purple" onclick="saveContentResult()">&#128190; ဖန်တီးမှုသိမ်းပါ</button>
@@ -183,21 +186,8 @@ const STEP14_HTML = `
 </div>`;
 
 // ============================================================
-// Audio Branch — Step 21 (Content ✓) / 22 (Audio Input) / 23 (AI) / 24 (Result)
+// Audio Branch — Step 22 (Audio Input) / 24 (Result) — AI Processing Step မရှိ
 // ============================================================
-const STEP21_HTML = `
-<div class="aics-step" data-step="21">
-<div class="card">
-<div class="card-title">&#9989; Content (အသံအတွက်)</div>
-<p class="voice-hint">သင့် Content ရလဒ်ကို အလိုအလျောက် ယူထားပါသည် — copy/paste မလိုပါ။</p>
-<div class="aics-transfer-box" id="audioContentPreview"></div>
-<div class="btn-row">
-<button class="btn btn-primary" onclick="csNav(22)">Audio အဆင့်သို့ ဆက်သွားရန် &#8594;</button>
-<button class="btn btn-secondary" onclick="backToContentResult()">&#8592; Content ရလဒ်သို့ ပြန်ရန်</button>
-</div>
-</div>
-</div>`;
-
 const STEP22_HTML = `
 <div class="aics-step" data-step="22">
 <div class="card">
@@ -243,6 +233,7 @@ const STEP22_HTML = `
 </select>
 </div>
 <button class="btn btn-secondary" id="voiceBtn" onclick="generateVoice()">&#127908; Generate Voice</button>
+<div class="loading" id="voiceGenLoading"><div class="spinner"></div> အသံဖန်တီးနေပါသည်...</div>
 <div class="error-box" id="voiceError"></div>
 </div>
 </div>`;
@@ -251,7 +242,13 @@ const STEP24_HTML = `
 <div class="aics-step" data-step="24">
 <div class="card">
 <div class="card-title">&#128266; Audio ရလဒ်</div>
+${aicsResultLoadingHtml('audioLoading','AI က သင့်အတွက် အသံကို ပြင်ဆင်နေသည်...')}
 <div class="audio-container" id="audioContainer"></div>
+<div class="error-box" id="voiceError2"></div>
+<div class="btn-row" id="voiceRetryRow" style="display:none;justify-content:center;">
+<button class="btn btn-secondary" onclick="csNav(22)">&#8592; ပြန်ပြင်ရန်</button>
+<button class="btn btn-primary" onclick="generateVoice()">&#128260; ပြန်ကြိုးစားရန်</button>
+</div>
 <div class="btn-row">
 <button class="btn-ghost" onclick="downloadAudio()">&#128190; Save Audio</button>
 </div>
@@ -291,7 +288,7 @@ const STEP24_HTML = `
 </div>
 </div>`;
 
-const STEPS_HTML = STEP1_HTML + STEP3_HTML + STEP11_HTML + STEP12_HTML + STEP14_HTML + STEP21_HTML + STEP22_HTML + STEP24_HTML;
+const STEPS_HTML = STEP1_HTML + STEP3_HTML + STEP12_HTML + STEP14_HTML + STEP22_HTML + STEP24_HTML;
 
 export const CONTENT_HTML = `<!DOCTYPE html>
 <html lang="my">
@@ -464,17 +461,18 @@ var csDone = {};
 var CS_STEPS = {
   main:  [
     { n: 1,  label: '01 အကြောင်းအရာ' },
-    { n: 3,  label: '03 Content ရလဒ် / Output Hub', req: [2] }
+    { n: 2,  label: '02 Content ရလဒ် / Output Hub', req: [1] }
   ],
   video: [
-    { n: 12, label: '01 Video ပြင်ဆင်ရန်', req: [11] },
-    { n: 14, label: '03 Video ရလဒ်', req: [13] }
+    { n: 12, label: '01 Video ပြင်ဆင်ရန်', req: [2] },
+    { n: 14, label: '02 Video ရလဒ်', req: [12] }
   ],
   audio: [
-    { n: 22, label: '01 Audio ပြင်ဆင်ရန်', req: [21] },
-    { n: 24, label: '03 Audio ရလဒ်', req: [23] }
+    { n: 22, label: '01 Audio ပြင်ဆင်ရန်', req: [2] },
+    { n: 24, label: '02 Audio ရလဒ်', req: [22] }
   ]
 };
+
 var QUICK_ACTIONS=[
   {label:'&#128260; Rewrite',kind:'rewrite'},
   {label:'&#128259; Shorten',kind:'shorten'},
@@ -538,7 +536,7 @@ function csShow(n){
     var ds=steps[i].getAttribute('data-step');
     var match=false;
     if(parseInt(ds,10)===n)match=true;
-    else if(n===3&&(ds==='3b'||ds==='3c'))match=true; // Content Result ၃ ပိုင်း (Result / Edit / Output Hub) အတူတူပြရန်
+    else if(n===2&&(ds==='2b'||ds==='2c'))match=true; // Content Result ၃ ပိုင်း (Result / Edit / Output Hub) အတူတူပြရန်
     steps[i].classList.toggle('active',match);
   }
   var w=document.getElementById('aicsWork'); if(w)w.scrollTop=0;
@@ -591,23 +589,21 @@ function openBranch(kind){
     var vt=document.getElementById('videoContentText'); if(vt){vt.value=content;autoGrow(vt);}
     var vp=document.getElementById('videoContentPreview'); if(vp)vp.textContent=content;
     csSetMode('video');
-    csMarkDone(11);
     csGoForce(12);
   }else if(kind==='audio'){
-    // Content Studio ၏ ကိုယ်ပိုင် Audio Branch (Step 21→22→23→24) သို့ သွားသည် —
+    // Content Studio ၏ ကိုယ်ပိုင် Audio Branch (Step 22→24) သို့ သွားသည် —
     // Voice Studio ကို ပြောင်းမသွားတော့ဘဲ ဤ Studio ထဲမှာပဲ ဆက်လုပ်သည်။
     // Copy/paste မလိုအပ် — နောက်ဆုံး edit လုပ်ထားသော Content ကို Auto-fill လုပ်သည်။
     audioState.content=content;
     var ap=document.getElementById('audioContentPreview'); if(ap)ap.textContent=content;
     var tt=document.getElementById('ttsText'); if(tt){tt.value=content;autoGrow(tt);}
     csSetMode('audio');
-    csMarkDone(21);
     csGoForce(22);
   }
 }
 function backToContentResult(){
   csSetMode('main');
-  if(csDone[2]){ csGoForce(3); } else { csGoForce(1); }
+  if(csDone[2]){ csGoForce(2); } else { csGoForce(1); }
 }
 
 // ===== Helpers — Loading / Error / Toast =====
@@ -620,6 +616,39 @@ function setGenButtonsDisabled(off){
 function setLoading(id,show){
   var el=document.getElementById(id);
   if(el){ if(show)el.classList.add('show'); else el.classList.remove('show'); }
+  var meta=csMeta(csCur)||{};
+  if(window.studioSetLoading){
+    window.studioSetLoading({on:show,step:csCur,text:meta.loading||''});
+  }
+}
+// ===== Loading checklist animation (Story Studio ပုံစံ) =====
+var statusTimers={};
+function startStatusAnim(id){
+  stopStatusAnim(id,false);
+  var box=document.getElementById(id);if(!box)return;
+  var lines=box.querySelectorAll('.st-line');
+  var cur=0,started=false;
+  for(var k=0;k<lines.length;k++){lines[k].className='st-line';var m=lines[k].querySelector('.st-marker');if(m)m.textContent='○';}
+  statusTimers[id]=setInterval(function(){
+    if(!started){lines[0].className='st-line active';var m0=lines[0].querySelector('.st-marker');if(m0)m0.textContent='●';started=true;return;}
+    if(cur<lines.length){
+      lines[cur].className='st-line done';
+      var md=lines[cur].querySelector('.st-marker');if(md)md.textContent='✓';
+      cur++;
+      if(cur<lines.length){lines[cur].className='st-line active';var ma=lines[cur].querySelector('.st-marker');if(ma)ma.textContent='●';}
+    }
+  },1100);
+}
+function stopStatusAnim(id,allDone){
+  if(statusTimers[id]){clearInterval(statusTimers[id]);delete statusTimers[id];}
+  var box=document.getElementById(id);if(!box)return;
+  var lines=box.querySelectorAll('.st-line');
+  if(allDone){
+    for(var k=0;k<lines.length;k++){
+      lines[k].className='st-line done';
+      var m=lines[k].querySelector('.st-marker');if(m)m.textContent='✓';
+    }
+  }
 }
 function showError(id,msg){ var el=document.getElementById(id); if(!el)return; el.textContent=msg; el.classList.add('show'); }
 function hideError(id){ var el=document.getElementById(id); if(el)el.classList.remove('show'); }
@@ -666,7 +695,7 @@ function apiCall(url,body){
   return fetch(url,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify(body)}).then(function(res){return res.json().then(function(data){if(!res.ok)throw new Error(data.detail||data.error||'Request failed');return data;});});
 }
 
-// ===== Content Generate (Main — Step 01 → 02 → 03) =====
+// ===== Content Generate (Main — Step 01 → 02 Result — Unified Result Loading) =====
 function generateContent(){
   if(csBusy)return;
   var idea=document.getElementById('ideaInput').value.trim();
@@ -674,19 +703,20 @@ function generateContent(){
   var byok=(document.getElementById('byokInput')||{value:''}).value.trim();
   var audEl=document.getElementById('audSel');
   if(!idea){showError('genError','အကြောင်းအရာ (User Idea) ထည့်ပါ။');return;}
-  if(audEl&&audEl.value)idea+='\\n\\nဘယ်သူအတွက်: '+audEl.value;
+  if(audEl&&audEl.value)idea+='\n\nဘယ်သူအတွက်: '+audEl.value;
   window.aichAud=audEl?audEl.value:'လူတိုင်း';
-  hideError('genError');
+  hideError('genError'); hideError('genError2');
+  document.getElementById('genRetryRow').style.display='none';
   contentState.input={idea:idea,type:type};
   contentState.status='processing';
   csBusy=true;
   setGenButtonsDisabled(true);
   csMarkDone(1);
-  // Unified Result Loading — Processing Step ကို Stepper မှာ မပြတော့ဘဲ Result နေရာတွင် Loading ပြသည်
-  var ideaPreview=document.getElementById('ideaInput').value;
-  csGoForce(3);
-  if(window.studioSetActions)window.studioSetActions([]);
-  if(window.studioShowResultLoading)window.studioShowResultLoading('AI က သင့်အတွက် အကြောင်းအရာကို ရေးသားနေသည်...', '“'+(window.studioPreviewText?window.studioPreviewText(ideaPreview):'')+'”');
+  // Unified: Result section အတွင်း loading ပြသည် (processing step မရှိ)
+  if(window.aicsResultLoading)window.aicsResultLoading.show('contentLoading','AI က သင့်အကြောင်းအရာကို ရေးသားနေသည်...',idea);
+  var crb=document.getElementById('contentResultBody');if(crb)crb.style.display='none';
+  csGoForce(2);
+  setLoading('genLoading',true);
   var body={idea:idea,type:type};
   if(byok)body.apiKey=byok;
   apiCall('/api/studio/content/generate',body)
@@ -694,25 +724,26 @@ function generateContent(){
       lastResult=data;
       contentState.result=data;
       contentState.status='done';
+      if(window.aicsResultLoading)window.aicsResultLoading.hide('contentLoading');
+      var crb2=document.getElementById('contentResultBody');if(crb2)crb2.style.display='';
       renderContentResult();
       document.getElementById('ttsText').value=data.content||'';
-      if(window.studioHideResultLoading)window.studioHideResultLoading();
       csMarkDone(1);
       csMarkDone(2);
       showToastMsg('&#10004; Content ပြီးပါပြီ');
-      csGoForce(3);
+      csGoForce(2);
     })
     .catch(function(err){
       console.error(err);
       contentState.status='error';
-      if(window.studioHideResultLoading)window.studioHideResultLoading();
+      if(window.aicsResultLoading)window.aicsResultLoading.hide('contentLoading');
+      showError('genError2','Content ဖန်တီးရာတွင် အခက်အခဲရှိနေပါသည်။ ခဏစောင့်ပြီး ပြန်ကြိုးစားပါ။');
+      document.getElementById('genRetryRow').style.display='flex';
+      // Error → Result section အတွင်းတွင် error + retry ပြသည် (existing error UI ကို ထိန်းထားသည်)
       csUnmarkDone(2);
-      var em='Content ဖန်တီးရာတွင် အခက်အခဲရှိနေပါသည်။ ခဏစောင့်ပြီး ပြန်ကြိုးစားပါ။';
       showToastMsg('⚠️ Content ဖန်တီး၍ မရပါ — ခဏစောင့်ပြီး ပြန်ကြိုးစားပါ');
-      // Error → Result နေရာတွင် unified error card (Retry / Back) ဖြင့် ပြသည်
-      if(window.studioShowResultError)window.studioShowResultError(em,generateContent,function(){csGoForce(1);});
     })
-    .finally(function(){setGenButtonsDisabled(false);csBusy=false;});
+    .finally(function(){setLoading('genLoading',false);setGenButtonsDisabled(false);csBusy=false;});
 }
 
 function renderContentResult(){
@@ -776,24 +807,26 @@ function addHistory(role,text){
   document.getElementById('reviseHistory').scrollTop=document.getElementById('reviseHistory').scrollHeight;
 }
 
-// ===== Video Branch — Generate (Step 12 → 13 → 14) =====
+// ===== Video Branch — Generate (Step 12 → 14 Result — Unified Result Loading) =====
 function generateVideo(){
   if(csBusy)return;
   var content=(document.getElementById('videoContentText').value||'').trim();
   var type=document.getElementById('videoTypeSelect').value;
   var byok=(document.getElementById('videoByokInput')||{value:''}).value.trim();
   if(!content){showError('videoError','Content မရှိသေးပါ — Content ကို အရင်ဖန်တီးပါ။');return;}
-  hideError('videoError');
+  hideError('videoError'); hideError('videoError2');
+  document.getElementById('videoRetryRow').style.display='none';
   videoState.content=content;
   videoState.input={type:type};
   videoState.status='processing';
   csBusy=true;
   setGenButtonsDisabled(true);
   csMarkDone(12);
-  // Unified Result Loading — Processing Step ကို Stepper မှာ မပြတော့ဘဲ Result နေရာတွင် Loading ပြသည်
+  // Unified: Video Result section အတွင်း loading ပြသည်
+  if(window.aicsResultLoading)window.aicsResultLoading.show('videoLoading','AI က သင့်အတွက် Video ကို ပြင်ဆင်နေသည်...',content);
+  var vrc=document.getElementById('videoResult');if(vrc)vrc.style.display='none';
   csGoForce(14);
-  if(window.studioSetActions)window.studioSetActions([]);
-  if(window.studioShowResultLoading)window.studioShowResultLoading('AI က သင့်အတွက် Video Plan ကို ပြင်ဆင်နေသည်...', '“'+(window.studioPreviewText?window.studioPreviewText(content):'')+'”');
+  setLoading('videoGenLoading',true);
   var body={idea:content,type:type};
   if(byok)body.apiKey=byok;
   apiCall('/api/studio/content/video',body)
@@ -801,24 +834,25 @@ function generateVideo(){
       videoPlan=data;
       videoState.result=data;
       videoState.status='done';
+      if(window.aicsResultLoading)window.aicsResultLoading.hide('videoLoading');
       renderVideoPlan(data);
       document.getElementById('videoResult').style.display='block';
-      if(window.studioHideResultLoading)window.studioHideResultLoading();
-      csMarkDone(13);
+      csMarkDone(12);
+      csMarkDone(14);
       showToastMsg('&#10004; Video Plan ပြီးပါပြီ');
       csGoForce(14);
     })
     .catch(function(err){
       console.error(err);
       videoState.status='error';
-      if(window.studioHideResultLoading)window.studioHideResultLoading();
-      csUnmarkDone(13);
-      var em='Video ဖန်တီးရာတွင် အခက်အခဲရှိနေပါသည်။ ပြန်ကြိုးစားပါ။';
+      if(window.aicsResultLoading)window.aicsResultLoading.hide('videoLoading');
+      showError('videoError2','Video ဖန်တီးရာတွင် အခက်အခဲရှိနေပါသည်။ ပြန်ကြိုးစားပါ။');
+      document.getElementById('videoRetryRow').style.display='flex';
+      // Error → Result section အတွင်းတွင် error + retry ပြသည် (existing error UI ကို ထိန်းထားသည်)
+      csUnmarkDone(14);
       showToastMsg('⚠️ Video ဖန်တီး၍ မရပါ — ခဏစောင့်ပြီး ပြန်ကြိုးစားပါ');
-      // Error → Result နေရာတွင် unified error card (Retry / Back) ဖြင့် ပြသည်
-      if(window.studioShowResultError)window.studioShowResultError(em,generateVideo,function(){csGoForce(12);});
     })
-    .finally(function(){setGenButtonsDisabled(false);csBusy=false;});
+    .finally(function(){setLoading('videoGenLoading',false);setGenButtonsDisabled(false);csBusy=false;});
 }
 function renderVideoPlan(data){
   var charsCard=document.getElementById('charactersCard');
@@ -928,25 +962,26 @@ function generateSceneImage(idx){
     });
 }
 
-// ===== Audio Branch — Generate Voice (Step 22 → 23 → 24) =====
+// ===== Audio Branch — Generate Voice (Step 22 → 24 Result — Unified Result Loading) =====
 function generateVoice(){
   if(csBusy)return;
   var text=(document.getElementById('ttsText').value||'').trim();
   if(!text){showError('voiceError','Text ထည့်ပါ (သို့မဟုတ် Content ကို အရင်ဖန်တီးပါ)။');return;}
   var voiceName=document.getElementById('voiceNameSelect').value;
   var byok=(document.getElementById('byokInput')||{value:''}).value.trim();
-  hideError('voiceError');
+  hideError('voiceError'); hideError('voiceError2');
+  document.getElementById('voiceRetryRow').style.display='none';
   audioState.content=text;
   audioState.input={voiceName:voiceName};
   audioState.status='processing';
   csBusy=true;
   setGenButtonsDisabled(true);
   csMarkDone(22);
-  // Unified Result Loading — Processing Step ကို Stepper မှာ မပြတော့ဘဲ Result နေရာတွင် Loading ပြသည်
+  // Unified: Audio Result section အတွင်း loading ပြသည်
+  if(window.aicsResultLoading)window.aicsResultLoading.show('audioLoading','AI က သင့်အတွက် အသံကို ပြင်ဆင်နေသည်...',text);
+  var ac=document.getElementById('audioContainer');if(ac)ac.innerHTML='';
   csGoForce(24);
-  if(window.studioSetActions)window.studioSetActions([]);
-  if(window.studioShowResultLoading)window.studioShowResultLoading('AI က သင့်အတွက် အသံကို ဖန်တီးနေသည်...', '“'+(window.studioPreviewText?window.studioPreviewText(text):'')+'”');
-  document.getElementById('voiceBtn').disabled=true;
+  setLoading('voiceGenLoading',true);
   document.getElementById('voiceBtn').disabled=true;
   var body={text:text,voiceName:voiceName};
   if(byok)body.apiKey=byok;
@@ -955,26 +990,27 @@ function generateVoice(){
       currentAudioBase64=data.data;
       audioState.result={data:data.data,mimeType:data.mimeType||'audio/wav'};
       audioState.status='done';
+      if(window.aicsResultLoading)window.aicsResultLoading.hide('audioLoading');
       var audioUrl='data:'+(data.mimeType||'audio/wav')+';base64,'+data.data;
       var container=document.getElementById('audioContainer');
       container.innerHTML='<audio controls src="'+audioUrl+'"></audio>'+
         '<div class="btn-row"><button class="btn-ghost" onclick="downloadAudio()">&#128190; Save Audio</button></div>';
-      if(window.studioHideResultLoading)window.studioHideResultLoading();
-      csMarkDone(23);
+      csMarkDone(22);
+      csMarkDone(24);
       showToastMsg('&#10004; အသံပြီးပါပြီ');
       csGoForce(24);
     })
     .catch(function(err){
       console.error(err);
       audioState.status='error';
-      if(window.studioHideResultLoading)window.studioHideResultLoading();
-      csUnmarkDone(23);
-      var em='အသံဖန်တီးရာတွင် အခက်အခဲရှိနေပါသည်။ ပြန်ကြိုးစားပါ။';
+      if(window.aicsResultLoading)window.aicsResultLoading.hide('audioLoading');
+      showError('voiceError2','အသံဖန်တီးရာတွင် အခက်အခဲရှိနေပါသည်။ ပြန်ကြိုးစားပါ။');
+      document.getElementById('voiceRetryRow').style.display='flex';
+      // Error → Result section အတွင်းတွင် error + retry ပြသည် (existing error UI ကို ထိန်းထားသည်)
+      csUnmarkDone(24);
       showToastMsg('⚠️ အသံဖန်တီး၍ မရပါ — ခဏစောင့်ပြီး ပြန်ကြိုးစားပါ');
-      // Error → Result နေရာတွင် unified error card (Retry / Back) ဖြင့် ပြသည်
-      if(window.studioShowResultError)window.studioShowResultError(em,generateVoice,function(){csGoForce(22);});
     })
-    .finally(function(){setGenButtonsDisabled(false);document.getElementById('voiceBtn').disabled=false;csBusy=false;});
+    .finally(function(){setLoading('voiceGenLoading',false);setGenButtonsDisabled(false);document.getElementById('voiceBtn').disabled=false;csBusy=false;});
 }
 function downloadAudio(){
   if(!currentAudioBase64)return;
@@ -1117,21 +1153,15 @@ function studioOnStep(n){
   var backHub={label:'&#8592; Content ရလဒ်သို့ ပြန်ရန်',cls:'ghost',fn:backToContentResult};
   if(n===1){
     var acts=[{label:'Reset',cls:'ghost',fn:studioReset}];
-    if(lastResult)acts.push({label:'Next &#8594;',cls:'secondary',fn:function(){csNav(3);}});
+    if(lastResult)acts.push({label:'Next &#8594;',cls:'secondary',fn:function(){csNav(2);}});
     acts.push({label:'Generate Content &#10024;',cls:'primary',fn:generateContent});
     studioSetActions(acts);
   }else if(n===2){
-    studioSetActions([]);
-  }else if(n===3){
     studioSetActions([{label:'Reset',cls:'ghost',fn:studioReset},{label:'&#128190; ဖန်တီးမှုသိမ်းပါ',cls:'purple',fn:saveContentResult}]);
-  }else if(n===11||n===21){
-    studioSetActions([backHub]);
   }else if(n===12){
     studioSetActions([backHub]);
   }else if(n===22){
     studioSetActions([backHub]);
-  }else if(n===13||n===23){
-    studioSetActions([]);
   }else if(n===14||n===24){
     studioSetActions([backHub,{label:'&#128190; ဖန်တီးမှုသိမ်းပါ',cls:'purple',fn:saveContentResult}]);
   }
@@ -1188,7 +1218,6 @@ function studioRestoreDraft(d){
     renderVideoPlan(videoPlan);
     document.getElementById('videoResult').style.display='block';
     csMarkDone(12);
-    csMarkDone(13);
     csMarkDone(14);
     var vp=document.getElementById('videoContentPreview');
     if(vp)vp.textContent=videoState.content||(lastResult?lastResult.content:'')||'';
@@ -1196,15 +1225,13 @@ function studioRestoreDraft(d){
   if(currentAudioBase64){
     var audioUrl='data:audio/wav;base64,'+currentAudioBase64;
     document.getElementById('audioContainer').innerHTML='<audio controls src="'+audioUrl+'"></audio><div class="btn-row"><button class="btn-ghost" onclick="downloadAudio()">&#128190; Save Audio</button></div>';
-    csMarkDone(23);
+    csMarkDone(22);
     csMarkDone(24);
     var ap=document.getElementById('audioContentPreview');
     if(ap)ap.textContent=audioState.content||(lastResult?lastResult.content:'')||'';
   }
   if(d.mode&&CS_STEPS[d.mode]){
     CS_MODE=d.mode;
-    if(d.mode==='video'&&!videoPlan)csMarkDone(11);
-    if(d.mode==='audio'&&!currentAudioBase64)csMarkDone(21);
   }
   csRenderStepper();
   var target=d.csCur||1;
