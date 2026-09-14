@@ -843,7 +843,7 @@ export function renderStudioShell(opts) {
     '      }\n' +
     '    }\n' +
     '  }\n' +
-  function init() {\n' +
+    '  function init() {\n' +
     '    renderStepper();\n' +
     '    normalizeStudioForms();\n' +
     '    var raw = null;\n' +
