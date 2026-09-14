@@ -806,11 +806,8 @@ export function renderStudioShell(opts) {
     '    if (typeof a.fn === "function") { try { a.fn(); } catch (e) { toast("Action error: " + (e && e.message || ""), true); } }\n' +
     '    else if (a.fn && window[a.fn]) { try { window[a.fn](); } catch (e) { toast("Action error: " + (e && e.message || ""), true); } }\n' +
     '  };\n' +
-    '  window.studioPreview = function (html) { var b = document.getElementById('aicsPreviewBody'); if (!b) return; b.innerHTML = html || '<div class="aics-preview-empty">Preview မရှိသေးပါ။</div>'; };\n' +
-    '  window.studioPreviewClear = function () { var b = document.getElementById('aicsPreviewBody'); if (b) b.innerHTML = '<div class="aics-preview-empty">Studio output preview ကို ဒီနေရာမှာ ပြပါမယ်။</div>'; };\n' +
-    '  window.__syncStudioPreview = function () {\n' +
-    '    var b=document.getElementById("aicsPreviewBody"); if(!b)return; var work=document.getElementById("aicsWork"); if(!work)return; var active=work.querySelector(".aics-step.active"); if(!active)return; var source=active.querySelector(".result-card, .shop-result, .result-grid, .result-textarea"); if(!source){return;} var clone=source.cloneNode(true); clone.removeAttribute("id"); var ids=clone.querySelectorAll("[id]"); for(var i=0;i<ids.length;i++)ids[i].removeAttribute("id"); b.innerHTML=""; b.appendChild(clone);\n' +
-    '  };\n' +
+    '  window.studioPreview = function (html) { var b = document.getElementById("aicsPreviewBody"); if (!b) return; b.innerHTML = html || "<div class=\"aics-preview-empty\">Preview မရှိသေးပါ။</div>"; };\n' +
+    '  window.studioPreviewClear = function () { var b = document.getElementById("aicsPreviewBody"); if (b) b.innerHTML = "<div class=\"aics-preview-empty\">Studio output preview ကို ဒီနေရာမှာ ပြပါမယ်။</div>"; };\n' +
     '  window.studioSaveDraft = function () {\n' +
     '    var data = null;\n' +
     '    if (window.studioCollectDraft) { try { data = window.studioCollectDraft(); } catch (e) { data = null; } }\n' +
