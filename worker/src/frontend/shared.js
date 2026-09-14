@@ -821,28 +821,28 @@ export function renderStudioShell(opts) {
     '    try { localStorage.removeItem(draftKey); } catch (e) {}\n' +
     '    location.reload();\n' +
     '  };\n' +
-    '  function normalizeStudioForms() {
-    var cards = document.querySelectorAll(".aics-step .card");
-    for (var i = 0; i < cards.length; i++) {
-      var groups = cards[i].querySelectorAll(":scope > .form-group");
-      if (groups.length >= 2 && !cards[i].querySelector(":scope > .aics-form-grid")) {
-        var grid = document.createElement("div"); grid.className = "aics-form-grid";
-        for (var j = 0; j < groups.length; j++) { var g = groups[j]; if (g.parentNode === cards[i]) grid.appendChild(g); }
-        var before = cards[i].querySelector(":scope > .error-box") || cards[i].querySelector(":scope > .btn-row");
-        if (before) cards[i].insertBefore(grid, before); else cards[i].appendChild(grid);
-      }
-      var details = cards[i].querySelectorAll(":scope > details, :scope > .aics-accordion");
-      for (var d = 0; d < details.length; d++) {
-        var body = details[d];
-        if (body.querySelector(":scope > .aics-form-grid")) continue;
-        var inner = body.querySelectorAll(":scope > .form-group");
-        if (inner.length < 2) continue;
-        var ig = document.createElement("div"); ig.className = "aics-form-grid";
-        for (var k = 0; k < inner.length; k++) ig.appendChild(inner[k]);
-        body.appendChild(ig);
-      }
-    }
-  }
+    '  function normalizeStudioForms() {\n' +
+    '    var cards = document.querySelectorAll(".aics-step .card");\n' +
+    '    for (var i = 0; i < cards.length; i++) {\n' +
+    '      var groups = cards[i].querySelectorAll(":scope > .form-group");\n' +
+    '      if (groups.length >= 2 && !cards[i].querySelector(":scope > .aics-form-grid")) {\n' +
+    '        var grid = document.createElement("div"); grid.className = "aics-form-grid";\n' +
+    '        for (var j = 0; j < groups.length; j++) { var g = groups[j]; if (g.parentNode === cards[i]) grid.appendChild(g); }\n' +
+    '        var before = cards[i].querySelector(":scope > .error-box") || cards[i].querySelector(":scope > .btn-row");\n' +
+    '        if (before) cards[i].insertBefore(grid, before); else cards[i].appendChild(grid);\n' +
+    '      }\n' +
+    '      var details = cards[i].querySelectorAll(":scope > details, :scope > .aics-accordion");\n' +
+    '      for (var d = 0; d < details.length; d++) {\n' +
+    '        var body = details[d];\n' +
+    '        if (body.querySelector(":scope > .aics-form-grid")) continue;\n' +
+    '        var inner = body.querySelectorAll(":scope > .form-group");\n' +
+    '        if (inner.length < 2) continue;\n' +
+    '        var ig = document.createElement("div"); ig.className = "aics-form-grid";\n' +
+    '        for (var k = 0; k < inner.length; k++) ig.appendChild(inner[k]);\n' +
+    '        body.appendChild(ig);\n' +
+    '      }\n' +
+    '    }\n' +
+    '  }\n' +
   function init() {\n' +
     '    renderStepper();\n' +
     '    normalizeStudioForms();\n' +
