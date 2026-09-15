@@ -1,7 +1,9 @@
 // AI Creative Studio — Story Studio Frontend (Main Stepper + Video Branch Stepper)
-// Main: 01 ဇာတ်လမ်းအချက်အလက် → 02 ဇာတ်လမ်းရလဒ်
-// Video Branch (Step 02 မှ): 01 Video ပြင်ဆင်ရန် → 02 နောက်ဆုံးရလဒ်
-// AI processing-status steps များကို Stepper ထဲတွင် မပြတော့ပါ — loading ကို Result section အတွင်း၌သာ ပြသည် (Unified)
+// Master Instruction refactor:
+//   Main: 01 ဇာတ်လမ်းအချက်အလက် → 02 ဇာတ်လမ်းရလဒ်
+//   Video Branch (Step 02 မှ): 01 Video ပြင်ဆင်ရန် → 02 နောက်ဆုံးရလဒ်
+// Main Stepper ကို မဖျောက်ပါ — Branch ဝင်လျှင် Main Steps ကို ဆက်မြင်ရသည် (Main + Branch Stepper)
+// AI loading/processing ကို Stepper ထဲတွင် မထည့်ပါ — Result section အတွင်း၌သာ ပြသည်
 // Studio Isolation: ဤ File သည် Story Studio UI နှင့်သာ သက်ဆိုင်သည်။
 // Shared: renderSidebar / sidebarScript / renderStudioShell (frontend/shared.js)
 // ⚠️ API Contract ကို မပျက်စီးစေရ — /api/studio/story/generate, /revise, /video, /video-image ကို ဆက်ထိန်းထားသည်။
@@ -14,14 +16,19 @@ const STEPS = [
   { label: '02 ဇာတ်လမ်းရလဒ်', req: [1] },
 ];
 
+// ============================================================
+// Step 01 — ဇာတ်လမ်းအချက်အလက် (Essential Settings + Advanced Settings Accordion)
+// ============================================================
 const STEP1_HTML = `
 <div class="aics-step" data-step="1">
 <div class="card">
-<div class="card-title">&#128221; ဇာတ်လမ်းရေးရန်</div>
-<p style="color:var(--text2);font-size:13px;margin-bottom:14px;">Type ရွေးပြီး အောက်ကနေရာလေးများကို ဖြည့်ရေးပါ — Generate နှိပ်လိုက်ရင် AI က ဇာတ်လမ်းရေးပေးပါမယ်။</p>
+<div class="card-title">&#128221; ဇာတ်လမ်းရေးရန် <span class="card-title-sub">(Story Creator)</span></div>
+<p class="story-intro">ဇာတ်လမ်းအကြောင်းအရာ ဖြည့်ပြီး အောက်က <b>「ဇာတ်လမ်းရေးသားရန်」</b> ခလုတ်ကို နှိပ်လိုက်ရင် AI က သင့်အတွက် ဇာတ်လမ်းတစ်ပုဒ် အပြည့်အစုံ ရေးပေးပါမယ်။</p>
+
+<div class="aics-section-label"><span class="aics-section-title">အခြေခံ သတ်မှတ်ချက်များ</span><span class="aics-section-sub">Essential Settings</span></div>
 <div class="studio-form-grid">
-<div class="form-group" style="margin-bottom:0;">
-<label>ဇာတ်လမ်းအမျိုးအစား</label>
+<div class="form-group">
+<label for="storyTypeSel">ဇာတ်လမ်းအမျိုးအစား (Story Type)</label>
 <select id="storyTypeSel" onchange="selectedStoryType=this.value;">
 <option value="1" selected>ဇာတ်လမ်း (Free)</option>
 <option value="2">ရုပ်ရှင် (Pro)</option>
@@ -30,28 +37,31 @@ const STEP1_HTML = `
 <option value="5">ဟာသဇာတ်လမ်း (Pro)</option>
 </select>
 </div>
-<div class="form-group" style="margin-bottom:0;">
-<label>ဘယ်သူအတွက်</label>
+<div class="form-group">
+<label for="audSel">ပရိသတ် (Audience)</label>
 <select id="audSel" onchange="window.aichAud=this.value;"><option>လူတိုင်း</option><option>လူငယ်</option><option>လူကြီး</option><option>ကလေး</option></select>
 </div>
+<div class="form-group">
+<label for="toneSel">ရေးသားပုံစံ (Tone)</label>
+<select id="toneSel"><option>Emotional (စိတ်ခံစားမှု)</option><option>Dark (မှောင်မိုက်)</option><option>Light (ပေါ့ပါး)</option><option>Funny (ရယ်စရာ)</option><option>Epic (ခမ်းနား)</option><option>Mysterious (လျှို့ဝှက်ဆန်းကြယ်)</option></select>
 </div>
-<div class="studio-form-grid">
-<div class="form-group" style="margin-bottom:0;">
-<label>Tone</label>
-<select id="toneSel"><option>Emotional</option><option>Dark</option><option>Light</option><option>Funny</option><option>Epic</option><option>Mysterious</option></select>
-</div>
-<div class="form-group" style="margin-bottom:0;">
-<label>Language</label>
+<div class="form-group">
+<label for="langSel">ဘာသာစကား (Language)</label>
 <select id="langSel"><option>မြန်မာ (ဘာသာ)</option><option>English</option><option>မြန်မာ + English</option></select>
 </div>
 </div>
-<div class="form-group">
-<label>ဇာတ်လမ်းအကြောင်း *</label>
-<textarea id="field_0" placeholder="ဥပမာ — ရန်ကုန်မှာ အောင်မြင်မှုရဖို့ ကြိုးစားနေတဲ့ လူငယ်တစ်ယောက်ရဲ့ ခရီး..." style="min-height:110px;resize:vertical;"></textarea>
+
+<div class="form-group story-content-group">
+<label for="field_0">ဇာတ်လမ်းအကြောင်းအရာ (Story Content) <span class="req-star" aria-hidden="true">*</span></label>
+<textarea id="field_0" class="story-content-input" aria-required="true" placeholder="ဥပမာ — ရန်ကုန်မှာ အောင်မြင်မှုရဖို့ ကြိုးစားနေတဲ့ လူငယ်တစ်ယောက်ရဲ့ ခရီး..." oninput="onStoryContentInput()"></textarea>
+<div class="form-error" id="field0Error">ဇာတ်လမ်းအကြောင်းအရာကို အနည်းဆုံး ဖြည့်ရေးပါ</div>
 </div>
-<button type="button" class="aics-advanced-toggle" id="advToggle" onclick="studioToggleAdvanced('advToggle','ideaFields')" aria-expanded="false"><span>အပိုဆောင်းသတ်မှတ်ချက်</span><span class="aics-adv-arrow">▼</span></button>
-<div id="ideaFields" class="adv-grid aics-adv-panel" style="margin-top:4px;"></div>
+
+<button type="button" class="aics-advanced-toggle" id="advToggle" onclick="studioToggleAdvanced('advToggle','ideaFields')" aria-expanded="false"><span>&#8964; အပိုဆောင်းသတ်မှတ်ချက် (Advanced Settings)</span><span class="aics-adv-arrow">&#9660;</span></button>
+<div id="ideaFields" class="adv-grid aics-adv-panel" style="margin-top:2px;"></div>
+
 <div class="error-box" id="genError"></div>
+<button type="button" class="btn btn-primary story-generate-btn" id="genStoryBtn" onclick="generateStory()" disabled>&#10024; ဇာတ်လမ်းရေးသားရန်</button>
 </div>
 </div>`;
 
@@ -61,16 +71,20 @@ const STEP1_HTML = `
 const STEP3_HTML = `
 <div class="aics-step" data-step="2">
 <div class="card">
-<div class="card-title">&#128214; ဇာတ်လမ်းရလဒ်</div>
-${aicsResultLoadingHtml('storyLoading','AI က သင့်အတွက် ဇာတ်လမ်းကို ရေးသားနေသည်...')}
+<div class="card-title">&#128214; ဇာတ်လမ်းရလဒ် <span class="card-title-sub">(Story Result)</span></div>
+${aicsResultLoadingHtml('storyLoading','AI ရေးသားနေသည်...')}
 <div id="storyResultBody">
+<div class="result-label">ဇာတ်လမ်း (Story)</div>
 <textarea class="result-textarea" id="storyResult" placeholder="ဇာတ်လမ်း ဒီနေရာမှာ ပေါ်လာပါမယ်..." oninput="onStoryEdit()"></textarea>
-<p style="color:var(--text3);font-size:12px;margin-top:6px;font-style:italic;">&#9997; ဒီနေရာမှာ တိုက်ရိုက် နှိပ်ပြီး ကိုယ်တိုင် ပြင်ဆင်နိုင်ပါတယ် — ပြင်ထားတဲ့ ဇာတ်လမ်းကို Video အဆင့်ကို အလိုအလျောက် ပို့ပေးပါမယ်</p>
-<div class="btn-row">
-<button class="btn btn-success" onclick="copyStory()">&#128203; Copy Story</button>
-<button class="btn btn-purple" onclick="saveStory()">&#128190; ဖန်တီးမှုသိမ်းပါ</button>
+<p class="result-hint">&#9997; ဒီနေရာမှာ တိုက်ရိုက် နှိပ်ပြီး ကိုယ်တိုင် ပြင်ဆင်နိုင်ပါတယ် — ပြင်ထားတဲ့ ဇာတ်လမ်းကို Video အဆင့်ကို အလိုအလျောက် ပို့ပေးပါမယ်</p>
+
+<div class="story-actions-primary">
+<button class="btn btn-primary story-action-primary" onclick="goToVideoForm()">&#127916; Video ဆက်ဖန်တီးရန်</button>
+</div>
+<div class="story-actions-secondary">
 <button class="btn btn-secondary" onclick="focusRevise()">&#9999;&#65039; ပြန်ပြင်ရန်</button>
-<button class="btn btn-primary" onclick="goToVideoForm()">&#127916; Video ဆက်ဖန်တီးရန်</button>
+<button class="btn btn-secondary" onclick="copyStory()">&#128203; Copy</button>
+<button class="btn btn-secondary" onclick="saveStory()">&#128190; သိမ်းရန်</button>
 </div>
 </div>
 <div class="error-box" id="genError2"></div>
@@ -80,7 +94,9 @@ ${aicsResultLoadingHtml('storyLoading','AI က သင့်အတွက် ဇ�
 </div>
 </div>
 <div class="card revise-section" id="revise-section">
-<div class="card-title">&#129302; AI ကို ဆက်ညွှန်ကြားရန် (Revise)</div>
+<button type="button" class="aics-advanced-toggle" id="reviseToggle" onclick="studioToggleAdvanced('reviseToggle','revisePanel')" aria-expanded="false"><span>&#8964; AI ကို ဆက်ညွှန်ကြားရန် (Revise with AI)</span><span class="aics-adv-arrow">&#9660;</span></button>
+<div id="revisePanel" class="aics-adv-panel revise-panel">
+<p class="form-help" style="margin-bottom:10px;">ဥပမာ — 「နိဂုံးကို ပိုစိတ်လှုပ်ရှားစရာဖြစ်အောင် ပြင်ပါ」 ဆိုပြီး ရေးပြီး ပြင်ပါ ကို နှိပ်ပါ။</p>
 <div class="revise-history" id="reviseHistory"></div>
 <div class="revise-input-row">
 <input type="text" id="feedbackInput" placeholder="ဥပမာ — နိဂုံးကို ပိုစိတ်ခံစားရအောင်ပြင်ပေးပါ" style="flex:1;" onkeypress="if(event.key==='Enter'){reviseStory();}">
@@ -89,44 +105,72 @@ ${aicsResultLoadingHtml('storyLoading','AI က သင့်အတွက် ဇ�
 <div class="loading" id="revLoading"><div class="spinner"></div> ပြင်ဆင်နေပါသည်...</div>
 <div class="error-box" id="revError"></div>
 </div>
+</div>
 </div>`;
 
+// ============================================================
+// Step 03 — Video Branch: Video Setup Form
+// (Story Result ကို အလိုအလျောက် ထည့်ပေးထားသည် — Essential + Advanced accordion)
+// ============================================================
 const STEP4_HTML = `
 <div class="aics-step" data-step="3">
 <div class="card">
-<div class="card-title">&#127916; Video ဇာတ်လမ်းဖန်တီးရန်</div>
-<p style="color:var(--text2);font-size:13px;margin-bottom:14px;">Step 02 မှာ ရရှိထားသော ဇာတ်လမ်းကို အလိုအလျောက် ထည့်ပေးထားပါသည် — Video အတွက် ဆက်တင်များရွေးပြီး ဖန်တီးပါ။</p>
+<div class="card-title">&#127916; Video ဇာတ်လမ်းဖန်တီးရန် <span class="card-title-sub">(Video Creation)</span></div>
+<div class="story-auto-status">&#10004; Story Result ကို အလိုအလျောက် ထည့်ထားသည်</div>
+<p class="story-intro">Step 02 မှ ဇာတ်လမ်းကို အောက်မှာ Preview ကြည့်နိုင်ပါသည်။ Video အတွက် ဆက်တင်များ ရွေးပြီး ဖန်တီးပါ။</p>
 <div class="form-group">
-<label>&#128214; အသုံးပြုမည့် ဇာတ်လမ်း</label>
-<textarea id="videoStoryInput" style="min-height:150px;" oninput="autoExpand(this)"></textarea>
+<label for="videoStoryInput">အသုံးပြုမည့် ဇာတ်လမ်း (Story to Use)</label>
+<textarea id="videoStoryInput" class="video-story-input" oninput="autoExpand(this)"></textarea>
 </div>
+
+<div class="aics-section-label"><span class="aics-section-title">ဗီဒီယို သတ်မှတ်ချက်များ</span><span class="aics-section-sub">Video Settings</span></div>
 <div class="vf-grid">
-<div class="form-group"><label>Video Type</label><select id="vidTypeSel"></select></div>
-<div class="form-group"><label>Video Duration</label><select id="vidDurationSel"></select></div>
-<div class="form-group"><label>Scene Duration</label><select id="vidSceneSel"></select></div>
-<div class="form-group"><label>Aspect Ratio</label><select id="vidRatioSel"></select></div>
-<div class="form-group"><label>Visual Style</label><select id="vidStyleSel"></select></div>
-<div class="form-group"><label>Camera Style</label><select id="vidCamSel"></select></div>
-<div class="form-group"><label>Language</label><select id="vidLangSel"></select></div>
-<div class="form-group"><label>Environment Style</label><select id="vidEnvSel"></select></div>
+<div class="form-group"><label for="vidTypeSel">Video အမျိုးအစား (Video Type)</label><select id="vidTypeSel"></select></div>
+<div class="form-group"><label for="vidDurationSel">Video ကြာချိန် (Video Duration)</label><select id="vidDurationSel"></select></div>
+<div class="form-group"><label for="vidSceneSel">Scene ကြာချိန် (Scene Duration)</label><select id="vidSceneSel"></select></div>
+<div class="form-group"><label for="vidRatioSel">ပုံရိပ်အချိုး (Aspect Ratio)</label><select id="vidRatioSel"></select></div>
+<div class="form-group"><label for="vidStyleSel">ရုပ်ပုံစတိုင် (Visual Style)</label><select id="vidStyleSel"></select></div>
+<div class="form-group"><label for="vidCamSel">ကင်မရာစတိုင် (Camera Style)</label><select id="vidCamSel"></select></div>
+<div class="form-group"><label for="vidLangSel">ဘာသာစကား (Language)</label><select id="vidLangSel"></select></div>
 </div>
-<label style="display:flex;align-items:center;gap:8px;margin:2px 0 16px;cursor:pointer;color:var(--text2);">
-<input type="checkbox" id="vidContinuity" checked style="width:18px;height:18px;flex-shrink:0;accent-color:var(--cyan);"> &#10004; Maintain Same Character (Character Continuity)
-</label>
+
+<button type="button" class="aics-advanced-toggle" id="vidAdvToggle" onclick="studioToggleAdvanced('vidAdvToggle','vidAdvFields')" aria-expanded="false"><span>&#8964; အပိုဆောင်း Video Settings (Advanced Video Settings)</span><span class="aics-adv-arrow">&#9660;</span></button>
+<div id="vidAdvFields" class="adv-grid aics-adv-panel" style="margin-top:2px;">
+<div class="form-group adv-check">
+<span class="group-label">ဇာတ်ကောင် ဆက်လက်ထားရှိမှု (Character Continuity)</span>
+<label class="aics-check-row" for="vidContinuity"><input type="checkbox" id="vidContinuity" checked> Scene တိုင်းတွင် ဇာတ်ကောင် ID တူညီစွာ ထားပါ</label>
+</div>
+<div class="form-group adv-check">
+<span class="group-label">ဇာတ်ကောင် ပုံစံတူညီမှု (Character Consistency)</span>
+<label class="aics-check-row" for="vidConsistency"><input type="checkbox" id="vidConsistency" checked> ဇာတ်ကောင်အသွင်အပြင်ကို Scene တိုင်း တစ်သမတ်တည်း ဖော်ပြပါ</label>
+</div>
 <div class="form-group">
-<label>Additional Instructions</label>
-<textarea id="vidExtra" placeholder="ဥပမာ — နောက်ဆုံး Scene မှာ မိုးရွာပြီး စိတ်ခံစားချက်ကို ပိုဖော်ပြပါ..." style="min-height:80px;"></textarea>
+<label for="vidEnvSel">ပတ်ဝန်းကျင်စတိုင် (Environment Style)</label>
+<select id="vidEnvSel"></select>
 </div>
+<div class="form-group">
+<label for="vidRefImgInput">ရည်ညွှန်းရုပ်ပုံ (Reference Image)</label>
+<input type="file" id="vidRefImgInput" accept="image/*" onchange="onRefImageSelect(this)">
+<div class="ref-img-preview" id="vidRefImgPreview"></div>
+<p class="form-help">Character / Style အတွက် ရည်ညွှန်းရုပ်ပုံ ထည့်နိုင်သည် (PNG / JPG, max 4MB)</p>
+</div>
+<div class="form-group adv-full">
+<label for="vidExtra">အပိုဆောင်း ညွှန်ကြားချက် (Additional Instructions)</label>
+<textarea id="vidExtra" placeholder="ဥပမာ — နောက်ဆုံး Scene မှာ မိုးရွာပြီး စိတ်ခံစားချက်ကို ပိုဖော်ပြပါ..." style="min-height:70px;"></textarea>
+</div>
+</div>
+
 <div class="error-box" id="planError"></div>
-<div class="btn-row" style="margin-top:14px;">
-<button class="btn btn-primary" id="videoPlanBtn" onclick="generateVideoPlan()" style="flex:1;">&#127916; Video ဇာတ်လမ်း ဖန်တီးရန်</button>
-</div>
+<button type="button" class="btn btn-primary video-generate-btn" id="videoPlanBtn" onclick="generateVideoPlan()">&#127916; Video ဇာတ်လမ်း ဖန်တီးရန်</button>
 </div>
 </div>`;
 
+// ============================================================
+// Step 04 — Video Branch Result (loading ကို ဤနေရာတွင်သာ ပြသည်)
+// ============================================================
 const STEP6_HTML = `
 <div class="aics-step" data-step="4">
-${aicsResultLoadingHtml('planLoading','AI က သင့်အတွက် Video ဇာတ်လမ်းကို ပြင်ဆင်နေသည်...')}
+${aicsResultLoadingHtml('planLoading','AI ပြင်ဆင်နေသည်...')}
 <div id="finalResult"></div>
 <div class="error-box" id="planError5"></div>
 <div class="retry-row" id="planRetry5">
@@ -148,106 +192,176 @@ export const STORY_HTML = `<!DOCTYPE html>
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:'Noto Sans Myanmar','Roboto','Segoe UI',Arial,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line-height:1.6}
 a{color:var(--cyan);text-decoration:none}
-.aics-work .card{background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px}
-.aics-work .card-title{font-size:15px;font-weight:600;color:var(--cyan);margin-bottom:14px;display:flex;align-items:center;gap:8px}
-.aics-work label{display:block;font-size:12.5px;color:var(--text2);margin-bottom:6px;font-weight:500}
-.aics-work input,.aics-work textarea,select{width:100%;background:var(--bg-input);border:1px solid var(--border);border-radius:14px;padding:11px 14px;color:var(--text);font-size:14px;font-family:inherit;transition:border-color .2s;box-sizing:border-box}
-.aics-work input:focus,.aics-work textarea:focus,select:focus{outline:none;border-color:var(--cyan);box-shadow:0 0 0 2px rgba(0,229,255,.1)}
-.aics-work textarea{resize:vertical;min-height:90px}
-select{cursor:pointer}
-select option{background:var(--bg-card);color:var(--text)}
+
+/* ===== Card / Section Label ===== */
+.aics-work .card{background:var(--bg-card);border:1px solid var(--border);border-radius:16px;padding:20px;margin-bottom:16px}
+.aics-work .card-title{font-size:15.5px;font-weight:700;color:var(--cyan);margin-bottom:14px;display:flex;align-items:center;gap:8px;line-height:1.4}
+.aics-work .card-title-sub{font-size:11.5px;font-weight:600;color:var(--text3);letter-spacing:.3px}
+.aics-work .story-intro{color:var(--text2);font-size:13px;margin-bottom:16px;line-height:1.7}
+.aics-section-label{display:flex;align-items:baseline;gap:8px;margin:4px 0 12px;padding-left:10px;border-left:3px solid var(--cyan);}
+.aics-section-title{font-size:13.5px;font-weight:700;color:var(--text);letter-spacing:.2px}
+.aics-section-sub{font-size:11px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.6px}
+
+/* ===== Unified Form Controls (Input / Select / Textarea — same height, radius, padding) ===== */
+.aics-work label{display:block;font-size:12.5px;color:var(--text2);margin-bottom:7px;font-weight:600;line-height:1.4}
+.aics-work .group-label{display:block;font-size:12.5px;color:var(--text2);margin-bottom:7px;font-weight:600;line-height:1.4}
+.aics-work input:not([type=checkbox]):not([type=radio]),.aics-work textarea,.aics-work select{width:100%;min-height:46px;background:var(--bg-input);border:1px solid rgba(148,163,184,.20);border-radius:12px;padding:11px 13px;color:var(--text);font-size:14px;line-height:1.5;font-family:inherit;transition:border-color .18s,box-shadow .18s,background .18s;box-sizing:border-box}
+.aics-work textarea{min-height:108px;resize:vertical;line-height:1.7}
+.aics-work input:not([type=checkbox]):not([type=radio]):hover,.aics-work textarea:hover,.aics-work select:hover{border-color:rgba(0,229,255,.35);background:rgba(8,16,32,.92)}
+.aics-work input:not([type=checkbox]):not([type=radio]):focus,.aics-work textarea:focus,.aics-work select:focus{outline:none;border-color:var(--cyan);box-shadow:0 0 0 3px rgba(0,229,255,.12);background:#0a1020}
+.aics-work select{cursor:pointer}
+.aics-work select option{background:var(--bg-card);color:var(--text)}
+.aics-work input:disabled,.aics-work textarea:disabled,.aics-work select:disabled,.aics-work button:disabled{opacity:.5;cursor:not-allowed}
 .aics-work .form-group{margin-bottom:16px}
-.aics-work .adv-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
-.aics-work .adv-grid .form-group{margin-bottom:0;}
-#typeSel,#audSel,#toneSel,#langSel{border-radius:20px;padding:13px 18px;background:rgba(123,92,255,.08);border:1px solid rgba(123,92,255,.22);color:#e8ecf4;min-height:50px;}
-#typeSel:hover,#audSel:hover,#toneSel:hover,#langSel:hover{background:rgba(123,92,255,.15);border-color:rgba(123,92,255,.4);}
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:12px 24px;border-radius:8px;border:none;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .2s;min-height:44px;min-width:44px}
-.btn-primary{background:linear-gradient(135deg,var(--cyan),#00b8d4);color:#080c18}
-.btn-primary:hover{opacity:.9;transform:translateY(-1px)}
-.btn-primary:disabled{opacity:.5;cursor:not-allowed;transform:none}
-.btn-secondary{background:var(--bg-card2);color:var(--cyan);border:1px solid var(--border-strong)}
-.btn-secondary:hover{background:rgba(0,229,255,.1)}
-.btn-ghost{background:none;color:var(--text2);border:1px solid var(--border);padding:6px 12px;font-size:12px;min-height:32px}
-.btn-ghost:hover{color:var(--cyan);border-color:var(--cyan)}
-.btn-success{background:linear-gradient(135deg,#00e676,#00c853);color:#080c18}
-.btn-purple{background:linear-gradient(135deg,var(--purple),#9c7cff);color:#fff}
-.btn-orange{background:linear-gradient(135deg,#ff9f2b,#ff6f00);color:#080c18}
-.aics-work .btn-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
-.aics-work .type-chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
-.aics-work .type-chip{padding:10px 16px;border:1px solid var(--border);border-radius:20px;font-size:13px;cursor:pointer;color:var(--text2);transition:all .2s;user-select:none;min-height:40px;display:inline-flex;align-items:center;gap:6px}
-.aics-work .type-chip:hover{border-color:var(--cyan);color:var(--cyan)}
-.aics-work .type-chip.selected{background:rgba(0,229,255,.12);border-color:var(--cyan);color:var(--cyan);font-weight:600}
-.aics-work .type-chip.locked{opacity:.45;cursor:not-allowed}
-.aics-work .type-chip.locked:hover{border-color:var(--border);color:var(--text2)}
-.aics-work .aics-advanced{background:var(--bg-card2);border:1px solid var(--border);border-radius:10px;padding:10px 14px;margin-bottom:16px}
-.aics-work .aics-advanced summary{cursor:pointer;color:var(--cyan);font-size:13px;font-weight:600;user-select:none;min-height:32px;display:flex;align-items:center}
-.aics-work .revise-section{margin-top:20px;padding-top:20px;border-top:1px solid var(--border)}
+.aics-work .form-group.has-error input,.aics-work .form-group.has-error textarea,.aics-work .form-group.has-error select{border-color:rgba(255,82,82,.7);box-shadow:0 0 0 2px rgba(255,82,82,.14)}
+.aics-work .form-error{display:none;color:#ff8a8a;font-size:12px;margin-top:6px;line-height:1.5}
+.aics-work .form-group.has-error .form-error{display:block}
+.aics-work .form-help{font-size:11.5px;color:var(--text3);margin-top:6px;line-height:1.55}
+.aics-work .req-star{color:var(--error)}
+
+/* ===== Story Content Primary Textarea ===== */
+.aics-work .story-content-group{margin-top:2px}
+.aics-work .story-content-input{min-height:150px;font-size:15px;background:linear-gradient(180deg,rgba(6,12,25,.9),rgba(10,16,32,.9));border-color:rgba(0,229,255,.28)}
+.aics-work .story-content-input:focus{border-color:var(--cyan);box-shadow:0 0 0 3px rgba(0,229,255,.16)}
+.aics-work .story-content-input:disabled{background:rgba(6,12,25,.5)}
+
+/* ===== Checkbox Rows (Video Advanced) ===== */
+.aics-work .adv-check .aics-check-row{display:flex;align-items:center;gap:9px;min-height:44px;padding:9px 12px;background:rgba(8,14,28,.55);border:1px solid rgba(148,163,184,.14);border-radius:10px;cursor:pointer;color:var(--text2);font-size:12.5px;line-height:1.5;transition:border-color .2s,background .2s}
+.aics-work .adv-check .aics-check-row:hover{border-color:rgba(0,229,255,.4)}
+.aics-work .adv-check .aics-check-row input{width:18px;height:18px;min-height:0;flex-shrink:0;accent-color:var(--cyan);cursor:pointer}
+.aics-work .adv-check{min-width:0}
+
+/* ===== Reference Image ===== */
+.aics-work .ref-img-preview{margin-top:8px;text-align:center}
+.aics-work .ref-img-preview img{max-width:100%;max-height:180px;border-radius:10px;border:1px solid var(--border);display:block;margin:0 auto 6px}
+.aics-work .ref-img-preview .btn-ghost{display:inline-flex}
+.aics-work input[type=file]{padding:10px;cursor:pointer}
+
+/* ===== Accordion (Advanced Settings) ===== */
+.aics-work .aics-advanced-toggle{width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:13px 16px;border-radius:12px;background:rgba(123,92,255,.07);border:1px solid rgba(123,92,255,.28);color:#c7bbff;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;min-height:46px;margin:2px 0 12px;text-align:left;transition:background .2s,border-color .2s;box-sizing:border-box}
+.aics-work .aics-advanced-toggle:hover{background:rgba(123,92,255,.13);border-color:rgba(123,92,255,.52)}
+.aics-work .aics-advanced-toggle:focus{outline:none;border-color:var(--cyan);box-shadow:0 0 0 2px rgba(0,229,255,.18)}
+.aics-work .aics-advanced-toggle .aics-adv-arrow{display:inline-block;font-size:11px;flex-shrink:0;transition:transform .2s;color:var(--cyan)}
+.aics-work .aics-advanced-toggle.open .aics-adv-arrow{transform:rotate(180deg)}
+.aics-work .aics-adv-panel{padding:14px;background:rgba(8,14,28,.52);border:1px solid rgba(148,163,184,.12);border-radius:14px;margin-bottom:16px}
+
+/* ===== Grids — 2-column on Desktop / iPad / Mobile (Story-specific) ===== */
+.aics-work .studio-form-grid,.aics-work .adv-grid,.aics-work .vf-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px 16px}
+.aics-work .studio-form-grid .form-group,.aics-work .adv-grid .form-group,.aics-work .vf-grid .form-group{margin-bottom:0;min-width:0}
+/* Accordion hide/show — grid display rules ပြီးမှ ထားရမည် (cascade) */
+.aics-work .aics-adv-panel{display:none}
+.aics-work .aics-adv-panel.open{display:grid}
+.aics-work .adv-full{grid-column:1 / -1}
+.aics-work .story-content-group{grid-column:1 / -1}
+
+/* ===== Buttons ===== */
+.aics-work .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:12px 22px;border-radius:11px;border:none;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .2s;min-height:46px;line-height:1.4}
+.aics-work .btn-primary{background:linear-gradient(135deg,var(--cyan),#00b8d4);color:#080c18;box-shadow:0 2px 14px rgba(0,229,255,.25)}
+.aics-work .btn-primary:hover{opacity:.92;transform:translateY(-1px);box-shadow:0 4px 18px rgba(0,229,255,.35)}
+.aics-work .btn-primary:disabled{opacity:.45;cursor:not-allowed;transform:none;box-shadow:none}
+.aics-work .btn-secondary{background:var(--bg-card2);color:var(--cyan);border:1px solid var(--border-strong)}
+.aics-work .btn-secondary:hover{background:rgba(0,229,255,.1)}
+.aics-work .btn-ghost{background:none;color:var(--text2);border:1px solid var(--border);padding:8px 14px;font-size:12.5px;min-height:40px;border-radius:10px}
+.aics-work .btn-ghost:hover{color:var(--cyan);border-color:var(--cyan)}
+.aics-work .btn-success{background:linear-gradient(135deg,#00e676,#00c853);color:#080c18}
+.aics-work .btn-purple{background:linear-gradient(135deg,var(--purple),#9c7cff);color:#fff}
+.aics-work .btn-orange{background:linear-gradient(135deg,#ff9f2b,#ff6f00);color:#080c18}
+.aics-work .btn:focus-visible,.aics-advanced-toggle:focus-visible,.aics-step-btn:focus-visible{outline:2px solid rgba(0,229,255,.8);outline-offset:2px}
+
+/* ===== Story Generate / Video Generate (Primary actions in forms) ===== */
+.aics-work .story-generate-btn,.aics-work .video-generate-btn{width:100%;min-height:52px;font-size:15px;margin-top:4px}
+.aics-work .story-generate-btn:disabled{opacity:.45;cursor:not-allowed}
+
+/* ===== Story Result Actions (Primary + Secondary hierarchy) ===== */
+.aics-work .story-actions-primary{margin:14px 0 10px}
+.aics-work .story-action-primary{width:100%;min-height:52px;font-size:15px}
+.aics-work .story-actions-secondary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.aics-work .story-actions-secondary .btn{width:100%}
+
+/* ===== Result Textarea ===== */
+.aics-work .result-label{font-size:12.5px;color:var(--text2);font-weight:600;margin-bottom:7px}
+.aics-work .result-textarea{width:100%;min-height:240px;background:var(--bg-input);border:1px solid var(--border-strong);border-radius:14px;padding:16px;color:var(--text);font-size:15px;line-height:1.8;font-family:inherit;resize:vertical;box-sizing:border-box;overflow:hidden}
+.aics-work .result-textarea:focus{outline:none;border-color:var(--cyan);box-shadow:0 0 0 3px rgba(0,229,255,.12)}
+.aics-work .result-hint{color:var(--text3);font-size:12px;margin-top:8px;font-style:italic;line-height:1.6}
+
+/* ===== Video Auto-Transfer Status ===== */
+.aics-work .story-auto-status{display:flex;align-items:center;gap:8px;background:rgba(0,230,118,.08);border:1px solid rgba(0,230,118,.35);color:var(--success);font-size:12.5px;font-weight:600;padding:10px 14px;border-radius:10px;margin-bottom:14px;line-height:1.5}
+.aics-work .video-story-input{min-height:150px;font-size:14px}
+
+/* ===== Loading (Result area only) ===== */
+.aics-work .loading{display:none !important;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);align-items:center;gap:12px;color:#00e5ff;font-size:15px;font-weight:600;padding:16px 28px;border-radius:16px;background:rgba(8,12,24,.95);border:1px solid rgba(0,229,255,.4);box-shadow:0 8px 40px rgba(0,229,255,.3);z-index:99999;backdrop-filter:blur(12px);white-space:nowrap}
+.aics-work .loading.show{display:flex}
+.aics-work .spinner{width:20px;height:20px;border:3px solid rgba(0,229,255,.2);border-top-color:#00e5ff;border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ===== Error / Retry ===== */
+.aics-work .error-box{display:none;background:rgba(255,82,82,.1);border:1px solid rgba(255,82,82,.3);color:var(--error);padding:12px 16px;border-radius:8px;font-size:13px;margin-top:12px;line-height:1.7;white-space:pre-line}
+.aics-work .error-box.show{display:block}
+.aics-work .retry-row{display:none;justify-content:center;margin-top:16px;gap:10px;flex-wrap:wrap}
+.aics-work .retry-row.show{display:flex}
+
+/* ===== Revise Section ===== */
+.aics-work .revise-section{margin-top:20px}
+.aics-work .revise-panel{margin-top:-4px}
 .aics-work .revise-history{margin-bottom:14px;max-height:280px;overflow-y:auto}
 .aics-work .revise-msg{background:var(--bg-input);border-radius:8px;padding:10px 14px;margin-bottom:8px;font-size:13px}
 .aics-work .revise-msg.user{border-left:3px solid var(--purple)}
 .aics-work .revise-msg .role{font-size:11px;color:var(--text3);margin-bottom:4px}
 .aics-work .revise-input-row{display:flex;gap:10px;align-items:flex-end}
-.aics-work .revise-input-row textarea{flex:1;min-height:60px}
-.aics-work .result-textarea{width:100%;min-height:220px;background:var(--bg-input);border:1px solid var(--border);border-radius:10px;padding:16px;color:var(--text);font-size:15px;line-height:1.7;font-family:inherit;resize:vertical;box-sizing:border-box;overflow:hidden}
-.aics-work .result-textarea:focus{outline:none;border-color:var(--cyan)}
-.aics-work .characters-list{display:flex;flex-wrap:wrap;gap:12px}
-.aics-work .character-card{background:var(--bg-card2);border:1px solid var(--border);border-radius:10px;padding:16px;flex:1 1 280px;min-width:260px}
-.aics-work .character-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
-.aics-work .character-name{font-weight:700;color:var(--cyan);font-size:14px}
-.aics-work .character-role{font-size:12px;color:var(--text3);margin-bottom:8px}
-.aics-work .character-prompt{font-size:13px;color:var(--text);line-height:1.6;white-space:pre-wrap;word-break:break-word;background:var(--bg-input);padding:10px 12px;border-radius:8px;margin-bottom:8px;min-height:20px}
-.aics-work .scene-group{margin-bottom:20px}
-.aics-work .scene-group-title{color:var(--cyan);font-weight:700;font-size:15px;padding-bottom:8px;margin-bottom:12px;border-bottom:1px solid var(--border)}
-.aics-work .scene-card{background:var(--bg-card2);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:12px}
-.aics-work .scene-card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
-.aics-work .scene-card-title{font-weight:600;color:var(--purple);font-size:13px}
-.aics-work .scene-prompt-text{font-size:13px;color:var(--text);line-height:1.6;white-space:pre-wrap;word-break:break-word;background:var(--bg-input);padding:10px 12px;border-radius:8px;margin-bottom:8px;min-height:20px}
-.aics-work .scene-prompt-textarea{width:100%;background:var(--bg-input);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--text);font-size:13px;line-height:1.6;font-family:inherit;resize:vertical;min-height:60px;box-sizing:border-box;margin-bottom:8px}
-.aics-work .scene-prompt-textarea:focus{outline:none;border-color:var(--cyan)}
-.aics-work .scene-image-area{margin-top:10px;text-align:center}
+.aics-work .revise-input-row input{flex:1}
+.aics-work .revise-input-row .btn{flex-shrink:0}
+
+/* ===== Characters (Video Result) ===== */
+.aics-work .final-char-card{background:var(--bg-card2);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:14px}
+.aics-work .final-char-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px;flex-wrap:wrap}
+.aics-work .final-char-name{font-weight:700;color:var(--cyan);font-size:15px}
+.aics-work .final-char-id{font-size:11px;color:var(--purple);background:rgba(123,92,255,.12);border:1px solid rgba(123,92,255,.3);padding:2px 10px;border-radius:20px}
+.aics-work .final-char-meta{display:flex;flex-wrap:wrap;gap:4px 16px;font-size:12.5px;color:var(--text2);margin-bottom:10px}
+.aics-work .final-char-img{background:var(--bg-input);border:1px dashed var(--border);border-radius:10px;padding:10px;margin-bottom:10px;text-align:center}
+.aics-work .final-char-img img{max-width:100%;max-height:340px;border-radius:8px}
+.aics-work .final-char-ref{background:var(--bg-input);border:1px dashed rgba(123,92,255,.4);border-radius:10px;padding:12px 14px;margin-bottom:10px}
+.aics-work .final-prompt-label{font-size:11.5px;color:var(--text3);font-weight:700;letter-spacing:.4px;margin:8px 0 6px;text-transform:uppercase}
+.aics-work .final-prompt-text{font-size:13px;color:var(--text);line-height:1.7;white-space:pre-wrap;word-break:break-word;background:var(--bg-input);padding:12px 14px;border-radius:10px;min-height:20px}
+
+/* ===== Story Map (Scenes) ===== */
+.aics-work .storymap-card .card-title{font-size:16px}
+.aics-work .smap-card{background:var(--bg-card2);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:14px}
+.aics-work .smap-head{display:flex;align-items:center;justify-content:space-between;gap:8px;border-bottom:1px solid var(--border);padding-bottom:10px;margin-bottom:12px;flex-wrap:wrap}
+.aics-work .smap-num{font-size:11px;font-weight:700;color:#fff;background:linear-gradient(135deg,var(--purple),#9c7cff);border-radius:20px;padding:3px 12px;flex-shrink:0}
+.aics-work .smap-title{font-weight:700;color:var(--purple);font-size:14.5px;min-width:0}
+.aics-work .smap-row{margin-bottom:11px}
+.aics-work .smap-row:last-child{margin-bottom:0}
+.aics-work .smap-label{font-size:11.5px;color:var(--cyan);font-weight:700;margin-bottom:6px;display:flex;align-items:center;gap:6px;letter-spacing:.3px}
+.aics-work .smap-text{font-size:13px;color:var(--text);line-height:1.7;white-space:pre-wrap;word-break:break-word;background:var(--bg-input);padding:11px 13px;border-radius:10px;min-height:20px}
+.aics-work .smap-meta{font-size:12.5px;color:var(--text2);border-top:1px solid var(--border);padding-top:10px;margin-top:4px;display:flex;flex-wrap:wrap;gap:6px 16px}
+.aics-work .smap-meta span{display:inline-flex;align-items:center;gap:5px}
+.aics-work .scene-image-area{margin-top:8px;text-align:center}
 .aics-work .scene-image-area img{max-width:100%;border-radius:8px;border:1px solid var(--border)}
-.aics-work .loading{display:none !important;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);align-items:center;gap:12px;color:#00e5ff;font-size:15px;font-weight:600;padding:16px 28px;border-radius:16px;background:rgba(8,12,24,.95);border:1px solid rgba(0,229,255,.4);box-shadow:0 8px 40px rgba(0,229,255,.3);z-index:99999;backdrop-filter:blur(12px);white-space:nowrap;}
-.aics-work .loading.show{display:flex}
-.aics-work .spinner{width:20px;height:20px;border:3px solid rgba(0,229,255,.2);border-top-color:#00e5ff;border-radius:50%;animation:spin .8s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
-.aics-work .error-box{display:none;background:rgba(255,82,82,.1);border:1px solid rgba(255,82,82,.3);color:var(--error);padding:12px 16px;border-radius:8px;font-size:13px;margin-top:12px;line-height:1.7;white-space:pre-line}
-.aics-work .error-box.show{display:block}
-.aics-work .fallback-note{display:none;background:rgba(255,193,7,.1);border:1px solid rgba(255,193,7,.3);color:var(--warn);padding:12px 16px;border-radius:8px;font-size:13px;margin-top:12px}
-.aics-work .fallback-note.show{display:block}
+
+/* ===== Misc ===== */
+.aics-work .empty-note{color:var(--text3);font-size:13px;padding:16px;background:var(--bg-input);border:1px dashed var(--border);border-radius:10px;text-align:center}
+.aics-work .btn-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(100px);background:var(--bg-card2);border:1px solid var(--success);color:var(--success);padding:10px 20px;border-radius:8px;font-size:13px;z-index:1000;transition:transform .3s}
 .toast.show{transform:translateX(-50%) translateY(0)}
-.aics-work .empty-note{color:var(--text3);font-size:13px;padding:16px;background:var(--bg-input);border:1px dashed var(--border);border-radius:10px;text-align:center}
-@media(max-width:767px){.aics-work .revise-input-row{flex-direction:column;align-items:stretch}}
-/* ===== Story Studio Workflow 01→06 — Additional Styles ===== */
-.aics-work .vf-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
-.aics-work .vf-grid .form-group{margin-bottom:14px;}
-.aics-work .loading-card{text-align:center;padding:40px 16px;}
-.aics-work .loading-card .spinner{width:38px;height:38px;border-width:4px;margin:0 auto 18px;}
-.aics-work .loading-title{font-size:18px;font-weight:700;color:var(--cyan);margin-bottom:20px;}
-.aics-work .status-list{max-width:440px;margin:0 auto;text-align:left;}
-.aics-work .st-line{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:10px;color:var(--text2);font-size:14px;opacity:.5;transition:all .2s;}
-.aics-work .st-line .st-marker{width:22px;text-align:center;flex-shrink:0;font-weight:700;color:var(--text3);}
-.aics-work .st-line.active{opacity:1;color:var(--text);background:rgba(0,229,255,.06);}
-.aics-work .st-line.active .st-marker{color:var(--cyan);}
-.aics-work .st-line.done{opacity:1;color:var(--text);}
-.aics-work .st-line.done .st-marker{color:var(--success);}
-.aics-work .retry-row{display:none;justify-content:center;margin-top:16px;}
-.aics-work .retry-row.show{display:flex;}
-.aics-work .final-char-card{background:var(--bg-card2);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:14px;}
-.aics-work .final-char-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px;flex-wrap:wrap;}
-.aics-work .final-char-name{font-weight:700;color:var(--cyan);font-size:15px;}
-.aics-work .final-char-id{font-size:11px;color:var(--purple);background:rgba(123,92,255,.12);border:1px solid rgba(123,92,255,.3);padding:2px 10px;border-radius:20px;}
-.aics-work .final-char-meta{display:flex;flex-wrap:wrap;gap:4px 16px;font-size:12.5px;color:var(--text2);margin-bottom:10px;}
-.aics-work .final-char-img{background:var(--bg-input);border:1px dashed var(--border);border-radius:10px;padding:10px;margin-bottom:10px;text-align:center;}
-.aics-work .final-char-img img{max-width:100%;max-height:340px;border-radius:8px;}
-.aics-work .final-prompt-label{font-size:11.5px;color:var(--text3);font-weight:700;letter-spacing:.4px;margin:8px 0 6px;text-transform:uppercase;}
-.aics-work .final-prompt-text{font-size:13px;color:var(--text);line-height:1.7;white-space:pre-wrap;word-break:break-word;background:var(--bg-input);padding:12px 14px;border-radius:10px;min-height:20px;}
-.aics-work .final-scene-card{background:var(--bg-card2);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:14px;}
-.aics-work .final-scene-title{font-weight:700;color:var(--purple);font-size:14.5px;padding-bottom:10px;margin-bottom:12px;border-bottom:1px solid var(--border);}
-.aics-work .final-scene-box{margin-bottom:12px;}
-.aics-work .final-box-label{font-size:12px;color:var(--cyan);font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:6px;}
-.aics-work .final-scene-meta{font-size:12.5px;color:var(--text2);border-top:1px solid var(--border);padding-top:10px;margin-top:4px;display:flex;flex-wrap:wrap;gap:6px 16px;}
-@media(max-width:767px){.aics-work .vf-grid{grid-template-columns:1fr;}}
+
+/* ===== Responsive — iPad (769–1199) & Mobile (≤767): keep 2-column grids ===== */
+@media (min-width:768px) and (max-width:1199px){
+  .aics-work .studio-form-grid,.aics-work .adv-grid,.aics-work .vf-grid{gap:12px}
+  .aics-work .card{padding:18px}
+}
+@media (max-width:767px){
+  .aics-work .card{padding:16px;border-radius:14px}
+  .aics-work .studio-form-grid,.aics-work .adv-grid,.aics-work .vf-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 10px}
+  .aics-work input:not([type=checkbox]):not([type=radio]),.aics-work textarea,.aics-work select{min-height:48px}
+  .aics-work textarea{min-height:100px}
+  .aics-work .story-content-input{min-height:130px}
+  .aics-work .story-actions-secondary{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .aics-work .story-actions-secondary .btn:last-child{grid-column:1 / -1}
+  .aics-work .revise-input-row{flex-direction:column;align-items:stretch}
+  .aics-work .revise-input-row .btn{width:100%}
+  .aics-work .story-generate-btn,.aics-work .video-generate-btn,.aics-work .story-action-primary{min-height:50px;font-size:14.5px}
+  .aics-work .aics-advanced-toggle{min-height:48px}
+}
 </style>
 </head>
 <body>
@@ -263,6 +377,14 @@ ${renderStudioShell({
   content: CONTENT_HTML,
 })}
 ${sidebarScript()}
+<style>
+/* ===== Story Studio — cascade override (after shared shell styles) ===== */
+/* Story Studio ပုံစံများကို shared mobile 1-column rule ထက် အသာဖြစ်စေရန် */
+@media (max-width:767px){
+  .aics-work .studio-form-grid,.aics-work .adv-grid,.aics-work .vf-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  .aics-work .vf-grid .form-group,.aics-work .adv-grid .form-group,.aics-work .studio-form-grid .form-group{margin-bottom:0}
+}
+</style>
 <div class="toast" id="toast">&#9989; ကူးယူပြီးပါပြီ</div>
 <script>
 var token=localStorage.getItem('aics_token')||'';
@@ -280,6 +402,7 @@ var videoStarted=false;
 var storyBusy=false;
 var planBusy=false;
 var typewriterTimer=null;
+var currentRefImage='';
 
 var STORY_TYPES=[
   {v:'1',label:'ဇာတ်လမ်း',pro:false},
@@ -290,22 +413,25 @@ var STORY_TYPES=[
 ];
 var VIDEO_TYPES=[
   {v:'1',label:'Video',pro:false},
-  {v:'2',label:'ရုပ်ရှင်',pro:true},
-  {v:'3',label:'ဇာတ်လမ်းတွဲ',pro:true},
-  {v:'4',label:'ဇာတ်လမ်းတို',pro:true},
-  {v:'5',label:'Type 5',pro:true}
+  {v:'2',label:'ရုပ်ရှင် (Film)',pro:true},
+  {v:'3',label:'ဇာတ်လမ်းတွဲ (Series)',pro:true},
+  {v:'4',label:'ဇာတ်လမ်းတို (Short)',pro:true},
+  {v:'5',label:'ဟာသဇာတ်လမ်း (Comedy)',pro:true}
 ];
+// Advanced Settings fields (field_0 = ဇာတ်လမ်းအကြောင်းအရာ — Essential, Required)
+// အောက်ပါတို့သည် Optional ဖြစ်ပြီး Advanced Accordion အတွင်းတွင် ပြသည်
 var FIELD_CONFIG=[
-  {label:'ဇာတ်လမ်းအကြောင်း',placeholder:'ဥပမာ — ဘာအကြောင်းရေးချင်ပါသလဲ?',required:true,multiline:true},
-  {label:'ဇာတ်လမ်းအမျိုးအစား',placeholder:'ဥပမာ — အချစ် / Horror / Action / ဟာသ'},
-  {label:'အဓိကဇာတ်ကောင်',placeholder:'ဥပမာ — မောင်မင်း'},
-  {label:'ဇာတ်ကောင်အသက် / အလုပ် / ရည်မှန်းချက်',placeholder:'ဥပမာ — ၂၅ နှစ် / ဆော့ဖ်ဝဲ အင်ဂျင်နီယာ / ကိုယ်ပိုင်လုပ်ငန်း ထူထောင်ချင်သည်'},
-  {label:'အဓိကပြဿနာ',placeholder:'ဥပမာ — ဇာတ်ကောင် ဘာအခက်အခဲကရမလဲ?'},
-  {label:'ခံစားချက်',placeholder:'ဥပမာ — ဝမ်းနည်း / လှုပ်ရှား / ကြောက်စရာ'},
-  {label:'နေရာ / ပတ်ဝန်းကျင်',placeholder:'ဥပမာ — မြန်မာကျေးရွာ / ရန်ကုန်မြို့'},
-  {label:'အချိန်ကာလ',placeholder:'ဥပမာ — ၂၀၂၀ / ရှေးခေတ် / အနာဂတ်'},
-  {label:'ဇာတ်လမ်းအရှည်',placeholder:'ဥပမာ — မိနစ် ၃၀ / နာရီဝက်'},
-  {label:'နိဂုံးပုံစံ (Ending)',placeholder:'ဥပမာ — ပျော်ရွှင်စရာ အဆုံးသတ် / လှည့်ကွက်နဲ့ အဆုံးသတ်'}
+  {label:'ဇာတ်လမ်းအကြောင်းအရာ (Story Content)',placeholder:'ဥပမာ — ဘာအကြောင်းရေးချင်ပါသလဲ?',required:true,multiline:true},
+  {label:'အဓိကဇာတ်ကောင် (Main Character)',placeholder:'ဥပမာ — မောင်မင်း'},
+  {label:'ဇာတ်ကောင်အသေးစိတ် (Character Details)',placeholder:'ဥပမာ — ၂၅ နှစ် / ဆော့ဖ်ဝဲ အင်ဂျင်နီယာ / ရဲရင့်သော စိတ်ထား'},
+  {label:'အဓိကပြဿနာ (Main Conflict)',placeholder:'ဥပမာ — ဇာတ်ကောင် ဘာအခက်အခဲကရမလဲ?'},
+  {label:'ဇာတ်ကောင်ရည်မှန်းချက် (Character Goal)',placeholder:'ဥပမာ — ကိုယ်ပိုင်လုပ်ငန်း ထူထောင်ချင်သည်'},
+  {label:'နေရာ / ပတ်ဝန်းကျင် (Setting / Environment)',placeholder:'ဥပမာ — မြန်မာကျေးရွာ / ရန်ကုန်မြို့'},
+  {label:'အချိန်ကာလ (Time Period)',placeholder:'ဥပမာ — ၂၀၂၀ / ရှေးခေတ် / အနာဂတ်'},
+  {label:'ခံစားချက် (Mood / Emotion)',placeholder:'ဥပမာ — ဝမ်းနည်း / လှုပ်ရှား / ကြောက်စရာ'},
+  {label:'ဇာတ်လမ်းအရှည် (Story Length)',placeholder:'ဥပမာ — မိနစ် ၃၀ / နာရီဝက်'},
+  {label:'နိဂုံးပုံစံ (Ending)',placeholder:'ဥပမာ — ပျော်ရွှင်စရာ အဆုံးသတ် / လှည့်ကွက်နဲ့ အဆုံးသတ်'},
+  {label:'အပိုဆောင်းညွှန်ကြားချက် (Additional Instructions)',placeholder:'ဥပမာ — ဇာတ်လမ်းထဲမှာ မြန်မာ့ယဉ်ကျေးမှု အသေးစိတ်များ ထည့်ပေးပါ',multiline:true}
 ];
 var DURATIONS=['15 sec','30 sec','45 sec','60 sec','90 sec','120 sec'];
 var SCENE_DURATIONS=['5 sec','8 sec','10 sec','12 sec','15 sec'];
@@ -331,6 +457,8 @@ var ENV_STYLES=['Realistic','Stylized','Minimalist','Fantasy','Sci-Fi','Historic
   fillSelect('vidEnvSel',ENV_STYLES,'Realistic');
   var _ta=document.getElementById('field_0');
   if(_ta){_ta.addEventListener('input',function(){this.style.height='auto';this.style.height=(this.scrollHeight)+'px';});}
+  updateGenBtn();
+  renderRefPreview();
   var sr=document.getElementById('storyResult');
   if(sr){
     sr.addEventListener('keydown',function(){stopTypewriter();});
@@ -376,16 +504,25 @@ function buildVideoTypeSel(){
 
 function apiCall(url,body){var s=document.getElementById('aiModelSel');if(s&&s.value)body.model=s.value;return fetch(url,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify(body)}).then(function(res){return res.json().then(function(data){if(!res.ok)throw new Error(data.detail||data.error||'Request failed');return data;});});}
 
+// ===================== Advanced Settings Fields =====================
 function buildIdeaFields(){
-  var c=document.getElementById('ideaFields');c.innerHTML='';
+  var c=document.getElementById('ideaFields');if(!c)return;
+  c.innerHTML='';
   for(var i=1;i<FIELD_CONFIG.length;i++){
     (function(f,idx){
       var row=document.createElement('div');row.className='form-group';
       var label=document.createElement('label');label.textContent=f.label;
       var input;
-      if(f.multiline){input=document.createElement('textarea');input.style.minHeight='70px';}
-      else{input=document.createElement('input');input.type='text';}
-      input.placeholder=f.placeholder;input.id='field_'+idx;
+      if(f.multiline){
+        input=document.createElement('textarea');
+        input.style.minHeight='70px';
+        input.addEventListener('input',function(){autoExpand(this);});
+      }else{
+        input=document.createElement('input');input.type='text';
+      }
+      input.id='field_'+idx;
+      input.placeholder=f.placeholder;
+      label.htmlFor=input.id;
       row.appendChild(label);row.appendChild(input);c.appendChild(row);
     })(FIELD_CONFIG[i],i);
   }
@@ -394,14 +531,38 @@ function buildIdeaFields(){
 function collectIdeaText(){
   var lines=[],valid=true;
   for(var i=0;i<FIELD_CONFIG.length;i++){
-    var val=document.getElementById('field_'+i).value.trim();
+    var el=document.getElementById('field_'+i);
+    var val=el?el.value.trim():'';
     if(FIELD_CONFIG[i].required&&!val)valid=false;
-    if(val)lines.push(FIELD_CONFIG[i].label+': '+val);
+    if(val)lines.push(FIELD_CONFIG[i].label.split(' (')[0]+': '+val);
   }
-  var tone=document.getElementById('toneSel');if(tone&&tone.value)lines.push('Tone: '+tone.value);
-  var lang=document.getElementById('langSel');if(lang&&lang.value)lines.push('Language: '+lang.value);
-  var aud=document.getElementById('audSel');if(aud&&aud.value)lines.push('Audience: '+aud.value);
+  var tone=document.getElementById('toneSel');if(tone&&tone.value)lines.push('ရေးသားပုံစံ (Tone): '+tone.value);
+  var lang=document.getElementById('langSel');if(lang&&lang.value)lines.push('ဘာသာစကား (Language): '+lang.value);
+  var aud=document.getElementById('audSel');if(aud&&aud.value)lines.push('ပရိသတ် (Audience): '+aud.value);
   return{text:lines.join('\\n'),valid:valid};
+}
+
+// ===================== Form Validation (Generate Button) =====================
+function onStoryContentInput(){
+  var ta=document.getElementById('field_0');
+  if(ta){autoExpand(ta);}
+  updateGenBtn();
+}
+function updateGenBtn(){
+  var btn=document.getElementById('genStoryBtn');
+  if(!btn)return;
+  var ta=document.getElementById('field_0');
+  var v=ta?ta.value.trim():'';
+  btn.disabled=!v;
+  if(v){hideField0Error();}
+}
+function showField0Error(){
+  var g=document.getElementById('field_0');
+  if(g&&g.closest){var grp=g.closest('.form-group');if(grp)grp.classList.add('has-error');}
+}
+function hideField0Error(){
+  var g=document.getElementById('field_0');
+  if(g&&g.closest){var grp=g.closest('.form-group');if(grp)grp.classList.remove('has-error');}
 }
 
 // ===================== Typewriter + Auto Expand =====================
@@ -426,36 +587,6 @@ function onStoryEdit(){
   if(ta){currentStory=ta.value;autoExpand(ta);}
 }
 
-// ===================== Status Animation (Loading Steps 02/05) =====================
-var statusTimers={};
-function startStatusAnim(id){
-  stopStatusAnim(id,false);
-  var box=document.getElementById(id);if(!box)return;
-  var lines=box.querySelectorAll('.st-line');
-  var cur=0,started=false;
-  for(var k=0;k<lines.length;k++){lines[k].className='st-line';var m=lines[k].querySelector('.st-marker');if(m)m.textContent='○';}
-  statusTimers[id]=setInterval(function(){
-    if(!started){lines[0].className='st-line active';var m0=lines[0].querySelector('.st-marker');if(m0)m0.textContent='●';started=true;return;}
-    if(cur<lines.length){
-      lines[cur].className='st-line done';
-      var md=lines[cur].querySelector('.st-marker');if(md)md.textContent='✓';
-      cur++;
-      if(cur<lines.length){lines[cur].className='st-line active';var ma=lines[cur].querySelector('.st-marker');if(ma)ma.textContent='●';}
-    }
-  },1100);
-}
-function stopStatusAnim(id,allDone){
-  if(statusTimers[id]){clearInterval(statusTimers[id]);delete statusTimers[id];}
-  var box=document.getElementById(id);if(!box)return;
-  var lines=box.querySelectorAll('.st-line');
-  if(allDone){
-    for(var k=0;k<lines.length;k++){
-      lines[k].className='st-line done';
-      var m=lines[k].querySelector('.st-marker');if(m)m.textContent='✓';
-    }
-  }
-}
-
 // ===================== Error Helpers =====================
 function friendlyMsg(err,kind){
   var m=(err&&err.message)?String(err.message):'';
@@ -463,21 +594,21 @@ function friendlyMsg(err,kind){
     if(/missing_idea/.test(m))return 'ဇာတ်လမ်းအကြောင်း အနည်းဆုံး ဖြည့်ရေးပါ။';
     if(/pro_only|feature_disabled/.test(m))return 'ဒီ Feature ကို ယခု အသုံးပြုခွင့် မရှိပါ။';
     if(/unauthorized|invalid_token/.test(m))return 'Login သက်တမ်း ကုန်သွားပါပြီ။ ပြန် Login ဝင်ပါ။';
-    if(/fetch|network|failed/i.test(m))return '⚠️ ဇာတ်လမ်းရေးသား၍ မရပါ။\\nAI Server မှ တုံ့ပြန်မှု မရရှိပါ။\\nခဏစောင့်ပြီး ပြန်ကြိုးစားပါ။';
-    return '⚠️ ဇာတ်လမ်းရေးသား၍ မရပါ။\\nခဏစောင့်ပြီး ပြန်ကြိုးစားပါ။';
+    if(/fetch|network|failed/i.test(m))return 'ဇာတ်လမ်းရေးသားရာတွင် ပြဿနာတစ်ခု ဖြစ်ပေါ်ခဲ့သည်။\\nAI Server မှ တုံ့ပြန်မှု မရရှိပါ။\\nခဏစောင့်ပြီး ပြန်ကြိုးစားပါ။';
+    return 'ဇာတ်လမ်းရေးသားရာတွင် ပြဿနာတစ်ခု ဖြစ်ပေါ်ခဲ့သည်။\\nခဏစောင့်ပြီး ပြန်ကြိုးစားပါ။';
   }
   if(kind==='video'){
-    if(/missing_idea/.test(m))return 'ဇာတ်လမ်း ထည့်ရန် လိုအပ်ပါသည် — Step 03 မှာ ဇာတ်လမ်းရေးပြီးမှ ဆက်လုပ်ပါ။';
+    if(/missing_idea/.test(m))return 'ဇာတ်လမ်း ထည့်ရန် လိုအပ်ပါသည် — Step 02 မှာ ဇာတ်လမ်းရေးပြီးမှ ဆက်လုပ်ပါ။';
     if(/pro_only|feature_disabled/.test(m))return 'ဒီ Feature ကို ယခု အသုံးပြုခွင့် မရှိပါ။';
     if(/unauthorized|invalid_token/.test(m))return 'Login သက်တမ်း ကုန်သွားပါပြီ။ ပြန် Login ဝင်ပါ။';
-    if(/fetch|network|failed/i.test(m))return '⚠️ Video ဇာတ်လမ်း ပြင်ဆင်၍ မရပါ။\\nAI Server မှ တုံ့ပြန်မှု မရရှိပါ။\\nခဏစောင့်ပြီး ပြန်ကြိုးစားပါ။';
-    return '⚠️ Video ဇာတ်လမ်း ပြင်ဆင်၍ မရပါ။\\nScene များကို ခွဲခြားရာတွင် အခက်အခဲ ဖြစ်ပေါ်ခဲ့ပါသည်။';
+    if(/fetch|network|failed/i.test(m))return 'Video ပြင်ဆင်ရာတွင် ပြဿနာတစ်ခု ဖြစ်ပေါ်ခဲ့သည်။\\nAI Server မှ တုံ့ပြန်မှု မရရှိပါ။\\nခဏစောင့်ပြီး ပြန်ကြိုးစားပါ။';
+    return 'Video ပြင်ဆင်ရာတွင် ပြဿနာတစ်ခု ဖြစ်ပေါ်ခဲ့သည်။\\nScene များကို ခွဲခြားရာတွင် အခက်အခဲ ဖြစ်ပေါ်ခဲ့ပါသည်။';
   }
   if(kind==='image'){
-    if(/fetch|network|failed/i.test(m))return '⚠️ ရုပ်ပုံ ဖန်တီး၍ မရပါ။\\nAI Server မှ တုံ့ပြန်မှု မရရှိပါ။\\nခဏစောင့်ပြီး ပြန်ကြိုးစားပါ။';
-    return '⚠️ ရုပ်ပုံ ဖန်တီး၍ မရပါ။\\nခဏစောင့်ပြီး ပြန်ကြိုးစားပါ။';
+    if(/fetch|network|failed/i.test(m))return 'ရုပ်ပုံ ဖန်တီး၍ မရပါ။\\nAI Server မှ တုံ့ပြန်မှု မရရှိပါ။\\nခဏစောင့်ပြီး ပြန်ကြိုးစားပါ။';
+    return 'ရုပ်ပုံ ဖန်တီး၍ မရပါ။\\nခဏစောင့်ပြီး ပြန်ကြိုးစားပါ။';
   }
-  return '⚠️ လုပ်ဆောင်၍ မရပါ။\\nခဏစောင့်ပြီး ပြန်ကြိုးစားပါ။';
+  return 'လုပ်ဆောင်၍ မရပါ။\\nခဏစောင့်ပြီး ပြန်ကြိုးစားပါ။';
 }
 function showError(id,msg){var el=document.getElementById(id);if(!el)return;el.textContent=msg;el.classList.add('show');}
 function hideError(id){var el=document.getElementById(id);if(el)el.classList.remove('show');}
@@ -503,7 +634,7 @@ function copyToClipboard(text){
 function generateStory(){
   if(storyBusy)return;
   var collected=collectIdeaText();
-  if(!collected.valid){showError('genError','ဇာတ်လမ်းအကြောင်း အနည်းဆုံး ဖြည့်ရေးပါ');return;}
+  if(!collected.valid){showError('genError','ဇာတ်လမ်းအကြောင်း အနည်းဆုံး ဖြည့်ရေးပါ');showField0Error();return;}
   var stMeta=STORY_TYPES[parseInt(selectedStoryType,10)-1];
   if(stMeta&&stMeta.pro&&!isPro){showToastMsg('ဒီ Type ကို Pro User သာ အသုံးပြုနိုင်ပါသည်။');return;}
   var idea=collected.text;
@@ -511,12 +642,14 @@ function generateStory(){
   storyBusy=true;
   currentStory='';
   studioMarkDone(1);
-  // Unified: Result section အတွင်း loading ပြသည် (processing step မရှိ)
-  if(window.aicsResultLoading)window.aicsResultLoading.show('storyLoading','AI က သင့်အတွက် ဇာတ်လမ်းကို ရေးသားနေသည်...',idea);
+  // Unified: Result section အတွင်း loading ပြသည် (Stepper ထဲတွင် မပြ)
+  if(window.aicsResultLoading)window.aicsResultLoading.show('storyLoading','AI ရေးသားနေသည်...',idea);
   var sb=document.getElementById('storyResultBody');if(sb)sb.style.display='none';
+  var gb=document.getElementById('genStoryBtn');
+  if(gb){gb.disabled=true;gb.innerHTML='&#9203; ဇာတ်လမ်းရေးသားနေသည်...';}
+  var f0=document.getElementById('field_0');if(f0)f0.disabled=true;
   if(window.studioForceGoStep)window.studioForceGoStep(2);
   else window.studioGoStep(2);
-  if(window.studioSetLoading)window.studioSetLoading({on:true});
   var byok=document.getElementById('byokInput')?document.getElementById('byokInput').value.trim():'';
   var body={idea:idea,type:selectedStoryType};
   if(byok)body.apiKey=byok;
@@ -525,13 +658,14 @@ function generateStory(){
       currentStory=data.story||'';
       currentStoryIdea=idea;
       if(window.aicsResultLoading)window.aicsResultLoading.hide('storyLoading');
-      if(window.studioSetLoading)window.studioSetLoading({on:false});
       var sb2=document.getElementById('storyResultBody');if(sb2)sb2.style.display='';
       studioMarkDone(1);studioMarkDone(2);
       document.getElementById('reviseHistory').innerHTML='';
       var ta=document.getElementById('storyResult');
       typewriteStory(currentStory,ta);
       storyBusy=false;
+      if(f0)f0.disabled=false;
+      if(gb){gb.disabled=false;gb.innerHTML='&#10024; ဇာတ်လမ်းရေးသားရန်';}
       if(window.studioForceGoStep)window.studioForceGoStep(2);
       else window.studioGoStep(2);
       showToastMsg('&#10004; ဇာတ်လမ်းရေးပြီးပါပြီ');
@@ -540,17 +674,18 @@ function generateStory(){
     .catch(function(err){
       console.error('Story Generate Error:', err);
       if(window.aicsResultLoading)window.aicsResultLoading.hide('storyLoading');
-      if(window.studioSetLoading)window.studioSetLoading({on:false});
       storyBusy=false;
+      if(f0)f0.disabled=false;
+      if(gb){gb.disabled=false;gb.innerHTML='&#10024; ဇာတ်လမ်းရေးသားရန်';}
       var sb3=document.getElementById('storyResultBody');if(sb3)sb3.style.display='none';
       showStepError('genError2','genRetry2',friendlyMsg(err,'story'));
-      // Error → Result section အတွင်းတွင် error + retry ပြသည် (existing error UI ကို ထိန်းထားသည်)
+      // Error → Result section အတွင်းတွင် error + retry ပြသည်
       if(window.studioUnmarkDone)window.studioUnmarkDone(2);
       showToastMsg('⚠️ '+(friendlyMsg(err,'story').replace(/\\n/g,' ')));
     });
 }
 
-// ===================== Revise (03) =====================
+// ===================== Revise =====================
 function reviseStory(){
   var instruction=document.getElementById('feedbackInput').value.trim();
   if(!instruction){showError('revError','ဘယ်လိုပြင်ချင်လဲ ရေးပါ');return;}
@@ -580,13 +715,16 @@ function addHistory(role,text){
   document.getElementById('reviseHistory').scrollTop=document.getElementById('reviseHistory').scrollHeight;
 }
 function focusRevise(){
+  var t=document.getElementById('reviseToggle');
+  var p=document.getElementById('revisePanel');
+  if(t&&p&&!p.classList.contains('open')){if(window.studioToggleAdvanced)window.studioToggleAdvanced('reviseToggle','revisePanel');}
   var r=document.getElementById('revise-section');
   if(r)r.scrollIntoView({behavior:'smooth',block:'center'});
   var f=document.getElementById('feedbackInput');
   if(f)f.focus();
 }
 
-// ===================== 02 → 03 (User နောက်ဆုံးပြင်ထားသော Story ကို ပို့သည်) =====================
+// ===================== 02 → 03 (User နောက်ဆုံးပြင်ထားသော Story ကို ပို့သည် — Auto Transfer) =====================
 function goToVideoForm(){
   var ta=document.getElementById('storyResult');
   stopTypewriter();
@@ -606,6 +744,30 @@ function fillVideoStoryField(){
   autoExpand(ta);
 }
 
+// ===================== Reference Image (Video Advanced) =====================
+function onRefImageSelect(input){
+  var f=input.files&&input.files[0];
+  if(!f)return;
+  if(!/^image\\//.test(f.type)){showToastMsg('ပုံဖိုင် (Image) သာ ထည့်နိုင်ပါသည်');input.value='';return;}
+  if(f.size>4*1024*1024){showToastMsg('ပုံဖိုင် အရွယ်အစား 4MB ထက် မကြီးရပါ');input.value='';return;}
+  var r=new FileReader();
+  r.onload=function(){currentRefImage=String(r.result);renderRefPreview();autoSave();};
+  r.readAsDataURL(f);
+}
+function renderRefPreview(){
+  var p=document.getElementById('vidRefImgPreview');
+  if(!p)return;
+  if(currentRefImage){
+    p.innerHTML='<img src="'+currentRefImage+'" alt="ရည်ညွှန်းရုပ်ပုံ (Reference Image)"><button type="button" class="btn-ghost" onclick="clearRefImage()">&#10005; ဖျက်ရန်</button>';
+  }else{p.innerHTML='';}
+}
+function clearRefImage(){
+  currentRefImage='';
+  var i=document.getElementById('vidRefImgInput');if(i)i.value='';
+  renderRefPreview();
+  autoSave();
+}
+
 // ===================== Step 03 → 04 (Video Plan — Unified Result Loading) =====================
 function generateVideoPlan(){
   if(planBusy)return;
@@ -614,14 +776,14 @@ function generateVideoPlan(){
   hideError('planError');hideStepError('planError5','planRetry5');
   planBusy=true;
   var btn=document.getElementById('videoPlanBtn');
-  if(btn)btn.disabled=true;
+  if(btn){btn.disabled=true;btn.innerHTML='&#9203; Video ပြင်ဆင်နေသည်...';}
   studioMarkDone(3);
   // Unified: Video Result section အတွင်း loading ပြသည်
-  if(window.aicsResultLoading)window.aicsResultLoading.show('planLoading','AI က သင့်အတွက် Video ဇာတ်လမ်းကို ပြင်ဆင်နေသည်...',story);
+  if(window.aicsResultLoading)window.aicsResultLoading.show('planLoading','AI ပြင်ဆင်နေသည်...',story);
   if(window.studioForceGoStep)window.studioForceGoStep(4);
   else window.studioGoStep(4);
-  if(window.studioSetLoading)window.studioSetLoading({on:true});
   var continuity=document.getElementById('vidContinuity');
+  var consistency=document.getElementById('vidConsistency');
   var body={
     story:story,
     type:selectedVideoType,
@@ -634,6 +796,8 @@ function generateVideoPlan(){
     language:sel('vidLangSel'),
     environmentStyle:sel('vidEnvSel'),
     characterContinuity:(continuity&&continuity.checked)?'true':'false',
+    characterConsistency:(consistency&&consistency.checked)?'true':'false',
+    referenceImage:currentRefImage||'',
     additionalInstructions:document.getElementById('vidExtra')?document.getElementById('vidExtra').value.trim():''
   };
   apiCall('/api/studio/story/video',body)
@@ -641,10 +805,9 @@ function generateVideoPlan(){
       currentScenes=data.scenes||[];
       currentCharacters=data.characters||[];
       if(window.aicsResultLoading)window.aicsResultLoading.hide('planLoading');
-      if(window.studioSetLoading)window.studioSetLoading({on:false});
       studioMarkDone(3);studioMarkDone(4);
       planBusy=false;
-      if(btn)btn.disabled=false;
+      if(btn){btn.disabled=false;btn.innerHTML='&#127916; Video ဇာတ်လမ်း ဖန်တီးရန်';}
       if(window.studioForceGoStep)window.studioForceGoStep(4);
       else window.studioGoStep(4);
       renderFinalResult();
@@ -654,17 +817,16 @@ function generateVideoPlan(){
     .catch(function(err){
       console.error('Story Video Plan Error:', err);
       if(window.aicsResultLoading)window.aicsResultLoading.hide('planLoading');
-      if(window.studioSetLoading)window.studioSetLoading({on:false});
       planBusy=false;
-      if(btn)btn.disabled=false;
+      if(btn){btn.disabled=false;btn.innerHTML='&#127916; Video ဇာတ်လမ်း ဖန်တီးရန်';}
       showStepError('planError5','planRetry5',friendlyMsg(err,'video'));
-      // Error → Result section အတွင်းတွင် error + retry ပြသည် (existing error UI ကို ထိန်းထားသည်)
+      // Error → Result section အတွင်းတွင် error + retry ပြသည်
       if(window.studioUnmarkDone)window.studioUnmarkDone(4);
       showToastMsg('⚠️ '+(friendlyMsg(err,'video').replace(/\\n/g,' ')));
     });
 }
 
-// ===================== Step 06 — Final Result (Characters + Scenes) =====================
+// ===================== Video Result — Characters + Story Map =====================
 function durText(d){
   if(d===undefined||d===null||d==='')return '';
   if(typeof d==='number')return d+' sec';
@@ -685,11 +847,27 @@ function resolveSceneCharacters(idx){
   }
   return names.join(', ');
 }
+function sceneDescription(s){
+  if(s.description)return s.description;
+  var parts=[];
+  if(s.location)parts.push('နေရာ — '+s.location);
+  if(s.emotion)parts.push('ခံစားချက် — '+s.emotion);
+  return parts.length?parts.join(' · '):'(မရှိပါ)';
+}
+function sceneVisualDesc(s){
+  if(s.visualDescription)return s.visualDescription;
+  var parts=[];
+  if(s.visualStyle)parts.push(s.visualStyle);
+  if(s.camera)parts.push(s.camera);
+  if(s.lighting)parts.push('Lighting — '+s.lighting);
+  return parts.length?parts.join(' · '):'(မရှိပါ)';
+}
 function renderFinalResult(){
   var c=document.getElementById('finalResult');if(!c)return;
   var html='';
+  // ---- Characters ----
   if(currentCharacters&&currentCharacters.length){
-    html+='<div class="card"><div class="card-title">&#127934; ဇာတ်ကောင်များ (Characters)</div>';
+    html+='<div class="card"><div class="card-title">&#128100; ဇာတ်ကောင်များ (Characters)</div>';
     for(var i=0;i<currentCharacters.length;i++){
       (function(idx){
         var ch=currentCharacters[idx]||{};
@@ -699,38 +877,40 @@ function renderFinalResult(){
         html+='<div class="final-char-head"><span class="final-char-name">&#128100; '+escapeHtml(ch.name||'Character '+(idx+1))+'</span><span class="final-char-id">'+escapeHtml(ch.id||('char_'+String(idx+1).padStart(2,'0')))+'</span></div>';
         var meta='';
         if(ch.age)meta+='<div>&#127875; အသက် '+escapeHtml(ch.age)+'</div>';
-        if(ch.role)meta+='<div>&#127917; Role: '+escapeHtml(ch.role)+'</div>';
+        if(ch.role)meta+='<div>&#127917; '+escapeHtml(ch.role)+'</div>';
         if(ch.description)meta+='<div>&#128221; '+escapeHtml(ch.description)+'</div>';
         if(meta)html+='<div class="final-char-meta">'+meta+'</div>';
+        html+='<div class="final-char-ref"><div class="final-prompt-label">Character Reference</div><div class="final-prompt-text">'+escapeHtml(prompt)+'</div></div>';
         html+='<div class="final-char-img" id="charImg_'+idx+'">'+(img?'<img class="aics-pv-img" src="'+img+'">':'<div class="empty-note">ရုပ်ပုံ မရှိသေးပါ</div>')+'</div>';
-        html+='<div class="final-prompt-label">Character Reference Prompt</div>';
-        html+='<div class="final-prompt-text">'+escapeHtml(prompt)+'</div>';
         html+='<div class="btn-row"><button class="btn-ghost" onclick="copyCharPrompt('+idx+')">&#128203; Copy Prompt</button><button class="btn-ghost" onclick="generateCharImage('+idx+')">&#127912; Character Image ဖန်တီးရန်</button></div>';
         html+='</div>';
       })(i);
     }
     html+='</div>';
   }
+  // ---- Story Map (Scenes) ----
   if(currentScenes&&currentScenes.length){
-    html+='<div class="card"><div class="card-title">&#127916; ဇာတ်လမ်းမြင်ကွင်းများ (Story Scenes)</div>';
+    html+='<div class="card storymap-card"><div class="card-title">&#128506; Story Map <span class="card-title-sub">(ဇာတ်လမ်းမြေပုံ — Scenes)</span></div>';
     for(var j=0;j<currentScenes.length;j++){
       (function(idx){
         var s=currentScenes[idx]||{};
         var num=String(s.number||(idx+1));
-        var title=s.title?(' — '+escapeHtml(s.title)):'';
-        html+='<div class="final-scene-card">';
-        html+='<div class="final-scene-title">&#127916; SCENE '+num+title+'</div>';
-        html+='<div class="final-scene-box"><div class="final-box-label">&#127916; Video Prompt</div><div class="final-prompt-text">'+escapeHtml(s.videoPrompt||'(မရှိပါ)')+'</div><div class="btn-row"><button class="btn-ghost" onclick="copyVideoPrompt('+idx+')">&#128203; Copy Video Prompt</button></div></div>';
-        html+='<div class="final-scene-box"><div class="final-box-label">&#127757; Environment Reference</div><div class="final-prompt-text">'+escapeHtml(s.environmentPrompt||'(မရှိပါ)')+'</div>';
-        html+='<div class="scene-image-area" id="envImg_'+idx+'">'+(imgCache['env_'+idx]?'<img src="'+imgCache['env_'+idx]+'">':'<button class="btn btn-orange" style="font-size:12px;padding:8px 14px;min-height:36px;" onclick="generateEnvImage('+idx+')">&#127912; Environment Image ဖန်တီးပါ</button>')+'</div>';
+        var title=s.title?escapeHtml(s.title):'(Scene '+num+')';
+        html+='<div class="smap-card">';
+        html+='<div class="smap-head"><span class="smap-num">SCENE '+num+'</span><span class="smap-title">'+title+'</span></div>';
+        html+='<div class="smap-row"><div class="smap-label">&#128221; Scene Description</div><div class="smap-text">'+escapeHtml(sceneDescription(s))+'</div></div>';
+        html+='<div class="smap-row"><div class="smap-label">&#127912; Visual Description</div><div class="smap-text">'+escapeHtml(sceneVisualDesc(s))+'</div></div>';
+        html+='<div class="smap-row"><div class="smap-label">&#127757; Environment</div><div class="smap-text">'+escapeHtml(s.environmentPrompt||'(မရှိပါ)')+'</div>';
+        html+='<div class="scene-image-area" id="envImg_'+idx+'">'+(imgCache['env_'+idx]?'<img src="'+imgCache['env_'+idx]+'">':'<button class="btn btn-orange" style="font-size:12px;padding:8px 14px;min-height:38px;" onclick="generateEnvImage('+idx+')">&#127912; Environment Image ဖန်တီးပါ</button>')+'</div>';
         html+='<div class="btn-row"><button class="btn-ghost" onclick="copyEnvPrompt('+idx+')">&#128203; Copy Environment Prompt</button></div></div>';
-        html+='<div class="final-scene-meta"><span>&#128100; Characters: '+escapeHtml(resolveSceneCharacters(idx))+'</span><span>&#9201; '+escapeHtml(durText(s.duration))+'</span></div>';
+        html+='<div class="smap-row"><div class="smap-label">&#127916; Video Prompt</div><div class="smap-text">'+escapeHtml(s.videoPrompt||'(မရှိပါ)')+'</div><div class="btn-row"><button class="btn-ghost" onclick="copyVideoPrompt('+idx+')">&#128203; Copy Video Prompt</button></div></div>';
+        html+='<div class="smap-meta"><span>&#128100; Characters: '+escapeHtml(resolveSceneCharacters(idx))+'</span><span>&#9201; '+escapeHtml(durText(s.duration))+'</span></div>';
         html+='</div>';
       })(j);
     }
     html+='</div>';
   }
-  if(!html)html='<div class="card"><div class="empty-note">ရလဒ် မရှိသေးပါ — Step 04 မှာ Video ဇာတ်လမ်း ဖန်တီးပါ</div></div>';
+  if(!html)html='<div class="card"><div class="empty-note">ရလဒ် မရှိသေးပါ — Video ဇာတ်လမ်း ဖန်တီးပါ</div></div>';
   c.innerHTML=html;
 }
 
@@ -845,15 +1025,12 @@ function exportResult(){
 function bReset(){return {label:'Reset',cls:'ghost',fn:studioReset};}
 function studioOnStep(n){
   if(n===1){
-    studioSetActions([bReset(),{label:'&#10024; Generate Story',cls:'primary',fn:generateStory}]);
+    // Story Form အောက်ရှိ Generate Button ကို Primary Action အဖြစ် ထားသည်
+    studioSetActions([bReset()]);
   }else if(n===2){
     studioSetActions([
       {label:'&#8592; Back',cls:'ghost',fn:function(){window.studioGoStep(1);}},
-      bReset(),
-      {label:'&#128203; Copy Story',cls:'secondary',fn:copyStory},
-      {label:'&#128190; ဖန်တီးမှုသိမ်းပါ',cls:'purple',fn:saveStory},
-      {label:'&#128203; Copy All',cls:'secondary',fn:copyAllResult},
-      {label:'&#128190; ဖန်တီးမှုအားလုံးသိမ်း',cls:'purple',fn:saveAllResult}
+      bReset()
     ]);
     var ta=document.getElementById('storyResult');
     if(ta)autoExpand(ta);
@@ -862,14 +1039,15 @@ function studioOnStep(n){
     var pb=document.getElementById('videoPlanBtn');
     if(pb)pb.disabled=false;
     studioSetActions([
-      {label:'&#8592; Content ရလဒ်သို့ ပြန်ရန်',cls:'ghost',fn:function(){stSetMode('main');stGoForce(2);}},
+      {label:'&#8592; ရလဒ်သို့ ပြန်ရန်',cls:'ghost',fn:function(){stSetMode('main');stGoForce(2);}},
       bReset()
     ]);
   }else if(n===4){
     studioSetActions([
       {label:'&#8592; Back',cls:'ghost',fn:function(){window.studioGoStep(3);}},
       {label:'&#128203; Copy All',cls:'secondary',fn:copyAllResult},
-      {label:'&#128190; ဖန်တီးမှုအားလုံးသိမ်း',cls:'purple',fn:saveAllResult}
+      {label:'&#128190; သိမ်းရန် (All)',cls:'purple',fn:saveAllResult},
+      bReset()
     ]);
     renderFinalResult();
   }
@@ -903,6 +1081,8 @@ function studioCollectDraft(){
       language:sel('vidLangSel'),
       environmentStyle:sel('vidEnvSel'),
       characterContinuity:document.getElementById('vidContinuity')?document.getElementById('vidContinuity').checked:true,
+      characterConsistency:document.getElementById('vidConsistency')?document.getElementById('vidConsistency').checked:true,
+      referenceImage:currentRefImage||'',
       additionalInstructions:document.getElementById('vidExtra')?document.getElementById('vidExtra').value:''
     },
     characters:currentCharacters,
@@ -934,6 +1114,9 @@ function studioRestoreDraft(d){
     setf('vidStyleSel',vf.visualStyle);setf('vidCamSel',vf.cameraStyle);setf('vidLangSel',vf.language);
     setf('vidEnvSel',vf.environmentStyle);
     var cc=document.getElementById('vidContinuity');if(cc)cc.checked=vf.characterContinuity!==false;
+    var cs=document.getElementById('vidConsistency');if(cs)cs.checked=vf.characterConsistency!==false;
+    currentRefImage=vf.referenceImage||'';
+    renderRefPreview();
     var ve=document.getElementById('vidExtra');if(ve)ve.value=vf.additionalInstructions||'';
   }
   currentCharacters=d.characters||[];
@@ -956,6 +1139,7 @@ function studioRestoreDraft(d){
   }
   stCur=target;
   stShow(target);
+  updateGenBtn();
 }
 window.studioRestoreDraft=studioRestoreDraft;
 
@@ -971,9 +1155,9 @@ function autoSaveImgCache(){
 }
 
 // ============================================================
-// Branch Stepper State Machine (Content Studio ပုံစံ — Main + Video Branch)
+// Branch Stepper State Machine (Main + Video Branch)
 // Main: 1,2 | Video Branch: 3,4 (AI Processing Step များ မရှိ — loading က Result အတွင်း)
-// Shell ၏ stepper ကို boot ပြီးမှ ကိုယ်ပိုင် render နှင့် mode-switch ထပ်ဆောက်သည်
+// Branch ဝင်လျှင် Main Stepper ကို မဖျောက်ဘဲ ဆက်ပေါင်းပြသည်
 // ============================================================
 var ST_MODE='main';
 var stCur=1;
