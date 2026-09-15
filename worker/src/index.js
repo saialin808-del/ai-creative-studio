@@ -861,6 +861,8 @@ export default {
             language: body.language,
             environmentStyle: body.environmentStyle,
             characterContinuity: body.characterContinuity,
+            characterConsistency: body.characterConsistency,
+            referenceImage: body.referenceImage,
             additionalInstructions: body.additionalInstructions,
             plan, apiKey,
           });
