@@ -45,7 +45,7 @@ export async function reviseStory(env, { idea, type, currentStory, instruction, 
 export async function generateStoryVideoPlan(env, {
   story, idea, type, videoType, duration, sceneDuration, aspectRatio,
   visualStyle, cameraStyle, language, environmentStyle, characterContinuity,
-  additionalInstructions, plan, apiKey, model,
+  characterConsistency, referenceImage, additionalInstructions, plan, apiKey, model,
 }) {
   const text = String(story || idea || '').trim();
   if (!text) throw new Error('missing_idea');
@@ -63,6 +63,10 @@ export async function generateStoryVideoPlan(env, {
     'Character Continuity: ' + (String(characterContinuity) === 'false' || characterContinuity === false
       ? 'No'
       : 'YES — တူညီသော ဇာတ်ကောင်ကို Scene တိုင်းတွင် character ID တူတူသုံးပါ (char_01 စသည်)'),
+    'Character Consistency: ' + (String(characterConsistency) === 'false' || characterConsistency === false
+      ? 'No'
+      : 'YES — ဇာတ်ကောင်၏ အသွင်အပြင် / ဝတ်စုံ / အသွင်လက္ခဏာများကို Scene တိုင်းတွင် တစ်သမတ်တည်း ဖော်ပြပါ'),
+    'Reference Image: ' + (referenceImage ? 'Provided (user reference — character / visual style အတွက်)' : 'Not provided'),
   ].join('\n');
   const extra = String(additionalInstructions || '').trim();
   const prompt = [
@@ -76,7 +80,7 @@ export async function generateStoryVideoPlan(env, {
     '',
     'အောက်ပါ အလုပ်များကို လုပ်ပါ:',
     '1. ဇာတ်လမ်းထဲမှ ဇာတ်ကောင်များကို ရှာပြီး character တစ်ယောက်စီအတွက် id (char_01, char_02 ...) သတ်မှတ်ပါ။',
-    '2. ဇာတ်လမ်းကို Scene များအဖြစ် ခွဲပါ။ Scene တစ်ခုစီအတွက် Video Prompt နှင့် Environment Reference Prompt ကို ရေးပါ။',
+    '2. ဇာတ်လမ်းကို Scene များအဖြစ် ခွဲပါ။ Scene တစ်ခုစီအတွက် title, description (မြင်ကွင်းဖော်ပြချက်), visualDescription (ရုပ်ပုံအသေးစိတ်), Video Prompt နှင့် Environment Reference Prompt ကို ရေးပါ။',
     '3. Character Continuity — တူညီသော ဇာတ်ကောင်သည် Scene အားလုံးတွင် character ID တူတူသာ သုံးရပါမည်။',
     '4. Video Prompt သည် Visual Style, Camera Style, Aspect Ratio, Language, Scene Duration စသည်တို့နှင့် ကိုက်ညီအောင် ရေးပါ။',
     '',
@@ -86,7 +90,7 @@ export async function generateStoryVideoPlan(env, {
     '    { "id": "char_01", "name": "", "role": "Main Character", "age": "", "description": "", "characterPrompt": "" }',
     '  ],',
     '  "scenes": [',
-    '    { "id": "scene_01", "number": 1, "title": "", "duration": 8, "characterIds": ["char_01"], "videoPrompt": "", "environmentPrompt": "" }',
+    '    { "id": "scene_01", "number": 1, "title": "", "description": "", "visualDescription": "", "duration": 8, "characterIds": ["char_01"], "videoPrompt": "", "environmentPrompt": "" }',
     '  ]',
     '}',
   ].filter(Boolean).join('\n');
@@ -180,6 +184,8 @@ function normalizeScenes(list, characters) {
     const number = sc.number !== undefined && sc.number !== null ? parseInt(String(sc.number), 10) : (i + 1);
     const num = isNaN(number) ? (i + 1) : number;
     const title = String(sc.title || '').trim();
+    const description = String(sc.description || '').trim();
+    const visualDescription = String(sc.visualDescription || '').trim();
     const videoPrompt = String(sc.videoPrompt || '').trim();
     const environmentPrompt = String(sc.environmentPrompt || '').trim();
     let characterIds = Array.isArray(sc.characterIds) ? mapIds(sc.characterIds) : [];
@@ -196,6 +202,8 @@ function normalizeScenes(list, characters) {
       id: String(sc.id || ('scene_' + String(num).padStart(2, '0'))).trim(),
       number: num,
       title: title,
+      description: description,
+      visualDescription: visualDescription,
       duration: normalizeDuration(sc.duration, 8),
       characterIds: characterIds,
       videoPrompt: videoPrompt,
