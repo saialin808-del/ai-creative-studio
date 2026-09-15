@@ -45,7 +45,9 @@ export async function reviseStory(env, { idea, type, currentStory, instruction, 
 export async function generateStoryVideoPlan(env, {
   story, idea, type, videoType, duration, sceneDuration, aspectRatio,
   visualStyle, cameraStyle, language, environmentStyle, characterContinuity,
-  characterConsistency, referenceImage, additionalInstructions, plan, apiKey, model,
+  characterConsistency, referenceImage, additionalInstructions,
+  characterDirection, cameraDirection, lighting, environmentDetails,
+  colorMood, transitionPacing, audioDirection, plan, apiKey, model,
 }) {
   const text = String(story || idea || '').trim();
   if (!text) throw new Error('missing_idea');
@@ -67,7 +69,17 @@ export async function generateStoryVideoPlan(env, {
       ? 'No'
       : 'YES — ဇာတ်ကောင်၏ အသွင်အပြင် / ဝတ်စုံ / အသွင်လက္ခဏာများကို Scene တိုင်းတွင် တစ်သမတ်တည်း ဖော်ပြပါ'),
     'Reference Image: ' + (referenceImage ? 'Provided (user reference — character / visual style အတွက်)' : 'Not provided'),
-  ].join('\n');
+  ];
+  // Optional advanced directions — အသုံးပြုသူ မဖြည့်ထားလျှင် prompt ထဲ မထည့် (Story + Essential settings ကိုသာ အသုံးပြု)
+  const opt = (label, val) => { const v = String(val || '').trim(); if (v) settings.push(label + ': ' + v); };
+  opt('Character Direction', characterDirection);
+  opt('Camera Direction', cameraDirection);
+  opt('Lighting', lighting);
+  opt('Environment Details', environmentDetails);
+  opt('Color / Mood', colorMood);
+  opt('Transition / Pacing', transitionPacing);
+  opt('Audio / Sound Direction', audioDirection);
+  const settingsStr = settings.join('\n');
   const extra = String(additionalInstructions || '').trim();
   const prompt = [
     system,
@@ -75,7 +87,7 @@ export async function generateStoryVideoPlan(env, {
     text,
     '',
     'VIDEO SETTINGS:',
-    settings,
+    settingsStr,
     extra ? ('ADDITIONAL INSTRUCTIONS:\n' + extra) : '',
     '',
     'အောက်ပါ အလုပ်များကို လုပ်ပါ:',
