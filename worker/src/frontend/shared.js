@@ -437,6 +437,53 @@ export function sidebarScript() {
 //   studioCollectDraft() / studioRestoreDraft(data) / studioOnStep(n)
 // ============================================================
 
+function aicsDesignPatchCss() {
+  return (
+    '<style>\n' +
+    '/* ===== Personal Studio UX/UI — v1.0 (shared across all studios) ===== */\n' +
+    '.aics-app .aics-main{padding:20px 24px 34px;}\n' +
+    '.aics-app .aics-work{max-width:1080px!important;width:100%;margin:0 auto;}\n' +
+    '.aics-work .card{border-radius:16px;border-color:rgba(148,163,184,.16);box-shadow:0 10px 30px rgba(0,0,0,.10);padding:20px;}\n' +
+    '.aics-work .card-title{display:flex;align-items:center;gap:8px;font-size:15.5px;line-height:1.4;margin-bottom:14px;}\n' +
+    '.aics-work .form-group{margin-bottom:16px;}\n' +
+    '.aics-work label{display:block;font-size:12.5px;color:#a8b3c7;margin:0 0 7px;font-weight:600;line-height:1.4;}\n' +
+    '.aics-work input:not([type=checkbox]):not([type=radio]),.aics-work textarea,.aics-work select{min-height:46px;background:rgba(6,12,25,.78);border:1px solid rgba(148,163,184,.20);border-radius:12px;padding:11px 13px;color:#e8ecf4;font-size:14px;line-height:1.5;box-sizing:border-box;transition:border-color .18s,box-shadow .18s,background .18s;}\n' +
+    '.aics-work textarea{min-height:108px;}\n' +
+    '.aics-work input:not([type=checkbox]):not([type=radio]):hover,.aics-work textarea:hover,.aics-work select:hover{border-color:rgba(0,229,255,.30);background:rgba(8,16,32,.92);}\n' +
+    '.aics-work input:not([type=checkbox]):not([type=radio]):focus,.aics-work textarea:focus,.aics-work select:focus{outline:none;border-color:rgba(0,229,255,.75);box-shadow:0 0 0 3px rgba(0,229,255,.10);background:#0a1020;}\n' +
+    '.aics-work select{cursor:pointer;appearance:auto;}\n' +
+    '.aics-work .studio-form-grid,.aics-work .adv-grid,.aics-work .vf-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:14px 16px;}\n' +
+    '.aics-work .studio-form-grid .form-group,.aics-work .adv-grid .form-group,.aics-work .vf-grid .form-group{min-width:0;}\n' +
+    '.aics-work .aics-advanced-toggle{margin:4px 0 12px;background:rgba(123,92,255,.07);border-color:rgba(123,92,255,.28);color:#c7bbff;}\n' +
+    '.aics-work .aics-advanced-toggle:hover{background:rgba(123,92,255,.13);border-color:rgba(123,92,255,.52);}\n' +
+    '.aics-work .aics-adv-panel{padding:14px;background:rgba(8,14,28,.52);border:1px solid rgba(148,163,184,.12);border-radius:14px;margin-bottom:16px;}\n' +
+    '.aics-work .aics-out-cards,.aics-work .branch-action-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;}\n' +
+    '.aics-work .aics-out-card,.aics-work .branch-action-card{min-height:150px;border-radius:16px;padding:20px;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;transition:transform .18s,border-color .18s,box-shadow .18s;}\n' +
+    '.aics-work .aics-out-card:hover,.aics-work .branch-action-card:hover{transform:translateY(-2px);box-shadow:0 10px 28px rgba(0,229,255,.10);border-color:rgba(0,229,255,.65); }\n' +
+    '.aics-work .aics-out-btn{min-height:46px;border-radius:11px;}\n' +
+    '.aics-work .result-textarea,.aics-work .shop-result,.aics-work .srt-editable{border-radius:14px;line-height:1.7;}\n' +
+    '.aics-work .btn-row{gap:10px;}\n' +
+    '.aics-work .btn,.aics-work button:not(.aics-step-btn):not(.aics-advanced-toggle){min-height:44px;border-radius:11px;}\n' +
+    '.aics-work .hint,.aics-work .form-help{line-height:1.55;}\n' +
+    '@media (min-width:768px) and (max-width:1199px){\n' +
+    '  .aics-app .aics-main{padding:18px 18px 28px;}\n' +
+    '  .aics-work .card{padding:18px;}\n' +
+    '  .aics-work .studio-form-grid,.aics-work .adv-grid,.aics-work .vf-grid{gap:12px;}\n' +
+    '}\n' +
+    '@media (max-width:767px){\n' +
+    '  .aics-app .aics-main{padding:12px 12px 24px;}\n' +
+    '  .aics-work .card{padding:16px;border-radius:14px;}\n' +
+    '  .aics-work .studio-form-grid,.aics-work .adv-grid,.aics-work .vf-grid,.aics-work .aics-out-cards,.aics-work .branch-action-grid{grid-template-columns:1fr;}\n' +
+    '  .aics-work input:not([type=checkbox]):not([type=radio]),.aics-work textarea,.aics-work select{min-height:48px;}\n' +
+    '  .aics-work textarea{min-height:104px;}\n' +
+    '  .aics-work .btn-row{display:grid;grid-template-columns:1fr;gap:8px;}\n' +
+    '  .aics-work .btn-row .btn{width:100%;}\n' +
+    '  .aics-work .aics-out-card,.aics-work .branch-action-card{min-height:128px;}\n' +
+    '}\n' +
+    '</style>'
+  );
+}
+
 function aicsShellCss() {
   return (
     '<style>\n' +
@@ -625,6 +672,7 @@ export function renderStudioShell(opts) {
 
   return (
     aicsShellCss() +
+    aicsDesignPatchCss() +
     '<div class="aics-app" id="aicsApp">\n' +
     '<header class="header aics-header">\n' +
     '<button class="aics-menu-btn" aria-label="Menu ဖွင့်ရန် / ပိတ်ရန်" title="Menu" onclick="toggleSidebar()">&#9776;</button>\n' +
