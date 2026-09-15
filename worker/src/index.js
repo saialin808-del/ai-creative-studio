@@ -863,6 +863,13 @@ export default {
             characterContinuity: body.characterContinuity,
             characterConsistency: body.characterConsistency,
             referenceImage: body.referenceImage,
+            characterDirection: body.characterDirection || '',
+            cameraDirection: body.cameraDirection || '',
+            lighting: body.lighting || '',
+            environmentDetails: body.environmentDetails || '',
+            colorMood: body.colorMood || '',
+            transitionPacing: body.transitionPacing || '',
+            audioDirection: body.audioDirection || '',
             additionalInstructions: body.additionalInstructions,
             plan, apiKey,
           });
