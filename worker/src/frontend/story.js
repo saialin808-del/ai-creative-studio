@@ -256,16 +256,16 @@ a{color:var(--cyan);text-decoration:none}
 
 /* ===== Buttons ===== */
 .aics-work .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:12px 22px;border-radius:11px;border:none;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .2s;min-height:46px;line-height:1.4}
-.aics-work .btn-primary{background:linear-gradient(135deg,var(--cyan),#00b8d4);color:#080c18;box-shadow:0 2px 14px rgba(0,229,255,.25)}
-.aics-work .btn-primary:hover{opacity:.92;transform:translateY(-1px);box-shadow:0 4px 18px rgba(0,229,255,.35)}
+.aics-work .btn-primary{background:linear-gradient(135deg,#9be7f3,#6bd3e6);color:#0a222b;box-shadow:0 2px 12px rgba(120,220,238,.18)}
+.aics-work .btn-primary:hover{opacity:.94;transform:translateY(-1px);box-shadow:0 4px 16px rgba(120,220,238,.26)}
 .aics-work .btn-primary:disabled{opacity:.45;cursor:not-allowed;transform:none;box-shadow:none}
-.aics-work .btn-secondary{background:var(--bg-card2);color:var(--cyan);border:1px solid var(--border-strong)}
-.aics-work .btn-secondary:hover{background:rgba(0,229,255,.1)}
+.aics-work .btn-secondary{background:rgba(140,220,238,.08);color:#9be7f3;border:1px solid rgba(155,231,243,.28)}
+.aics-work .btn-secondary:hover{background:rgba(140,220,238,.16)}
 .aics-work .btn-ghost{background:none;color:var(--text2);border:1px solid var(--border);padding:8px 14px;font-size:12.5px;min-height:40px;border-radius:10px}
 .aics-work .btn-ghost:hover{color:var(--cyan);border-color:var(--cyan)}
-.aics-work .btn-success{background:linear-gradient(135deg,#00e676,#00c853);color:#080c18}
-.aics-work .btn-purple{background:linear-gradient(135deg,var(--purple),#9c7cff);color:#fff}
-.aics-work .btn-orange{background:linear-gradient(135deg,#ff9f2b,#ff6f00);color:#080c18}
+.aics-work .btn-success{background:linear-gradient(135deg,#96e9b4,#71d795);color:#0a2a18}
+.aics-work .btn-purple{background:linear-gradient(135deg,#c9bcff,#ad98f5);color:#1c1440}
+.aics-work .btn-orange{background:linear-gradient(135deg,#ffd3a2,#ffb976);color:#3a2408}
 .aics-work .btn:focus-visible,.aics-advanced-toggle:focus-visible,.aics-step-btn:focus-visible{outline:2px solid rgba(0,229,255,.8);outline-offset:2px}
 
 /* ===== Story Generate / Video Generate (Primary actions in forms) ===== */
@@ -337,6 +337,10 @@ a{color:var(--cyan);text-decoration:none}
 .aics-work .smap-meta span{display:inline-flex;align-items:center;gap:5px}
 .aics-work .scene-image-area{margin-top:8px;text-align:center}
 .aics-work .scene-image-area img{max-width:100%;border-radius:8px;border:1px solid var(--border)}
+.aics-work .env-action-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:10px;align-items:stretch}
+.aics-work .env-action-grid .scene-image-area{margin-top:0;display:flex;align-items:center;justify-content:center}
+.aics-work .env-action-grid .env-img-btn{width:100%;font-size:12px;padding:8px 10px;min-height:44px}
+.aics-work .env-action-grid .env-copy-btn{width:100%;min-height:44px}
 
 /* ===== Misc ===== */
 .aics-work .empty-note{color:var(--text3);font-size:13px;padding:16px;background:var(--bg-input);border:1px dashed var(--border);border-radius:10px;text-align:center}
@@ -847,21 +851,6 @@ function resolveSceneCharacters(idx){
   }
   return names.join(', ');
 }
-function sceneDescription(s){
-  if(s.description)return s.description;
-  var parts=[];
-  if(s.location)parts.push('နေရာ — '+s.location);
-  if(s.emotion)parts.push('ခံစားချက် — '+s.emotion);
-  return parts.length?parts.join(' · '):'(မရှိပါ)';
-}
-function sceneVisualDesc(s){
-  if(s.visualDescription)return s.visualDescription;
-  var parts=[];
-  if(s.visualStyle)parts.push(s.visualStyle);
-  if(s.camera)parts.push(s.camera);
-  if(s.lighting)parts.push('Lighting — '+s.lighting);
-  return parts.length?parts.join(' · '):'(မရှိပါ)';
-}
 function renderFinalResult(){
   var c=document.getElementById('finalResult');if(!c)return;
   var html='';
@@ -898,11 +887,8 @@ function renderFinalResult(){
         var title=s.title?escapeHtml(s.title):'(Scene '+num+')';
         html+='<div class="smap-card">';
         html+='<div class="smap-head"><span class="smap-num">SCENE '+num+'</span><span class="smap-title">'+title+'</span></div>';
-        html+='<div class="smap-row"><div class="smap-label">&#128221; Scene Description</div><div class="smap-text">'+escapeHtml(sceneDescription(s))+'</div></div>';
-        html+='<div class="smap-row"><div class="smap-label">&#127912; Visual Description</div><div class="smap-text">'+escapeHtml(sceneVisualDesc(s))+'</div></div>';
         html+='<div class="smap-row"><div class="smap-label">&#127757; Environment</div><div class="smap-text">'+escapeHtml(s.environmentPrompt||'(မရှိပါ)')+'</div>';
-        html+='<div class="scene-image-area" id="envImg_'+idx+'">'+(imgCache['env_'+idx]?'<img src="'+imgCache['env_'+idx]+'">':'<button class="btn btn-orange" style="font-size:12px;padding:8px 14px;min-height:38px;" onclick="generateEnvImage('+idx+')">&#127912; Environment Image ဖန်တီးပါ</button>')+'</div>';
-        html+='<div class="btn-row"><button class="btn-ghost" onclick="copyEnvPrompt('+idx+')">&#128203; Copy Environment Prompt</button></div></div>';
+        html+='<div class="env-action-grid"><div class="scene-image-area" id="envImg_'+idx+'">'+(imgCache['env_'+idx]?'<img src="'+imgCache['env_'+idx]+'">':'<button class="btn btn-orange env-img-btn" onclick="generateEnvImage('+idx+')">&#127912; Environment Image ဖန်တီးပါ</button>')+'</div><button class="btn btn-ghost env-copy-btn" onclick="copyEnvPrompt('+idx+')">&#128203; Copy Environment Prompt</button></div></div>';
         html+='<div class="smap-row"><div class="smap-label">&#127916; Video Prompt</div><div class="smap-text">'+escapeHtml(s.videoPrompt||'(မရှိပါ)')+'</div><div class="btn-row"><button class="btn-ghost" onclick="copyVideoPrompt('+idx+')">&#128203; Copy Video Prompt</button></div></div>';
         html+='<div class="smap-meta"><span>&#128100; Characters: '+escapeHtml(resolveSceneCharacters(idx))+'</span><span>&#9201; '+escapeHtml(durText(s.duration))+'</span></div>';
         html+='</div>';
