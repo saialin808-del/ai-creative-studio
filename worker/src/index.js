@@ -1294,6 +1294,19 @@ export default {
       // User ဖန်တီးမှုအားလုံးကို Browser IndexedDB တွင်သာ သိမ်းသည်။
       // Server-side /api/creations endpoints များကို ဖယ်ရှားပြီးပြီ — D1 တွင် User Content မသိမ်းတော့ပါ။
 
+      // Favicon — Console 404 noise ကို ဖယ်ရှားရန် inline SVG icon ပြန်ပေးသည်
+      if (path === '/favicon.ico' && request.method === 'GET') {
+        const icon = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="7" fill="#0d1424"/><text x="16" y="23" font-size="19" text-anchor="middle">🎨</text></svg>';
+        return new Response(icon, {
+          status: 200,
+          headers: {
+            'Content-Type': 'image/svg+xml',
+            'Cache-Control': 'public, max-age=86400',
+            ...cors,
+          },
+        });
+      }
+
       return json({ error: 'not_found', path }, 404, cors);
     } catch (e) {
       return json({ error: 'internal', detail: friendlyError(e) }, 500, cors);
