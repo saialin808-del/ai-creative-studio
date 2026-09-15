@@ -149,10 +149,38 @@ const STEP4_HTML = `
 <select id="vidEnvSel"></select>
 </div>
 <div class="form-group">
+<label for="vidCharDir">&#127917; ဇာတ်ကောင် ဦးတည်ချက် (Character Direction)</label>
+<input type="text" id="vidCharDir" placeholder="ဥပမာ — ရိုးရာ ဗုဒ္ဓဝတ်စုံ၊ လေးစားတဲ့ အမူအရာ...">
+</div>
+<div class="form-group">
+<label for="vidCamDir">&#127909; Camera ဦးတည်ချက် (Camera Direction)</label>
+<input type="text" id="vidCamDir" placeholder="ဥပမာ — slow dolly-in, close-up shots...">
+</div>
+<div class="form-group">
+<label for="vidLighting">&#128161; အလင်းရောင် (Lighting)</label>
+<input type="text" id="vidLighting" placeholder="ဥပမာ — soft golden hour, early dawn...">
+</div>
+<div class="form-group">
+<label for="vidColorMood">&#127912; အရောင် / ခံစားချက် (Color / Mood)</label>
+<input type="text" id="vidColorMood" placeholder="ဥပမာ — warm nostalgic tones, bittersweet...">
+</div>
+<div class="form-group">
+<label for="vidEnvDetails">&#127757; ပတ်ဝန်းကျင် အသေးစိတ် (Environment Details)</label>
+<input type="text" id="vidEnvDetails" placeholder="ဥပမာ — ရန်ကုန် ရပ်ကွက်၊ မိုးသစ်ပြီး...">
+</div>
+<div class="form-group">
+<label for="vidTransition">&#127916; ကူးပြောင်း / အရှိန် (Transition / Pacing)</label>
+<input type="text" id="vidTransition" placeholder="ဥပမာ — soft cross-fade, slow pacing...">
+</div>
+<div class="form-group adv-full">
 <label for="vidRefImgInput">ရည်ညွှန်းရုပ်ပုံ (Reference Image)</label>
 <input type="file" id="vidRefImgInput" accept="image/*" onchange="onRefImageSelect(this)">
 <div class="ref-img-preview" id="vidRefImgPreview"></div>
 <p class="form-help">Character / Style အတွက် ရည်ညွှန်းရုပ်ပုံ ထည့်နိုင်သည် (PNG / JPG, max 4MB)</p>
+</div>
+<div class="form-group adv-full">
+<label for="vidAudio">&#128266; အသံ / အသံလမ်းညွှန် (Audio / Sound Direction)</label>
+<textarea id="vidAudio" placeholder="ဥပမာ — နောက်ခံ ဇာတ်လမ်းသံ၊ မိုးသံ၊ ညင်သာတဲ့ တေးသံ..." style="min-height:64px;"></textarea>
 </div>
 <div class="form-group adv-full">
 <label for="vidExtra">အပိုဆောင်း ညွှန်ကြားချက် (Additional Instructions)</label>
@@ -802,6 +830,13 @@ function generateVideoPlan(){
     characterContinuity:(continuity&&continuity.checked)?'true':'false',
     characterConsistency:(consistency&&consistency.checked)?'true':'false',
     referenceImage:currentRefImage||'',
+    characterDirection:document.getElementById('vidCharDir')?document.getElementById('vidCharDir').value.trim():'',
+    cameraDirection:document.getElementById('vidCamDir')?document.getElementById('vidCamDir').value.trim():'',
+    lighting:document.getElementById('vidLighting')?document.getElementById('vidLighting').value.trim():'',
+    environmentDetails:document.getElementById('vidEnvDetails')?document.getElementById('vidEnvDetails').value.trim():'',
+    colorMood:document.getElementById('vidColorMood')?document.getElementById('vidColorMood').value.trim():'',
+    transitionPacing:document.getElementById('vidTransition')?document.getElementById('vidTransition').value.trim():'',
+    audioDirection:document.getElementById('vidAudio')?document.getElementById('vidAudio').value.trim():'',
     additionalInstructions:document.getElementById('vidExtra')?document.getElementById('vidExtra').value.trim():''
   };
   apiCall('/api/studio/story/video',body)
@@ -1069,6 +1104,13 @@ function studioCollectDraft(){
       characterContinuity:document.getElementById('vidContinuity')?document.getElementById('vidContinuity').checked:true,
       characterConsistency:document.getElementById('vidConsistency')?document.getElementById('vidConsistency').checked:true,
       referenceImage:currentRefImage||'',
+      characterDirection:document.getElementById('vidCharDir')?document.getElementById('vidCharDir').value:'',
+      cameraDirection:document.getElementById('vidCamDir')?document.getElementById('vidCamDir').value:'',
+      lighting:document.getElementById('vidLighting')?document.getElementById('vidLighting').value:'',
+      environmentDetails:document.getElementById('vidEnvDetails')?document.getElementById('vidEnvDetails').value:'',
+      colorMood:document.getElementById('vidColorMood')?document.getElementById('vidColorMood').value:'',
+      transitionPacing:document.getElementById('vidTransition')?document.getElementById('vidTransition').value:'',
+      audioDirection:document.getElementById('vidAudio')?document.getElementById('vidAudio').value:'',
       additionalInstructions:document.getElementById('vidExtra')?document.getElementById('vidExtra').value:''
     },
     characters:currentCharacters,
@@ -1104,6 +1146,9 @@ function studioRestoreDraft(d){
     currentRefImage=vf.referenceImage||'';
     renderRefPreview();
     var ve=document.getElementById('vidExtra');if(ve)ve.value=vf.additionalInstructions||'';
+    setf('vidCharDir',vf.characterDirection);setf('vidCamDir',vf.cameraDirection);setf('vidLighting',vf.lighting);
+    setf('vidEnvDetails',vf.environmentDetails);setf('vidColorMood',vf.colorMood);setf('vidTransition',vf.transitionPacing);
+    setf('vidAudio',vf.audioDirection);
   }
   currentCharacters=d.characters||[];
   currentScenes=d.scenes||[];
