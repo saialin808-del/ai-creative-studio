@@ -1,12 +1,13 @@
 // AI Creative Studio — Content Studio Frontend
 // Architecture: Content → Output Hub → Branch (Video / Audio)
-// Main Stepper: ① အကြောင်းအရာ → ② Content ရလဒ်
-// Video Branch : ① Video ပြင်ဆင်ရန် → ② Video ရလဒ်
-// Audio Branch : ① Audio ပြင်ဆင်ရန် → ② Audio ရလဒ်
+// Main Stepper   : 01 အကြောင်းအရာ → 02 Content ရလဒ်   (အမြဲမြင်ရသည်)
+// Branch Stepper : 01 Video/Audio ပြင်ဆင်ရန် → 02 Video/Audio ရလဒ် (Branch ဝင်မှသာ ပေါ်သည်)
+// Content Result ကို Video / Audio Branch သို့ အလိုအလျောက် Pass လုပ်သည် (Copy/Paste မလို)
 // AI processing-status steps များကို Stepper ထဲတွင် မပြတော့ပါ — loading ကို Result section အတွင်း၌သာ ပြသည် (Unified)
 // Studio Isolation: ဤ File သည် Content Studio UI နှင့်သာ သက်ဆိုင်သည်။
 // Shared: renderSidebar / sidebarScript / renderStudioShell (frontend/shared.js) — မပြောင်းပါ
 // ⚠️ API Contract / Backend Routes မပြောင်းပါ — Frontend Flow သာ ပြောင်းပါသည်။
+// Video Branch State နှင့် Audio Branch State ကို သီးခြားထားသည် (Shared Mutable State မသုံး)
 // Stepper = လက်ရှိသွားနေသော လမ်းကြောင်း | MAP = System တစ်ခုလုံး၏ workflow (Internal)
 
 import { renderSidebar, sidebarScript, renderStudioShell, aicsResultLoadingHtml } from './shared.js';
@@ -14,20 +15,137 @@ import { renderSidebar, sidebarScript, renderStudioShell, aicsResultLoadingHtml 
 // ===== Shell Stepper (Main — 2 Steps; Shell အတွက် Lock/Req Metadata) =====
 const STEPS = [
   { label: '01 အကြောင်းအရာ' },
-  { label: '02 Content ရလဒ် / Output Hub', req: [1] },
+  { label: '02 Content ရလဒ်', req: [1] },
 ];
 
 // ============================================================
+// Voice Data — Section 15 (Audio Branch Essential)
+// အမျိုးသားအသံ (17) + အမျိုးသမီးအသံ (13) — spec အတိုင်း
+// ============================================================
+const MALE_VOICES = [
+  { name: 'Puck', desc: 'တက်ကြွဆန်းသစ်သော အသံ (Upbeat)' },
+  { name: 'Charon', desc: 'တည်ငြိမ်ပြီး လုပ်ငန်းသုံး အချက်အလက်ပေး အသံ (Informative / Calm)' },
+  { name: 'Fenrir', desc: 'စိတ်လှုပ်ရှားဖွယ် တက်ကြွသော အသံ (Excitable / Energetic)' },
+  { name: 'Orus', desc: 'တည်ငြိမ်ပြီး ခိုင်မာသော အသံ (Firm / Calm)' },
+  { name: 'Enceladus', desc: 'ငြင်သာပြီး သက်ပြင်းသံပါသော အသံ (Breathy / Soft)' },
+  { name: 'Iapetus', desc: 'သလင်းပြင်ကဲ့သို့ ကြည်လင်သော အသံ (Clear)' },
+  { name: 'Umbriel', desc: 'ပေါ့ပေါ့ပါးပါး ဖော်ရွေသော အသံ (Easy-going / Relaxed)' },
+  { name: 'Algieba', desc: 'ချောမွေ့ပြေပြစ်သော အသံ (Smooth)' },
+  { name: 'Algenib', desc: 'သြဇာပါပြီး အနည်းငယ် ရှာရှာအသံ (Gravelly / Textured)' },
+  { name: 'Rasalgethi', desc: 'စာဖတ်ပြသူ/သတင်းဖတ်သူ အသံပုံစံ (Informative / Narrator)' },
+  { name: 'Alnilam', desc: 'ယုံကြည်မှုရှိပြီး ခိုင်မာသော အသံ (Firm / Confident)' },
+  { name: 'Schedar', desc: 'ညီညာတပြ ပုံမှန်အသံ (Even / Steady)' },
+  { name: 'Pulcherrima', desc: 'တက်ကြွပြီး ရှေ့သို့ တက်လှမ်းလိုဟန် အသံ (Forward / Enterprising)' },
+  { name: 'Achird', desc: 'ဖော်ရွေပြီး ကြင်နာသော အသံ (Friendly / Kind)' },
+  { name: 'Zubenelgenubi', desc: 'ပေါ့ပေါ့ပါးပါး ပြောဆိုသည့် အသံ (Casual / Resonant)' },
+  { name: 'Sadachbia', desc: 'သက်ဝင်လှုပ်ရှားသော အသံ (Lively)' },
+  { name: 'Sadaltager', desc: 'ဗဟုသုတပြည့်ဝသော ပညာရှင်အသံ (Knowledgeable)' },
+];
+const FEMALE_VOICES = [
+  { name: 'Zephyr', desc: 'တောက်ပပြီး ကြည်လင်သော အသံ (Bright / Clear)' },
+  { name: 'Kore', desc: 'ခိုင်မာပြီး စိတ်ချရသော အသံ (Firm / Strong)' },
+  { name: 'Leda', desc: 'လူငယ်ဆန်ပြီး တက်ကြွသော အသံ (Youthful / Energetic)' },
+  { name: 'Aoede', desc: 'အေးဆေးတည်ငြိမ်ပြီး သဘာဝကျသော အသံ (Breezy / Natural)' },
+  { name: 'Callirrhoe', desc: 'ဖော်ရွေပြီး သဘောကောင်းသော အသံ (Easy-going / Friendly)' },
+  { name: 'Autonoe', desc: 'ရွှင်လန်းတောက်ပသော အသံ (Bright / Cheerful)' },
+  { name: 'Despina', desc: 'ငြင်သာပြီး ချောမွေ့သော အသံ (Smooth / Gentle)' },
+  { name: 'Erinome', desc: 'ပီပြင်ပြတ်သားသော အသံ (Clear / Articulate)' },
+  { name: 'Laomedeia', desc: 'အပြုသဘောဆောင်ပြီး တက်ကြွသော အသံ (Upbeat / Positive)' },
+  { name: 'Achernar', desc: 'ငြင်သာပြီး နွေးထွေးသော အသံ (Soft / Warm)' },
+  { name: 'Gacrux', desc: 'ရင့်ကျက်ပြီး တည်ငြိမ်သော အသံ (Mature / Steady)' },
+  { name: 'Vindemiatrix', desc: 'သိမ်မွေ့ပြီး အေးဆေးသော အသံ (Gentle / Delicate)' },
+  { name: 'Sulafat', desc: 'နွေးထွေးပြီး အနီးကပ်ခံစားရသော အသံ (Warm / Approachable)' },
+];
+function voiceOptionHtml(list, selected) {
+  return list.map(function (v) {
+    return '<option value="' + v.name + '"' + (v.name === selected ? ' selected' : '') + '>' + v.name + ' — ' + v.desc + '</option>';
+  }).join('');
+}
+
+// ============================================================
 // Step 01 — အကြောင်းအရာ (Input)
+// Essential (အမြဲမြင်ရ): Content Idea / Type / Audience / Tone / Language
+// Advanced Settings (Accordion): Key Points / Main Message / Length / Generation Level / Additional Instructions
 // ============================================================
 const STEP1_HTML = `
 <div class="aics-step" data-step="1">
 <div class="card">
-<div class="card-title">&#9997; Create Content</div>
-<p style="color:var(--text2);font-size:13px;margin-bottom:14px;">သင့် အကြံ / အကြောင်းအရာကို ထည့်ပြီး Generate နှိပ်ပါ — AI က Content + Speaking Style + Voice Style သုံးမျိုး ရေးပေးပါမယ်။</p>
-<div class="adv-grid">
+<div class="card-title">&#9997; အကြောင်းအရာ ရေးသားရန် (Create Content)</div>
+<p class="form-help" style="margin-bottom:14px;">သင့် Content အကြံကို ထည့်ပြီး "&#10024; Content ရေးသားရန်" နှိပ်ပါ — AI က သင့်အတွက် Content ကို ရေးပေးပါမည်။</p>
 <div class="form-group">
-<label>အမျိုးအစား (Type 1-5)</label>
+<label for="ideaInput">အကြောင်းအရာ (Content Idea) *</label>
+<textarea id="ideaInput" placeholder="ဥပမာ — ကော်ဖီဆိုင်တစ်ဆိုင်အတွက် social media content ရေးပါ..." style="min-height:130px;"></textarea>
+</div>
+<div class="studio-form-grid">
+<div class="form-group">
+<label for="contentTypeSel">အမျိုးအစား (Type)</label>
+<select id="contentTypeSel">
+<option value="Article">ဆောင်းပါး (Article)</option>
+<option value="Social Media" selected>လူမှုမီဒီယာ (Social Media)</option>
+<option value="Blog">ဘလော့ဂ် (Blog)</option>
+<option value="Advertisement">ကြော်ငြာ (Advertisement)</option>
+<option value="Educational">ပညာရေး (Educational)</option>
+<option value="Story / Narrative">ဇာတ်လမ်း / ပုံပြင် (Story / Narrative)</option>
+<option value="Other">အခြား (Other)</option>
+</select>
+</div>
+<div class="form-group">
+<label for="audSel">ပရိသတ် (Audience)</label>
+<select id="audSel">
+<option>လူတိုင်း</option>
+<option>လူငယ်</option>
+<option>လူကြီး</option>
+<option>ကလေး</option>
+<option>စီးပွားရေးလုပ်ငန်း (Business)</option>
+<option>ကျောင်းသား / ကျောင်းသူ (Students)</option>
+<option>Gamer</option>
+<option>မိဘများ (Parents)</option>
+</select>
+</div>
+<div class="form-group">
+<label for="toneSel">ရေးသားပုံစံ (Tone)</label>
+<select id="toneSel">
+<option>Professional</option>
+<option>Friendly</option>
+<option selected>Informative</option>
+<option>Persuasive</option>
+<option>Emotional</option>
+<option>Creative</option>
+<option>Casual</option>
+</select>
+</div>
+<div class="form-group">
+<label for="langSel">ဘာသာစကား (Language)</label>
+<select id="langSel">
+<option value="မြန်မာ" selected>မြန်မာ (Myanmar)</option>
+<option value="English">English</option>
+<option value="မြန်မာ + English">မြန်မာ + English</option>
+<option value="中文">中文 (Chinese)</option>
+<option value="ไทย">ไทย (Thai)</option>
+<option value="Auto">ဘာသာစကားမရွေး (Auto)</option>
+</select>
+</div>
+</div>
+<button type="button" class="aics-advanced-toggle" id="advToggle" onclick="studioToggleAdvanced('advToggle','advFields')" aria-expanded="false"><span>&#9881; Advanced Settings (အဆင့်မြင့် သတ်မှတ်ချက်များ)</span><span class="aics-adv-arrow">&#9660;</span></button>
+<div id="advFields" class="studio-form-grid aics-adv-panel">
+<div class="form-group">
+<label for="keyPoints">အဓိကအချက်များ (Key Points)</label>
+<textarea id="keyPoints" placeholder="ထည့်သွင်းလိုသော အဓိကအချက်များ — တစ်ကြောင်းစီ ရေးပါ..."></textarea>
+</div>
+<div class="form-group">
+<label for="mainMessage">အဓိကအကြောင်းအရာ (Main Message)</label>
+<textarea id="mainMessage" placeholder="Content ရဲ့ အဓိက message တစ်ကြောင်းတည်း..."></textarea>
+</div>
+<div class="form-group">
+<label for="lengthSel">Content အရှည် (Length)</label>
+<select id="lengthSel">
+<option value="Short">တို (Short)</option>
+<option value="Medium" selected>အလယ်အလတ် (Medium)</option>
+<option value="Long">ရှည် (Long)</option>
+</select>
+</div>
+<div class="form-group">
+<label for="typeSelect">Generation Level (Type 1-5)</label>
 <select id="typeSelect">
 <option value="1">Type 1 — Basic (FREE)</option>
 <option value="2">Type 2 — Standard (PRO)</option>
@@ -35,32 +153,30 @@ const STEP1_HTML = `
 <option value="4">Type 4 — Premium (PRO)</option>
 <option value="5">Type 5 — Ultimate (PRO)</option>
 </select>
+<p class="form-help">Type 1 = FREE ၊ Type 2-5 = PRO သာ သုံးနိုင်ပါသည်။</p>
 </div>
-<div class="form-group">
-<label>ဘယ်သူအတွက်</label>
-<select id="audSel"><option>လူတိုင်း</option><option>လူငယ်</option><option>လူကြီး</option><option>ကလေး</option></select>
+<div class="form-group" style="grid-column:1/-1;">
+<label for="additionalInstr">ထပ်မံညွှန်ကြားချက် (Additional Instructions)</label>
+<textarea id="additionalInstr" placeholder="AI ကို ထပ်မံ ညွှန်ကြားလိုသည်များ — ဥပမာ: စာကြောင်းတိုများဖြင့် ရေးပါ..."></textarea>
 </div>
 </div>
-<div class="form-group" style="margin-top:4px;">
-<label>သင့် အကြံ / အကြောင်းအရာ (User Idea) *</label>
-<textarea id="ideaInput" placeholder="ဥပမာ — ကော်ဖီဆိုင်တစ်ဆင်အတွက် social media content ရေးပါ..." style="min-height:130px;"></textarea>
-</div>
-<button class="btn btn-primary" id="genBtn" onclick="generateContent()" style="margin-top:4px;">&#10024; Generate Content</button>
-<div class="loading" id="genLoading"><div class="spinner"></div> AI က ရေးနေပါသည်...</div>
+<button class="btn btn-primary" id="genBtn" onclick="generateContent()" style="margin-top:4px;">&#10024; Content ရေးသားရန်</button>
+<div class="loading" id="genLoading"><div class="spinner"></div> AI ရေးသားနေသည်</div>
 <div class="error-box" id="genError"></div>
 </div>
 </div>`;
 
 // ============================================================
-// Step 02 — Content ရလဒ် (+ Output Hub) — loading ကို ဤနေရာတွင်သာ ပြသည်
+// Step 02 — Content ရလဒ် (+ Actions + Output Hub) — loading ကို ဤနေရာတွင်သာ ပြသည်
+// Primary Actions: Video / Audio | Secondary: ပြန်ပြင်ရန် / Copy / သိမ်းရန်
 // ============================================================
 const STEP3_HTML = `
 <div class="aics-step" data-step="2">
 <div class="card">
-<div class="card-title">&#128221; Content (ရလဒ်)</div>
-${aicsResultLoadingHtml('contentLoading','AI က သင့်အကြောင်းအရာကို ရေးသားနေသည်...')}
+<div class="card-title">&#128221; Content ရလဒ် (Result)</div>
+${aicsResultLoadingHtml('contentLoading','AI ရေးသားနေသည်')}
 <div id="contentResultBody">
-<div id="noResultHint" class="empty-note">Result မရှိသေးပါ — "Create" အဆင့်မှာ Generate နှိပ်ပါ</div>
+<div id="noResultHint" class="empty-note">Result မရှိသေးပါ — "01 အကြောင်းအရာ" အဆင့်မှာ Generate နှိပ်ပါ</div>
 <div class="result-grid" id="resultGrid" style="display:none;">
 <div class="result-card">
 <div class="result-card-header"><span class="result-card-label">ကွန်တင့် (Content)</span><button class="btn-ghost" onclick="copyText('contentOut')">&#128203; Copy</button></div>
@@ -74,22 +190,26 @@ ${aicsResultLoadingHtml('contentLoading','AI က သင့်အကြောင�
 <div class="result-card-header"><span class="result-card-label">အသံပုံစံ (Voice Style)</span><button class="btn-ghost" onclick="copyText('voiceOut')">&#128203; Copy</button></div>
 <div class="result-card-body" id="voiceOut"></div>
 </div>
-<div class="btn-row">
-<button class="btn btn-purple" onclick="saveContentResult()">&#128190; ဖန်တီးမှုသိမ်းပါ</button>
 </div>
 </div>
+<div class="btn-row" id="resultActionsRow" style="display:none;margin-top:14px;">
+<button class="btn btn-primary" onclick="openBranch('video')">&#127916; Video ဆက်ဖန်တီးရန်</button>
+<button class="btn btn-secondary" onclick="openBranch('audio')">&#128266; အသံ ဆက်ဖန်တီးရန်</button>
+<button class="btn-ghost" onclick="scrollToRevise()">&#9998; ပြန်ပြင်ရန်</button>
+<button class="btn-ghost" onclick="copyAllResult()">&#128203; Copy</button>
+<button class="btn btn-purple" onclick="saveContentResult()">&#128190; သိမ်းရန်</button>
 </div>
 <div class="error-box" id="genError2"></div>
 <div class="btn-row" id="genRetryRow" style="display:none;justify-content:center;">
 <button class="btn btn-secondary" onclick="csNav(1)">&#8592; ပြန်ပြင်ရန်</button>
-<button class="btn btn-primary" onclick="generateContent()">&#128260; ပြန်ကြိုးစားရန်</button>
+<button class="btn btn-primary" onclick="generateContent()">&#128260; ပြန်လည်ကြိုးစားရန်</button>
 </div>
 </div>
 </div>
 <div class="aics-step" data-step="2b">
 <div class="card">
 <div class="card-title">&#128172; Edit — Quick Actions</div>
-<p style="color:var(--text2);font-size:13px;margin-bottom:12px;">လိုချင်တဲ့ ပြင်ဆင်မှုကို တစ်ချက်နှိပ်ရုံဖြင့် AI က ပြင်ပေးပါမယ် — သို့မဟုတ် အောက်မှာ ကိုယ်တိုင် ညွှန်ကြားချက် ရေးနိုင်ပါတယ်။</p>
+<p class="form-help" style="margin-bottom:12px;">လိုချင်တဲ့ ပြင်ဆင်မှုကို တစ်ချက်နှိပ်ရုံဖြင့် AI က ပြင်ပေးပါမယ် — သို့မဟုတ် အောက်မှာ ကိုယ်တိုင် ညွှန်ကြားချက် ရေးနိုင်ပါတယ်။</p>
 <div class="type-chips" id="quickActions"></div>
 <div class="revise-section" style="border-top:none;padding-top:0;">
 <div class="revise-history" id="reviseHistory"></div>
@@ -109,15 +229,15 @@ ${aicsResultLoadingHtml('contentLoading','AI က သင့်အကြောင�
 <div class="aics-out-cards">
 <div class="aics-out-card">
 <div class="aics-out-icon">&#127916;</div>
-<div class="aics-out-title">Video ဆက်ဖန်တီးရန်</div>
-<div class="aics-out-desc">Content ကို Video အဖြစ် ဆက်လက်ဖန်တီးနိုင်သည်။</div>
-<button class="btn btn-primary aics-out-btn" onclick="openBranch('video')">&#127916; Video ဆက်ဖန်တီးရန်</button>
+<div class="aics-out-title">Video</div>
+<div class="aics-out-desc">Content &#8594; Video</div>
+<button class="btn btn-primary aics-out-btn" onclick="openBranch('video')">&#127916; ဆက်ဖန်တီးရန်</button>
 </div>
 <div class="aics-out-card">
 <div class="aics-out-icon">&#128266;</div>
-<div class="aics-out-title">အသံ ဆက်ဖန်တီးရန်</div>
-<div class="aics-out-desc">Content ကို Voice / Audio အဖြစ် ဆက်လက်ဖန်တီးနိုင်သည်။</div>
-<button class="btn btn-secondary aics-out-btn" onclick="openBranch('audio')">&#128266; အသံ ဆက်ဖန်တီးရန်</button>
+<div class="aics-out-title">Audio</div>
+<div class="aics-out-desc">Content &#8594; Audio</div>
+<button class="btn btn-secondary aics-out-btn" onclick="openBranch('audio')">&#128266; ဆက်ဖန်တီးရန်</button>
 </div>
 </div>
 </div>
@@ -125,22 +245,104 @@ ${aicsResultLoadingHtml('contentLoading','AI က သင့်အကြောင�
 
 // ============================================================
 // Video Branch — Step 12 (Video Input) / 14 (Result) — AI Processing Step မရှိ
+// Essential: Video Type / Duration / Aspect Ratio / Visual Style / Camera Style / Language
+// Advanced Accordion: Scene Settings / Visual Settings / Reference / Additional Instructions
 // ============================================================
 const STEP12_HTML = `
 <div class="aics-step" data-step="12">
 <div class="card">
-<div class="card-title">&#127916; Video</div>
-<p style="color:var(--text2);font-size:13px;margin-bottom:12px;">သင့် Content ကို Video အစီအစဉ် (Video Plan) အဖြစ် ဖန်တီးပါမည် — အောက်မှာ လိုအပ်သလို ပြင်နိုင်ပါသည်။</p>
+<div class="card-title">&#127916; Video ပြင်ဆင်ရန် (Video Setup)</div>
+<div class="aics-transfer-note">&#10003; Content Result ကို အလိုအလျောက် ထည့်ထားသည်</div>
+<div class="aics-transfer-box" id="videoContentPreview" style="display:none;"></div>
 <div class="form-group">
-<label>ဗီဒီယိုအတွက် Content (အလိုအလျောက် ယူထားပါသည်)</label>
-<textarea id="videoContentText" class="auto-expand" placeholder="Content ကို အလိုအလျောက် ထည့်ပေးပါမည်..." oninput="autoGrow(this)"></textarea>
+<label for="videoContentText">ဗီဒီယိုအတွက် Content (Content for Video)</label>
+<textarea id="videoContentText" class="auto-expand" placeholder="Content ကို အလိုအလျောက် ထည့်ပေးပါမည် — ကိုယ်တိုင်လည်း ပြင်နိုင်ပါသည်" oninput="autoGrow(this)"></textarea>
 </div>
-<details class="aics-advanced">
-<summary>&#9881; Advanced Settings</summary>
-<div style="margin-top:12px;">
-<div class="adv-grid">
+<div class="studio-form-grid">
 <div class="form-group">
-<label>အမျိုးအစား (Type 1-5)</label>
+<label for="videoTypeSel">Video Type (ဗီဒီယိုအမျိုးအစား)</label>
+<select id="videoTypeSel">
+<option>Explainer</option>
+<option>Tutorial</option>
+<option selected>Product Showcase</option>
+<option>Story / Narrative</option>
+<option>Advertisement</option>
+<option>Social Short</option>
+<option>Documentary</option>
+<option>Other</option>
+</select>
+</div>
+<div class="form-group">
+<label for="videoDuration">ကြာချိန် (Duration) — စက္ကန့်</label>
+<input id="videoDuration" type="number" min="5" max="600" step="5" placeholder="ဥပမာ — 60" />
+</div>
+<div class="form-group">
+<label for="videoAspect">အချိုးအစား (Aspect Ratio)</label>
+<select id="videoAspect">
+<option value="16:9" selected>16:9 (Landscape)</option>
+<option value="9:16">9:16 (Vertical)</option>
+<option value="1:1">1:1 (Square)</option>
+<option value="4:3">4:3</option>
+<option value="21:9">21:9 (Cinematic)</option>
+</select>
+</div>
+<div class="form-group">
+<label for="videoVisualStyle">ရုပ်ပုံပုံစံ (Visual Style)</label>
+<select id="videoVisualStyle">
+<option>Realistic</option>
+<option>Cinematic</option>
+<option>3D Animation</option>
+<option>2D Animation</option>
+<option>Anime</option>
+<option>Minimalist</option>
+<option>Vlog Style</option>
+<option>Documentary</option>
+</select>
+</div>
+<div class="form-group">
+<label for="videoCameraStyle">ကင်မရာပုံစံ (Camera Style)</label>
+<select id="videoCameraStyle">
+<option>Static</option>
+<option>Handheld</option>
+<option>Drone</option>
+<option>Tracking</option>
+<option>Zoom</option>
+<option>Pan</option>
+<option>Slow Motion</option>
+</select>
+</div>
+<div class="form-group">
+<label for="videoLanguage">ဘာသာစကား (Language)</label>
+<select id="videoLanguage">
+<option value="မြန်မာ" selected>မြန်မာ (Myanmar)</option>
+<option value="English">English</option>
+<option value="မြန်မာ + English">မြန်မာ + English</option>
+<option value="中文">中文 (Chinese)</option>
+<option value="ไทย">ไทย (Thai)</option>
+<option value="Auto">ဘာသာစကားမရွေး (Auto)</option>
+</select>
+</div>
+</div>
+<button type="button" class="aics-advanced-toggle" id="videoAdvToggle" onclick="studioToggleAdvanced('videoAdvToggle','videoAdvFields')" aria-expanded="false"><span>&#9881; Advanced Settings (Scene / Visual / Reference)</span><span class="aics-adv-arrow">&#9660;</span></button>
+<div id="videoAdvFields" class="studio-form-grid aics-adv-panel">
+<div class="form-group">
+<label for="videoSceneSettings">Scene Settings (ဖြစ်စဉ် သတ်မှတ်ချက်)</label>
+<textarea id="videoSceneSettings" placeholder="Scene အရေအတွက် / နေရာ / အချိန် စသည်တို့..."></textarea>
+</div>
+<div class="form-group">
+<label for="videoVisualSettings">Visual Settings (ရုပ်ပုံ သတ်မှတ်ချက်)</label>
+<textarea id="videoVisualSettings" placeholder="အရောင် / Lighting / Effect များ..."></textarea>
+</div>
+<div class="form-group">
+<label for="videoReference">ကိုးကားချက် (Reference)</label>
+<textarea id="videoReference" placeholder="Video ဖန်တီးရာတွင် ကိုးကားလိုသည်များ..."></textarea>
+</div>
+<div class="form-group">
+<label for="videoAdditionalInstructions">ထပ်မံညွှန်ကြားချက် (Additional Instructions)</label>
+<textarea id="videoAdditionalInstructions" placeholder="AI ကို ထပ်မံ ညွှန်ကြားလိုသည်များ..."></textarea>
+</div>
+<div class="form-group">
+<label for="videoTypeSelect">Generation Level (Type 1-5)</label>
 <select id="videoTypeSelect">
 <option value="1">Type 1 — Basic (FREE)</option>
 <option value="2">Type 2 — Standard (PRO)</option>
@@ -150,11 +352,9 @@ const STEP12_HTML = `
 </select>
 </div>
 </div>
-</details>
 <button class="btn btn-primary" id="videoGenBtn" onclick="generateVideo()">&#9654; Video Plan ဖန်တီးမယ်</button>
 <div class="loading" id="videoGenLoading"><div class="spinner"></div> ဗီဒီယိုအစီအစဉ် ရေးဆွဲနေပါသည်...</div>
 <div class="error-box" id="videoError"></div>
-</div>
 </div>
 </div>`;
 
@@ -176,7 +376,7 @@ ${aicsResultLoadingHtml('videoLoading','AI က သင့်အတွက် Video
 <div class="error-box" id="videoError2"></div>
 <div class="btn-row" id="videoRetryRow" style="display:none;justify-content:center;">
 <button class="btn btn-secondary" onclick="csNav(12)">&#8592; ပြန်ပြင်ရန်</button>
-<button class="btn btn-primary" onclick="generateVideo()">&#128260; ပြန်ကြိုးစားရန်</button>
+<button class="btn btn-primary" onclick="generateVideo()">&#128260; ပြန်လည်ကြိုးစားရန်</button>
 </div>
 <div class="btn-row">
 <button class="btn btn-secondary" onclick="backToContentResult()">&#8592; Content ရလဒ်သို့ ပြန်ရန်</button>
@@ -187,50 +387,90 @@ ${aicsResultLoadingHtml('videoLoading','AI က သင့်အတွက် Video
 
 // ============================================================
 // Audio Branch — Step 22 (Audio Input) / 24 (Result) — AI Processing Step မရှိ
+// Essential: အမျိုးသားအသံ / အမျိုးသမီးအသံ / Voice Style / Language / Speed / Pitch
+// Advanced Accordion: Voice Direction / Emotion / Pronunciation
 // ============================================================
 const STEP22_HTML = `
 <div class="aics-step" data-step="22">
 <div class="card">
-<div class="card-title">&#128266; Audio</div>
-<p class="voice-hint">Content Generate လုပ်ပြီးရင် အောက်က Box ထဲ အလိုအလျောက် ဖြည့်ပေးပါမည်။ Generate Voice နှိပ်ရင် အသံပြောင်းပေးပါမည်။</p>
-<div class="form-group" style="margin-top:12px;">
-<label>အသံပြောင်းရန် Text (Content)</label>
-<textarea id="ttsText" class="auto-expand" placeholder="Voice ပြောင်းလိုသော Text ကို အလိုအလျောက် ထည့်ပေးပါမည်..." oninput="autoGrow(this)"></textarea>
+<div class="card-title">&#128266; Audio ပြင်ဆင်ရန် (Audio Setup)</div>
+<div class="aics-transfer-note">&#10003; Content Result ကို အလိုအလျောက် ထည့်ထားသည်</div>
+<div class="aics-transfer-box" id="audioContentPreview" style="display:none;"></div>
+<div class="form-group">
+<label for="ttsText">အသံပြောင်းရန် Text (Text for Voice)</label>
+<textarea id="ttsText" class="auto-expand" placeholder="Voice ပြောင်းလိုသော Text ကို အလိုအလျောက် ထည့်ပေးပါမည် — ကိုယ်တိုင်လည်း ပြင်နိုင်ပါသည်" oninput="autoGrow(this)"></textarea>
+</div>
+<div class="studio-form-grid">
+<div class="form-group">
+<label for="maleVoiceSelect">အမျိုးသားအသံ (Male Voice)</label>
+<select id="maleVoiceSelect" onchange="setEffectiveVoice('male')">
+${voiceOptionHtml(MALE_VOICES, 'Puck')}
+</select>
 </div>
 <div class="form-group">
-<label>အသံရွေးချယ်ရန် (Voice — ၃၀ မျိုး)</label>
-<select id="voiceNameSelect">
-<option value="Zephyr">Zephyr — တောက်ပ (Bright)</option>
-<option value="Puck">Puck — တက်ကြွ (Upbeat)</option>
-<option value="Charon">Charon — ရှင်းလင်းတိကျ (Informative)</option>
-<option value="Kore" selected>Kore — ခိုင်မာတည်ငြိမ် (Firm)</option>
-<option value="Fenrir">Fenrir — စိတ်လှုပ်ရှားလွယ် (Excitable)</option>
-<option value="Leda">Leda — လူငယ်ဆန် (Youthful)</option>
-<option value="Orus">Orus — ခိုင်မာ (Firm)</option>
-<option value="Aoede">Aoede — ပေါ့ပါးလန်းဆန်း (Breezy)</option>
-<option value="Callirrhoe">Callirrhoe — အေးဆေး (Easy-going)</option>
-<option value="Autonoe">Autonoe — တောက်ပ (Bright)</option>
-<option value="Enceladus">Enceladus — အသက်ရှူသံပါ (Breathy)</option>
-<option value="Iapetus">Iapetus — ရှင်းလင်း (Clear)</option>
-<option value="Umbriel">Umbriel — အေးဆေး (Easy-going)</option>
-<option value="Algieba">Algieba — ချောမွေ့ (Smooth)</option>
-<option value="Despina">Despina — ချောမွေ့ (Smooth)</option>
-<option value="Erinome">Erinome — ရှင်းလင်း (Clear)</option>
-<option value="Algenib">Algenib — ရိုင်းရင့် (Gravelly)</option>
-<option value="Rasalgethi">Rasalgethi — ရှင်းလင်းတိကျ (Informative)</option>
-<option value="Laomedeia">Laomedeia — တက်ကြွ (Upbeat)</option>
-<option value="Achernar">Achernar — နူးညံ့ (Soft)</option>
-<option value="Alnilam">Alnilam — ခိုင်မာ (Firm)</option>
-<option value="Schedar">Schedar — တညီတညာ (Even)</option>
-<option value="Gacrux">Gacrux — ရင့်ကျက် (Mature)</option>
-<option value="Pulcherrima">Pulcherrima — တိုက်ရိုက် (Forward)</option>
-<option value="Achird">Achird — ဖော်ရွေ (Friendly)</option>
-<option value="Zubenelgenubi">Zubenelgenubi — ပေါ့ပေါ့ပါးပါး (Casual)</option>
-<option value="Vindemiatrix">Vindemiatrix — နူးညံ့သိမ်မွေ့ (Gentle)</option>
-<option value="Sadachbia">Sadachbia — တက်ကြွရှင်သန် (Lively)</option>
-<option value="Sadaltager">Sadaltager — ဗဟုသုတရှိ (Knowledgeable)</option>
-<option value="Sulafat">Sulafat — နွေးထွေး (Warm)</option>
+<label for="femaleVoiceSelect">အမျိုးသမီးအသံ (Female Voice)</label>
+<select id="femaleVoiceSelect" onchange="setEffectiveVoice('female')">
+${voiceOptionHtml(FEMALE_VOICES, 'Kore')}
 </select>
+</div>
+<div class="form-group">
+<label for="audioVoiceStyleSel">အသံပုံစံ (Voice Style)</label>
+<select id="audioVoiceStyleSel">
+<option>Natural</option>
+<option>Animated</option>
+<option>Calm</option>
+<option>Energetic</option>
+<option>Professional</option>
+<option>Friendly</option>
+<option>Serious</option>
+<option>Warm</option>
+</select>
+</div>
+<div class="form-group">
+<label for="audioLangSel">ဘာသာစကား (Language)</label>
+<select id="audioLangSel">
+<option value="မြန်မာ" selected>မြန်မာ (Myanmar)</option>
+<option value="English">English</option>
+<option value="မြန်မာ + English">မြန်မာ + English</option>
+<option value="中文">中文 (Chinese)</option>
+<option value="ไทย">Thai</option>
+</select>
+</div>
+<div class="form-group">
+<label for="audioSpeed">Speed (အမြန်နှုန်း)</label>
+<input id="audioSpeed" type="number" min="0.5" max="2" step="0.1" value="1" placeholder="1.0" />
+</div>
+<div class="form-group">
+<label for="audioPitch">Pitch (အသံအနိမ့်အမြင့်)</label>
+<input id="audioPitch" type="number" min="-10" max="10" step="1" value="0" placeholder="0" />
+</div>
+</div>
+<div class="form-group" style="margin-top:2px;">
+<label>လက်ရှိရွေးထားသော အသံ (Selected Voice)</label>
+<div class="selected-voice-chip" id="effectiveVoiceLabel">Kore</div>
+</div>
+<button type="button" class="aics-advanced-toggle" id="audioAdvToggle" onclick="studioToggleAdvanced('audioAdvToggle','audioAdvFields')" aria-expanded="false"><span>&#9881; Advanced Settings (Voice Direction / Emotion / Pronunciation)</span><span class="aics-adv-arrow">&#9660;</span></button>
+<div id="audioAdvFields" class="studio-form-grid aics-adv-panel">
+<div class="form-group">
+<label for="audioDirection">Voice Direction (အသံလမ်းညွှန်)</label>
+<textarea id="audioDirection" placeholder="ဥပမာ — နှေးနှေးနဲ့ ရှင်းရှင်းပြောပါ / စိတ်လှုပ်ရှားနေသလို ပြောပါ..."></textarea>
+</div>
+<div class="form-group">
+<label for="audioEmotion">Emotion (စိတ်ခံစားမှု)</label>
+<select id="audioEmotion">
+<option value="Neutral" selected>Neutral</option>
+<option value="Happy">Happy</option>
+<option value="Sad">Sad</option>
+<option value="Excited">Excited</option>
+<option value="Calm">Calm</option>
+<option value="Serious">Serious</option>
+<option value="Warm">Warm</option>
+</select>
+</div>
+<div class="form-group" style="grid-column:1/-1;">
+<label for="audioPronunciation">Pronunciation (အသံထွက်)</label>
+<textarea id="audioPronunciation" placeholder="အထူးထွက်ရမည့် စကားလုံးများ / အသံထွက်မှတ်စုများ..."></textarea>
+</div>
 </div>
 <button class="btn btn-secondary" id="voiceBtn" onclick="generateVoice()">&#127908; Generate Voice</button>
 <div class="loading" id="voiceGenLoading"><div class="spinner"></div> အသံဖန်တီးနေပါသည်...</div>
@@ -247,7 +487,7 @@ ${aicsResultLoadingHtml('audioLoading','AI က သင့်အတွက် အ�
 <div class="error-box" id="voiceError2"></div>
 <div class="btn-row" id="voiceRetryRow" style="display:none;justify-content:center;">
 <button class="btn btn-secondary" onclick="csNav(22)">&#8592; ပြန်ပြင်ရန်</button>
-<button class="btn btn-primary" onclick="generateVoice()">&#128260; ပြန်ကြိုးစားရန်</button>
+<button class="btn btn-primary" onclick="generateVoice()">&#128260; ပြန်လည်ကြိုးစားရန်</button>
 </div>
 <div class="btn-row">
 <button class="btn-ghost" onclick="downloadAudio()">&#128190; Save Audio</button>
@@ -310,23 +550,10 @@ a{color:var(--cyan);text-decoration:none}
 select{cursor:pointer}
 select option{background:var(--bg-card);color:var(--text)}
 .aics-work .form-group{margin-bottom:16px}
-.aics-work .adv-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
-.aics-work .adv-grid .form-group{margin-bottom:0;}
 /* Stepper loading — global .loading{display:none!important} နဲ့ မတိုက်အောင် cs-busy သုံး */
 .aics-step-btn.cs-busy{border-color:rgba(0,229,255,.6)!important;box-shadow:0 0 18px rgba(0,229,255,.4)!important;}
 .aics-step-btn.cs-busy .aics-step-label{color:#00e5ff!important;}
 .aics-step-btn.cs-busy .aics-step-loading{display:flex!important;}
-/* Loading checklist (Story Studio ပုံစံ) */
-.aics-work .loading-card{text-align:center;padding:40px 16px;}
-.aics-work .loading-card .spinner{width:38px;height:38px;border-width:4px;margin:0 auto 18px;}
-.aics-work .loading-title{font-size:18px;font-weight:700;color:var(--cyan);margin-bottom:20px;}
-.aics-work .status-list{max-width:440px;margin:0 auto;text-align:left;}
-.aics-work .st-line{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:10px;color:var(--text2);font-size:14px;opacity:.5;transition:all .2s;}
-.aics-work .st-line .st-marker{width:22px;text-align:center;flex-shrink:0;font-weight:700;color:var(--text3);}
-.aics-work .st-line.active{opacity:1;color:var(--text);background:rgba(0,229,255,.06);}
-.aics-work .st-line.active .st-marker{color:var(--cyan);}
-.aics-work .st-line.done{opacity:1;color:var(--text);}
-.aics-work .st-line.done .st-marker{color:var(--success);}
 /* Video result boxes (Story Studio ပုံစံ) */
 .aics-work .final-char-card{background:var(--bg-card2,#0e1626);border:1px solid var(--border,#26324a);border-radius:12px;padding:16px;margin-bottom:12px;}
 .aics-work .final-char-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
@@ -337,8 +564,6 @@ select option{background:var(--bg-card);color:var(--text)}
 .aics-work .final-scene-title{font-weight:700;color:var(--purple,#b7a8ff);font-size:14.5px;padding-bottom:10px;margin-bottom:12px;border-bottom:1px solid var(--border,#26324a);}
 .aics-work .final-scene-box{margin-bottom:12px;}
 .aics-work .final-box-label{font-size:11.5px;color:var(--cyan);font-weight:700;letter-spacing:.5px;margin-bottom:4px;text-transform:uppercase;}
-.aics-work .form-row{display:flex;gap:14px;flex-wrap:wrap}
-.aics-work .form-row .form-group{flex:1;min-width:200px}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:12px 24px;border-radius:8px;border:none;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .2s;min-height:44px;min-width:44px}
 .btn-primary{background:linear-gradient(135deg,var(--cyan),#00b8d4);color:#080c18}
 .btn-primary:hover{opacity:.9;transform:translateY(-1px)}
@@ -347,15 +572,11 @@ select option{background:var(--bg-card);color:var(--text)}
 .btn-secondary:hover{background:rgba(0,229,255,.1)}
 .btn-ghost{background:none;color:var(--text2);border:1px solid var(--border);padding:6px 12px;font-size:12px;min-height:32px}
 .btn-ghost:hover{color:var(--cyan);border-color:var(--cyan)}
-.btn-success{background:linear-gradient(135deg,#00e676,#00c853);color:#080c18}
 .btn-purple{background:linear-gradient(135deg,var(--purple),#9c7cff);color:#fff}
-.btn-orange{background:linear-gradient(135deg,#ff9f2b,#ff6f00);color:#080c18}
 .aics-work .btn-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
 .aics-work .type-chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
 .aics-work .type-chip{padding:10px 16px;border:1px solid var(--border);border-radius:20px;font-size:13px;cursor:pointer;color:var(--text2);transition:all .2s;user-select:none;min-height:40px;display:inline-flex;align-items:center;gap:6px}
 .aics-work .type-chip:hover{border-color:var(--cyan);color:var(--cyan)}
-.aics-work .aics-advanced{background:var(--bg-card2);border:1px solid var(--border);border-radius:10px;padding:10px 14px;margin-bottom:16px}
-.aics-work .aics-advanced summary{cursor:pointer;color:var(--cyan);font-size:13px;font-weight:600;user-select:none;min-height:32px;display:flex;align-items:center}
 .aics-work .result-grid{display:grid;grid-template-columns:1fr;gap:14px;margin-top:16px}
 .aics-work .result-card{background:var(--bg-card2);border:1px solid var(--border);border-radius:10px;padding:16px}
 .aics-work .result-card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
@@ -381,16 +602,6 @@ select option{background:var(--bg-card);color:var(--text)}
 .aics-work .divider{border:none;border-top:1px solid var(--border);margin:18px 0}
 .aics-work .result-label{font-size:12px;font-weight:600;color:var(--success);margin-bottom:6px}
 .aics-work .characters-list{display:flex;flex-wrap:wrap;gap:10px}
-.aics-work .character-chip{background:var(--bg-input);border:1px solid var(--border);border-radius:8px;padding:10px 14px;flex:1 1 200px;min-width:180px}
-.aics-work .character-name{font-weight:600;color:var(--cyan);font-size:13px;margin-bottom:4px}
-.aics-work .character-desc{font-size:12px;color:var(--text2);line-height:1.5}
-.aics-work .scene-item{background:var(--bg-card2);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:14px}
-.aics-work .scene-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
-.aics-work .scene-num{font-weight:700;color:var(--cyan);font-size:14px}
-.aics-work .scene-duration{font-size:11px;color:var(--text3);background:var(--bg-input);padding:2px 8px;border-radius:10px}
-.aics-work .scene-field{margin-bottom:10px}
-.aics-work .scene-field-label{font-size:11px;font-weight:600;color:var(--purple);text-transform:uppercase;margin-bottom:4px;display:flex;align-items:center;justify-content:space-between;gap:8px}
-.aics-work .scene-field-text{font-size:13px;color:var(--text);line-height:1.6;white-space:pre-wrap;word-break:break-word}
 .aics-work .scene-image-area{margin-top:12px;text-align:center}
 .aics-work .scene-image-area img{max-width:100%;border-radius:8px;border:1px solid var(--border)}
 .aics-work .scene-image-placeholder{background:var(--bg-input);border:1px dashed var(--border);border-radius:8px;padding:20px;color:var(--text3);font-size:12px}
@@ -403,7 +614,7 @@ select option{background:var(--bg-card);color:var(--text)}
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(100px);background:var(--bg-card2);border:1px solid var(--success);color:var(--success);padding:10px 20px;border-radius:8px;font-size:13px;z-index:1000;transition:transform .3s}
 .toast.show{transform:translateX(-50%) translateY(0)}
 .aics-work .empty-note{color:var(--text3);font-size:13px;padding:16px;background:var(--bg-input);border:1px dashed var(--border);border-radius:10px;text-align:center}
-/* ===== Content Studio — Output Hub ===== */
+/* ===== Content Studio — Output Hub (Compact — Section 21) ===== */
 .aics-work .aics-out-hub{margin-top:4px;padding:20px;background:linear-gradient(135deg,rgba(123,92,255,.07),rgba(0,229,255,.05));border:1px solid rgba(123,92,255,.3);border-radius:14px}
 .aics-work .aics-out-hub-title{font-size:16px;font-weight:700;color:var(--purple);margin-bottom:6px;letter-spacing:.3px}
 .aics-work .aics-out-hub-sub{font-size:12.5px;color:var(--text2);margin-bottom:16px}
@@ -413,14 +624,14 @@ select option{background:var(--bg-card);color:var(--text)}
 .aics-work .aics-out-title{font-size:15px;font-weight:700;color:var(--text)}
 .aics-work .aics-out-desc{font-size:12.5px;color:var(--text2);line-height:1.55;flex:1}
 .aics-work .aics-out-btn{margin-top:8px}
-/* ===== Content Studio — Branch / Processing UI ===== */
-.aics-work .aics-process-screen{text-align:center;padding:56px 20px}
-.aics-work .aics-process-spinner{width:46px;height:46px;border:3px solid rgba(0,229,255,.2);border-top-color:var(--cyan);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 20px}
-.aics-work .aics-process-title{font-size:17px;font-weight:700;color:var(--cyan);margin-bottom:10px}
-.aics-work .aics-process-sub{font-size:13px;color:var(--text2);margin-bottom:20px}
 .aics-work .aics-transfer-box{background:var(--bg-input);border:1px solid var(--border);border-radius:10px;padding:14px;font-size:14px;line-height:1.7;white-space:pre-wrap;word-break:break-word;max-height:340px;overflow-y:auto;margin-bottom:14px}
 .aics-act:disabled{opacity:.5;cursor:not-allowed}
-@media(max-width:767px){.aics-work .form-row{flex-direction:column}.aics-work .revise-input-row{flex-direction:column;align-items:stretch}.aics-work .aics-out-cards{grid-template-columns:1fr}.aics-work .aics-out-card{padding:16px}.aics-work .aics-process-screen{padding:40px 14px}}
+/* ===== Content Studio — Local Additions (Branch Stepper / Transfer Note / Selected Voice) ===== */
+.aics-branch-stepper{display:flex;align-items:center;gap:2px;margin-top:-4px;}
+.aics-branch-cap{display:inline-flex;align-items:center;font-size:10.5px;color:var(--purple,#b7a8ff);font-weight:700;letter-spacing:.5px;text-transform:uppercase;white-space:nowrap;padding-right:8px;flex-shrink:0;}
+.aics-work .aics-transfer-note{display:flex;align-items:center;gap:6px;background:rgba(0,230,118,.08);border:1px solid rgba(0,230,118,.3);color:var(--success,#00e676);font-size:12.5px;font-weight:600;padding:8px 12px;border-radius:10px;margin-bottom:10px;}
+.aics-work .selected-voice-chip{display:inline-block;background:var(--bg-input,#0a1020);border:1px solid var(--border-strong,rgba(0,229,255,.35));color:var(--cyan,#00e5ff);font-weight:700;padding:8px 14px;border-radius:10px;font-size:13px;}
+@media(max-width:767px){.aics-work .revise-input-row{flex-direction:column;align-items:stretch}.aics-work .aics-out-cards{grid-template-columns:1fr}.aics-work .aics-out-card{padding:16px}}
 </style>
 </head>
 <body>
@@ -437,6 +648,23 @@ ${renderStudioShell({
 })}
 ${sidebarScript()}
 <div class="toast" id="toast">&#9989; ကူးယူပြီးပါပြီ</div>
+<style>
+/* Compact Output Hub overrides (Content Studio only — higher specificity than shared) */
+.aics-work .aics-out-hub{padding:14px 16px;margin-top:2px;}
+.aics-work .aics-out-hub .aics-out-hub-title{font-size:14px;margin-bottom:2px;}
+.aics-work .aics-out-hub .aics-out-hub-sub{font-size:11.5px;margin-bottom:10px;}
+.aics-work .aics-out-hub .aics-out-cards{grid-template-columns:1fr 1fr;gap:10px;}
+.aics-work .aics-out-hub .aics-out-card{min-height:0;flex-direction:row;justify-content:flex-start;text-align:left;padding:12px 14px;gap:4px;}
+.aics-work .aics-out-hub .aics-out-icon{font-size:20px;}
+.aics-work .aics-out-hub .aics-out-title{font-size:13.5px;}
+.aics-work .aics-out-hub .aics-out-desc{font-size:11.5px;margin:0;flex:none;}
+.aics-work .aics-out-hub .aics-out-btn{margin-top:0;min-height:34px;padding:6px 12px;font-size:12px;}
+@media(max-width:767px){
+  .aics-work .aics-out-hub .aics-out-cards{grid-template-columns:1fr 1fr;gap:8px;}
+  .aics-work .aics-out-hub .aics-out-card{flex-direction:column;align-items:flex-start;padding:10px 12px;}
+  .aics-work .aics-out-hub .aics-out-desc{display:none;}
+}
+</style>
 <script>
 var token=localStorage.getItem('aics_token')||'';
 var userEmail=localStorage.getItem('aics_email')||'';
@@ -444,6 +672,7 @@ var userPlan=localStorage.getItem('aics_plan')||'FREE';
 
 // ===== Data Flow State (Section 14 — သီးခြား ခွဲထားသည်) =====
 // contentState သည် Source of Truth — video/audio State သည် ၎င်းကို မဖျက်ပါ
+// Video Branch နှင့် Audio Branch State များကို သီးခြားထား — Shared Mutable State မသုံး (Section 16)
 var contentState = { input: {}, result: null, editedResult: null, status: 'idle' };
 var videoState = { content: '', input: {}, result: null, status: 'idle' };
 var audioState = { content: '', input: {}, result: null, status: 'idle' };
@@ -453,15 +682,17 @@ var currentAudioBase64 = null;
 var currentDirection = 'my-to-cn';
 var imgCache = {};
 var csBusy = false;
+var effectiveVoiceName = 'Kore'; // Audio Branch — Male/Female select မှ နောက်ဆုံး ရွေးထားသော အသံ
 
 // ===== Branch Stepper State Machine (Content.js တွင်သာ — shared.js မပြောင်းပါ) =====
+// Main Stepper နှင့် Branch Stepper ကို State အရ သီးခြားထိန်းချုပ်သည် (Section 12)
 var CS_MODE = 'main'; // 'main' | 'video' | 'audio'
 var csCur = 1;
 var csDone = {};
 var CS_STEPS = {
   main:  [
     { n: 1,  label: '01 အကြောင်းအရာ' },
-    { n: 2,  label: '02 Content ရလဒ် / Output Hub', req: [1] }
+    { n: 2,  label: '02 Content ရလဒ်', req: [1] }
   ],
   video: [
     { n: 12, label: '01 Video ပြင်ဆင်ရန်', req: [2] },
@@ -505,12 +736,6 @@ function csMeta(n){
   return null;
 }
 function csModeSteps(){ return CS_STEPS[CS_MODE]||CS_STEPS.main; }
-// Main + Branch = Stepper တစ်ခုတည်း — Branch ဝင်လျှင် Main steps ကို မဖျောက်ဘဲ ဆက်ပေါင်းပြသည်
-function csVisibleSteps(){
-  var main=CS_STEPS.main||[];
-  if(CS_MODE==='main'||!CS_STEPS[CS_MODE])return main.slice();
-  return main.concat(CS_STEPS[CS_MODE]);
-}
 function csAllowed(n){
   if(csDone[n])return true;
   var m=csMeta(n); if(!m)return false;
@@ -525,7 +750,7 @@ function csNav(n){
   if(!csAllowed(n)){ showToastMsg('အရင်အဆင့်များ ပြီးမှ ဤအဆင့်သို့ ဆက်သွားနိုင်ပါသည်'); return; }
   csCur=n; csShow(n);
 }
-// Program အလိုအလျောက် သွားရန် (AI Processing / Branch) — Lock & Req ကို ကျော်သည်
+// Program အလိုအလျောက် သွားရန် (Branch) — Lock & Req ကို ကျော်သည်
 function csGoForce(n){ csCur=n; csShow(n); }
 function csMarkDone(n){ csDone[n]=true; csUpdateStepper(); }
 // Error ဖြစ်သော Processing Step ကို Done အဖြစ် မသတ်မှတ်စေရန် — Done အခြေအနေကို ပြန်ဖျက်သည်
@@ -543,6 +768,58 @@ function csShow(n){
   csUpdateStepper();
   if(window.studioOnStep){ try{ window.studioOnStep(n); }catch(e){} }
 }
+
+// ===== Main Stepper + Branch Stepper (Section 12 — State အလိုက် သီးခြား ထိန်းချုပ်) =====
+// Main Stepper ကို မဖျောက် — Branch ဝင်လျှင် Branch Stepper ကို ထပ်မံ ပြသည်
+function csEnsureBranchStepper(){
+  var main=document.getElementById('aicsStepper');
+  if(!main)return null;
+  var bs=document.getElementById('aicsBranchStepper');
+  if(!bs){
+    bs=document.createElement('div');
+    bs.className='aics-stepper aics-branch-stepper';
+    bs.id='aicsBranchStepper';
+    main.insertAdjacentElement('afterend',bs);
+  }
+  return bs;
+}
+function csStepHtml(s,index){
+  var label=((index+1<10)?'0':'')+(index+1)+' '+String(s.label).replace(/^\\d+\\s*/,'');
+  return '<button class="aics-step-btn" data-step="'+s.n+'" onclick="csNav('+s.n+')">'+
+    '<span class="aics-step-txt"><span class="aics-step-label">'+label+'</span></span>'+
+    '<span class="aics-step-loading"><span class="aics-step-spinner"></span>'+(s.loading||'ဖန်တီးနေသည်...')+'</span></button>';
+}
+function csRenderMainStepper(){
+  var c=document.getElementById('aicsStepper'); if(!c)return;
+  var steps=CS_STEPS.main;
+  var html='<div class="aics-stepper-inner">';
+  for(var i=0;i<steps.length;i++){
+    html+=csStepHtml(steps[i],i);
+    if(i<steps.length-1)html+='<span class="aics-step-link"></span>';
+  }
+  html+='</div>';
+  c.innerHTML=html;
+}
+function csRenderBranchStepper(){
+  var bs=csEnsureBranchStepper();
+  if(!bs)return;
+  if(CS_MODE==='main'||!CS_STEPS[CS_MODE]){
+    bs.style.display='none';
+    bs.innerHTML='';
+    return;
+  }
+  bs.style.display='';
+  var steps=CS_STEPS[CS_MODE];
+  var cap=(CS_MODE==='video')?'&#127916; Video Branch':'&#128266; Audio Branch';
+  var html='<span class="aics-branch-cap">'+cap+'</span><div class="aics-stepper-inner">';
+  for(var i=0;i<steps.length;i++){
+    html+=csStepHtml(steps[i],i);
+    if(i<steps.length-1)html+='<span class="aics-step-link"></span>';
+  }
+  html+='</div>';
+  bs.innerHTML=html;
+}
+function csRenderStepper(){ csRenderMainStepper(); csRenderBranchStepper(); csUpdateStepper(); }
 function csUpdateStepper(){
   var btns=document.querySelectorAll('.aics-step-btn');
   for(var i=0;i<btns.length;i++){
@@ -555,25 +832,9 @@ function csUpdateStepper(){
   }
   if(window.studioScrollActiveStep)window.studioScrollActiveStep(true);
 }
-function csRenderStepper(){
-  var c=document.getElementById('aicsStepper'); if(!c)return;
-  var steps=csVisibleSteps();
-  var html='<div class="aics-stepper-inner">';
-  for(var i=0;i<steps.length;i++){
-    var s=steps[i];
-    var label=((i+1<10)?'0':'')+(i+1)+' '+String(s.label).replace(/^\\d+\\s*/,'');
-    html+='<button class="aics-step-btn" data-step="'+s.n+'" onclick="csNav('+s.n+')">'+
-      '<span class="aics-step-txt"><span class="aics-step-label">'+label+'</span></span>'+
-      '<span class="aics-step-loading"><span class="aics-step-spinner"></span>'+(s.loading||'ဖန်တီးနေသည်...')+'</span></button>';
-    if(i<steps.length-1)html+='<span class="aics-step-link"></span>';
-  }
-  html+='</div>';
-  c.innerHTML=html;
-  csUpdateStepper();
-}
 function csSetMode(mode){ CS_MODE=mode; csRenderStepper(); }
 
-// ===== Output Hub — Branch ဖွင့်ခြင်း (Auto-Transfer) =====
+// ===== Output Hub — Branch ဖွင့်ခြင်း (Auto-Transfer — Section 11 / 14) =====
 function getEditedContent(){
   var ta=document.getElementById('contentOut');
   var v=(ta&&ta.value!==undefined&&ta.value!==null)?ta.value:'';
@@ -587,7 +848,7 @@ function openBranch(kind){
   if(kind==='video'){
     videoState.content=content;
     var vt=document.getElementById('videoContentText'); if(vt){vt.value=content;autoGrow(vt);}
-    var vp=document.getElementById('videoContentPreview'); if(vp)vp.textContent=content;
+    var vp=document.getElementById('videoContentPreview'); if(vp){vp.textContent=content;vp.style.display='';}
     csSetMode('video');
     csGoForce(12);
   }else if(kind==='audio'){
@@ -595,7 +856,7 @@ function openBranch(kind){
     // Voice Studio ကို ပြောင်းမသွားတော့ဘဲ ဤ Studio ထဲမှာပဲ ဆက်လုပ်သည်။
     // Copy/paste မလိုအပ် — နောက်ဆုံး edit လုပ်ထားသော Content ကို Auto-fill လုပ်သည်။
     audioState.content=content;
-    var ap=document.getElementById('audioContentPreview'); if(ap)ap.textContent=content;
+    var ap=document.getElementById('audioContentPreview'); if(ap){ap.textContent=content;ap.style.display='';}
     var tt=document.getElementById('ttsText'); if(tt){tt.value=content;autoGrow(tt);}
     csSetMode('audio');
     csGoForce(22);
@@ -604,6 +865,10 @@ function openBranch(kind){
 function backToContentResult(){
   csSetMode('main');
   if(csDone[2]){ csGoForce(2); } else { csGoForce(1); }
+}
+function scrollToRevise(){
+  var el=document.getElementById('feedbackInput');
+  if(el){ try{ el.scrollIntoView({behavior:'smooth',block:'center'}); }catch(e){ el.focus(); } }
 }
 
 // ===== Helpers — Loading / Error / Toast =====
@@ -621,35 +886,6 @@ function setLoading(id,show){
     window.studioSetLoading({on:show,step:csCur,text:meta.loading||''});
   }
 }
-// ===== Loading checklist animation (Story Studio ပုံစံ) =====
-var statusTimers={};
-function startStatusAnim(id){
-  stopStatusAnim(id,false);
-  var box=document.getElementById(id);if(!box)return;
-  var lines=box.querySelectorAll('.st-line');
-  var cur=0,started=false;
-  for(var k=0;k<lines.length;k++){lines[k].className='st-line';var m=lines[k].querySelector('.st-marker');if(m)m.textContent='○';}
-  statusTimers[id]=setInterval(function(){
-    if(!started){lines[0].className='st-line active';var m0=lines[0].querySelector('.st-marker');if(m0)m0.textContent='●';started=true;return;}
-    if(cur<lines.length){
-      lines[cur].className='st-line done';
-      var md=lines[cur].querySelector('.st-marker');if(md)md.textContent='✓';
-      cur++;
-      if(cur<lines.length){lines[cur].className='st-line active';var ma=lines[cur].querySelector('.st-marker');if(ma)ma.textContent='●';}
-    }
-  },1100);
-}
-function stopStatusAnim(id,allDone){
-  if(statusTimers[id]){clearInterval(statusTimers[id]);delete statusTimers[id];}
-  var box=document.getElementById(id);if(!box)return;
-  var lines=box.querySelectorAll('.st-line');
-  if(allDone){
-    for(var k=0;k<lines.length;k++){
-      lines[k].className='st-line done';
-      var m=lines[k].querySelector('.st-marker');if(m)m.textContent='✓';
-    }
-  }
-}
 function showError(id,msg){ var el=document.getElementById(id); if(!el)return; el.textContent=msg; el.classList.add('show'); }
 function hideError(id){ var el=document.getElementById(id); if(el)el.classList.remove('show'); }
 function copyText(id){
@@ -661,7 +897,33 @@ function copyText(id){
 function showToastMsg(msg){ var t=document.getElementById('toast'); if(!t)return; t.textContent=msg||'&#9989; ကူးယူပြီးပါပြီ'; t.classList.add('show'); setTimeout(function(){t.classList.remove('show');},2000); }
 function escapeHtml(s){ var d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
 function autoGrow(el){ if(!el)return; el.style.height='auto'; el.style.height=(el.scrollHeight+4)+'px'; }
-function onContentEdit(){ if(!lastResult)return; lastResult.content=document.getElementById('contentOut').value; contentState.editedResult=lastResult.content; }
+function onContentEdit(){ if(typingNow)return; if(!lastResult)return; lastResult.content=document.getElementById('contentOut').value; contentState.editedResult=lastResult.content; }
+
+// ===== Typewriter Effect + Auto Expand (Section 9) =====
+var typeTimer=null;
+var typingNow=false;
+function stopTypewriter(){ if(typeTimer){clearInterval(typeTimer);typeTimer=null;} typingNow=false; }
+function typewriterFill(ta,text,onDone){
+  if(!ta)return;
+  stopTypewriter();
+  var full=text||'';
+  if(!full){ta.value='';autoGrow(ta);if(onDone)onDone();return;}
+  ta.readOnly=true;
+  ta.value='';
+  autoGrow(ta);
+  typingNow=true;
+  var i=0;
+  typeTimer=setInterval(function(){
+    i+=2;
+    if(i>full.length)i=full.length;
+    ta.value=full.slice(0,i);
+    autoGrow(ta);
+    if(i>=full.length){
+      clearInterval(typeTimer);typeTimer=null;typingNow=false;ta.readOnly=false;
+      if(onDone)onDone();
+    }
+  },14);
+}
 
 function buildQuickActions(){
   var c=document.getElementById('quickActions');if(!c)return;
@@ -695,6 +957,21 @@ function apiCall(url,body){
   return fetch(url,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify(body)}).then(function(res){return res.json().then(function(data){if(!res.ok)throw new Error(data.detail||data.error||'Request failed');return data;});});
 }
 
+// ===== Step 01 မှ အပိုအချက်များကို Idea ထဲသို့ ပေါင်းသည် (API Contract မပြောင်း) =====
+function collectIdeaNotes(){
+  var parts=[];
+  function val(id){var e=document.getElementById(id);return e?(e.value||'').trim():'';}
+  var ct=val('contentTypeSel'); if(ct)parts.push('Content Type: '+ct);
+  var aud=val('audSel'); if(aud)parts.push('Audience (ပရိသတ်): '+aud);
+  var tone=val('toneSel'); if(tone)parts.push('Tone (ရေးသားပုံစံ): '+tone);
+  var lang=val('langSel'); if(lang&&lang!=='Auto')parts.push('Language (ဘာသာစကား): '+lang);
+  var kp=val('keyPoints'); if(kp)parts.push('Key Points (အဓိကအချက်များ):\\n'+kp);
+  var mm=val('mainMessage'); if(mm)parts.push('Main Message (အဓိကအကြောင်းအရာ): '+mm);
+  var len=val('lengthSel'); if(len)parts.push('Length (အရှည်): '+len);
+  var ai=val('additionalInstr'); if(ai)parts.push('Additional Instructions (ထပ်မံညွှန်ကြားချက်): '+ai);
+  return parts;
+}
+
 // ===== Content Generate (Main — Step 01 → 02 Result — Unified Result Loading) =====
 function generateContent(){
   if(csBusy)return;
@@ -702,10 +979,11 @@ function generateContent(){
   var type=document.getElementById('typeSelect').value;
   var byok=(document.getElementById('byokInput')||{value:''}).value.trim();
   var audEl=document.getElementById('audSel');
-  if(!idea){showError('genError','အကြောင်းအရာ (User Idea) ထည့်ပါ။');return;}
-  if(type!=='1'&&(window.userPlan||localStorage.getItem('aics_plan')||'FREE')!=='PRO'){showError('genError','ဒီ Type ကို Pro User သာ အသုံးပြုနိုင်ပါသည်။ — Settings → Plan မှာ Upgrade လုပ်ပါ။');return;}
-  if(audEl&&audEl.value)idea+='\\n\\nဘယ်သူအတွက်: '+audEl.value;
+  if(!idea){showError('genError','အကြောင်းအရာ (Content Idea) ထည့်ပါ။');return;}
+  if(type!=='1'&&(window.userPlan||localStorage.getItem('aics_plan')||'FREE')!=='PRO'){showError('genError','ဒီ Generation Level ကို Pro User သာ အသုံးပြုနိုင်ပါသည်။ — Settings → Plan မှာ Upgrade လုပ်ပါ။');return;}
   window.aichAud=audEl?audEl.value:'လူတိုင်း';
+  var notes=collectIdeaNotes();
+  if(notes.length)idea+='\\n\\n'+notes.join('\\n');
   hideError('genError'); hideError('genError2');
   document.getElementById('genRetryRow').style.display='none';
   contentState.input={idea:idea,type:type};
@@ -713,8 +991,8 @@ function generateContent(){
   csBusy=true;
   setGenButtonsDisabled(true);
   csMarkDone(1);
-  // Unified: Result section အတွင်း loading ပြသည် (processing step မရှိ)
-  if(window.aicsResultLoading)window.aicsResultLoading.show('contentLoading','AI က သင့်အကြောင်းအရာကို ရေးသားနေသည်...',idea);
+  // Unified: Result section အတွင်း loading ပြသည် (processing step မရှိ) — Exact Text: AI ရေးသားနေသည်
+  if(window.aicsResultLoading)window.aicsResultLoading.show('contentLoading','AI ရေးသားနေသည်',idea);
   var crb=document.getElementById('contentResultBody');if(crb)crb.style.display='none';
   csGoForce(2);
   setLoading('genLoading',true);
@@ -727,7 +1005,7 @@ function generateContent(){
       contentState.status='done';
       if(window.aicsResultLoading)window.aicsResultLoading.hide('contentLoading');
       var crb2=document.getElementById('contentResultBody');if(crb2)crb2.style.display='';
-      renderContentResult();
+      renderContentResult(false); // Typewriter Effect
       document.getElementById('ttsText').value=data.content||'';
       csMarkDone(1);
       csMarkDone(2);
@@ -738,28 +1016,35 @@ function generateContent(){
       console.error(err);
       contentState.status='error';
       if(window.aicsResultLoading)window.aicsResultLoading.hide('contentLoading');
-      showError('genError2','Content ဖန်တီးရာတွင် အခက်အခဲရှိနေပါသည်။ ခဏစောင့်ပြီး ပြန်ကြိုးစားပါ။');
+      // Error State (Section 8) — Form Data မပျောက်၊ Retry ရှိသည်
+      showError('genError2','⚠️ Content ဖန်တီးရာတွင် ပြဿနာရှိပါသည်။');
       document.getElementById('genRetryRow').style.display='flex';
-      // Error → Result section အတွင်းတွင် error + retry ပြသည် (existing error UI ကို ထိန်းထားသည်)
       csUnmarkDone(2);
       showToastMsg('⚠️ Content ဖန်တီး၍ မရပါ — ခဏစောင့်ပြီး ပြန်ကြိုးစားပါ');
     })
     .finally(function(){setLoading('genLoading',false);setGenButtonsDisabled(false);csBusy=false;});
 }
 
-function renderContentResult(){
+function renderContentResult(instant){
   if(!lastResult){
     if(document.getElementById('resultGrid'))document.getElementById('resultGrid').style.display='none';
     if(document.getElementById('noResultHint'))document.getElementById('noResultHint').style.display='block';
     return;
   }
   var ta=document.getElementById('contentOut');
-  if(ta)ta.value=lastResult.content||'(empty)';
-  if(document.getElementById('speakingOut'))document.getElementById('speakingOut').textContent=lastResult.speakingStyle||'(empty)';
-  if(document.getElementById('voiceOut'))document.getElementById('voiceOut').textContent=lastResult.voiceStyle||'(empty)';
   if(document.getElementById('resultGrid'))document.getElementById('resultGrid').style.display='block';
   if(document.getElementById('noResultHint'))document.getElementById('noResultHint').style.display='none';
-  if(ta)autoGrow(ta);
+  var showMeta=function(){
+    if(document.getElementById('speakingOut'))document.getElementById('speakingOut').textContent=lastResult.speakingStyle||'(empty)';
+    if(document.getElementById('voiceOut'))document.getElementById('voiceOut').textContent=lastResult.voiceStyle||'(empty)';
+    if(document.getElementById('resultActionsRow'))document.getElementById('resultActionsRow').style.display='flex';
+  };
+  if(instant){
+    if(ta){ta.value=lastResult.content||'(empty)';autoGrow(ta);}
+    showMeta();
+  }else{
+    typewriterFill(ta,lastResult.content||'(empty)',showMeta); // Typewriter + Auto Expand
+  }
 }
 
 // ===== Revise (AI ပြန်ပြင်ရန် — Existing ကို ဆက်သုံးသည်) =====
@@ -788,7 +1073,7 @@ function reviseContent(){
     .then(function(data){
       lastResult=data;
       contentState.result=data;
-      renderContentResult();
+      renderContentResult(false); // Typewriter Effect
       document.getElementById('feedbackInput').value='';
       document.getElementById('ttsText').value=data.content||'';
       addHistory('ai','ပြင်ဆင်ပြီးပါပြီ — အထက်ပါရလဒ်ကို ကြည့်ပါ။');
@@ -808,6 +1093,23 @@ function addHistory(role,text){
   document.getElementById('reviseHistory').scrollTop=document.getElementById('reviseHistory').scrollHeight;
 }
 
+// ===== Video Branch — Settings များကို Idea ထဲသို့ ပေါင်းသည် =====
+function collectVideoExtras(){
+  var parts=[];
+  function val(id){var e=document.getElementById(id);return e?(e.value||'').trim():'';}
+  var vType=val('videoTypeSel'); if(vType)parts.push('Video Type: '+vType);
+  var dur=val('videoDuration'); if(dur)parts.push('Duration: '+dur+' seconds');
+  var ar=val('videoAspect'); if(ar)parts.push('Aspect Ratio: '+ar);
+  var vs=val('videoVisualStyle'); if(vs)parts.push('Visual Style: '+vs);
+  var cs=val('videoCameraStyle'); if(cs)parts.push('Camera Style: '+cs);
+  var lang=val('videoLanguage'); if(lang&&lang!=='Auto')parts.push('Language: '+lang);
+  var ss=val('videoSceneSettings'); if(ss)parts.push('Scene Settings:\\n'+ss);
+  var vv=val('videoVisualSettings'); if(vv)parts.push('Visual Settings:\\n'+vv);
+  var ref=val('videoReference'); if(ref)parts.push('Reference:\\n'+ref);
+  var ai=val('videoAdditionalInstructions'); if(ai)parts.push('Additional Instructions:\\n'+ai);
+  return parts;
+}
+
 // ===== Video Branch — Generate (Step 12 → 14 Result — Unified Result Loading) =====
 function generateVideo(){
   if(csBusy)return;
@@ -818,7 +1120,10 @@ function generateVideo(){
   hideError('videoError'); hideError('videoError2');
   document.getElementById('videoRetryRow').style.display='none';
   videoState.content=content;
-  videoState.input={type:type};
+  var extras=collectVideoExtras();
+  var idea=content;
+  if(extras.length)idea+='\\n\\n'+extras.join('\\n');
+  videoState.input={type:type,settings:extras};
   videoState.status='processing';
   csBusy=true;
   setGenButtonsDisabled(true);
@@ -828,7 +1133,7 @@ function generateVideo(){
   var vrc=document.getElementById('videoResult');if(vrc)vrc.style.display='none';
   csGoForce(14);
   setLoading('videoGenLoading',true);
-  var body={idea:content,type:type};
+  var body={idea:idea,type:type};
   if(byok)body.apiKey=byok;
   apiCall('/api/studio/content/video',body)
     .then(function(data){
@@ -847,9 +1152,8 @@ function generateVideo(){
       console.error(err);
       videoState.status='error';
       if(window.aicsResultLoading)window.aicsResultLoading.hide('videoLoading');
-      showError('videoError2','Video ဖန်တီးရာတွင် အခက်အခဲရှိနေပါသည်။ ပြန်ကြိုးစားပါ။');
+      showError('videoError2','Video ဖန်တီးရာတွင် အခက်အခဲရှိနေပါသည်။ ပြန်လည်ကြိုးစားပါ။');
       document.getElementById('videoRetryRow').style.display='flex';
-      // Error → Result section အတွင်းတွင် error + retry ပြသည် (existing error UI ကို ထိန်းထားသည်)
       csUnmarkDone(14);
       showToastMsg('⚠️ Video ဖန်တီး၍ မရပါ — ခဏစောင့်ပြီး ပြန်ကြိုးစားပါ');
     })
@@ -963,17 +1267,38 @@ function generateSceneImage(idx){
     });
 }
 
+// ===== Audio Branch — Voice Selection (Male / Female — Section 15) =====
+function setEffectiveVoice(kind){
+  var sel=document.getElementById(kind==='male'?'maleVoiceSelect':'femaleVoiceSelect');
+  if(sel&&sel.value)effectiveVoiceName=sel.value;
+  var ind=document.getElementById('effectiveVoiceLabel');
+  if(ind)ind.textContent=effectiveVoiceName;
+}
+function collectAudioExtras(){
+  var parts=[];
+  function val(id){var e=document.getElementById(id);return e?(e.value||'').trim():'';}
+  var vs=val('audioVoiceStyleSel'); if(vs)parts.push('Voice Style: '+vs);
+  var lang=val('audioLangSel'); if(lang)parts.push('Language: '+lang);
+  var sp=val('audioSpeed'); if(sp)parts.push('Speed: '+sp);
+  var pt=val('audioPitch'); if(pt)parts.push('Pitch: '+pt);
+  var dir=val('audioDirection'); if(dir)parts.push('Voice Direction:\\n'+dir);
+  var em=val('audioEmotion'); if(em&&em!=='Neutral')parts.push('Emotion: '+em);
+  var pr=val('audioPronunciation'); if(pr)parts.push('Pronunciation:\\n'+pr);
+  return parts;
+}
+
 // ===== Audio Branch — Generate Voice (Step 22 → 24 Result — Unified Result Loading) =====
 function generateVoice(){
   if(csBusy)return;
   var text=(document.getElementById('ttsText').value||'').trim();
   if(!text){showError('voiceError','Text ထည့်ပါ (သို့မဟုတ် Content ကို အရင်ဖန်တီးပါ)။');return;}
-  var voiceName=document.getElementById('voiceNameSelect').value;
+  var voiceName=effectiveVoiceName||'Kore';
+  var extras=collectAudioExtras();
   var byok=(document.getElementById('byokInput')||{value:''}).value.trim();
   hideError('voiceError'); hideError('voiceError2');
   document.getElementById('voiceRetryRow').style.display='none';
   audioState.content=text;
-  audioState.input={voiceName:voiceName};
+  audioState.input={voiceName:voiceName,settings:extras};
   audioState.status='processing';
   csBusy=true;
   setGenButtonsDisabled(true);
@@ -985,6 +1310,7 @@ function generateVoice(){
   setLoading('voiceGenLoading',true);
   document.getElementById('voiceBtn').disabled=true;
   var body={text:text,voiceName:voiceName};
+  if(extras.length)body.settings=extras;
   if(byok)body.apiKey=byok;
   apiCall('/api/studio/content/tts',body)
     .then(function(data){
@@ -1005,9 +1331,8 @@ function generateVoice(){
       console.error(err);
       audioState.status='error';
       if(window.aicsResultLoading)window.aicsResultLoading.hide('audioLoading');
-      showError('voiceError2','အသံဖန်တီးရာတွင် အခက်အခဲရှိနေပါသည်။ ပြန်ကြိုးစားပါ။');
+      showError('voiceError2','အသံဖန်တီးရာတွင် အခက်အခဲရှိနေပါသည်။ ပြန်လည်ကြိုးစားပါ။');
       document.getElementById('voiceRetryRow').style.display='flex';
-      // Error → Result section အတွင်းတွင် error + retry ပြသည် (existing error UI ကို ထိန်းထားသည်)
       csUnmarkDone(24);
       showToastMsg('⚠️ အသံဖန်တီး၍ မရပါ — ခဏစောင့်ပြီး ပြန်ကြိုးစားပါ');
     })
@@ -1149,16 +1474,16 @@ function copyToClipboard(text){
 }
 
 // ===== Studio Shell Hooks =====
-// Stepper = လက်ရှိ သွားနေသော လမ်းကြောင်း (Branch) သာလျှင် — MAP (System တစ်ခုလုံး) ကို UI တွင် မပြပါ
+// Stepper = Main + Branch — MAP (System တစ်ခုလုံး) ကို UI တွင် မပြပါ
 function studioOnStep(n){
   var backHub={label:'&#8592; Content ရလဒ်သို့ ပြန်ရန်',cls:'ghost',fn:backToContentResult};
   if(n===1){
     var acts=[{label:'Reset',cls:'ghost',fn:studioReset}];
     if(lastResult)acts.push({label:'Next &#8594;',cls:'secondary',fn:function(){csNav(2);}});
-    acts.push({label:'Generate Content &#10024;',cls:'primary',fn:generateContent});
+    acts.push({label:'&#10024; Content ရေးသားရန်',cls:'primary',fn:generateContent});
     studioSetActions(acts);
   }else if(n===2){
-    studioSetActions([{label:'Reset',cls:'ghost',fn:studioReset},{label:'&#128190; ဖန်တီးမှုသိမ်းပါ',cls:'purple',fn:saveContentResult}]);
+    studioSetActions([{label:'Reset',cls:'ghost',fn:studioReset},{label:'&#128203; Copy',cls:'ghost',fn:copyAllResult},{label:'&#128190; ဖန်တီးမှုသိမ်းပါ',cls:'purple',fn:saveContentResult}]);
   }else if(n===12){
     studioSetActions([backHub]);
   }else if(n===22){
@@ -1170,20 +1495,47 @@ function studioOnStep(n){
 window.studioOnStep=studioOnStep;
 
 function studioCollectDraft(){
+  function val(id){var e=document.getElementById(id);return e?(e.value||''):'';}
   return {
     mode:CS_MODE,
     csCur:csCur,
-    idea:(document.getElementById('ideaInput')?document.getElementById('ideaInput').value:''),
-    type:(document.getElementById('typeSelect')?document.getElementById('typeSelect').value:'1'),
-    aud:(document.getElementById('audSel')?document.getElementById('audSel').value:''),
-    byok:(document.getElementById('byokInput')?document.getElementById('byokInput').value:''),
-    videoContent:(document.getElementById('videoContentText')?document.getElementById('videoContentText').value:''),
-    videoType:(document.getElementById('videoTypeSelect')?document.getElementById('videoTypeSelect').value:'1'),
-    videoByok:(document.getElementById('videoByokInput')?document.getElementById('videoByokInput').value:''),
-    ttsText:(document.getElementById('ttsText')?document.getElementById('ttsText').value:''),
-    voiceName:(document.getElementById('voiceNameSelect')?document.getElementById('voiceNameSelect').value:'Kore'),
-    srt:(document.getElementById('resultSrt')?document.getElementById('resultSrt').value:''),
-    srtTranslated:(document.getElementById('resultSrtTranslated')?document.getElementById('resultSrtTranslated').value:''),
+    idea:val('ideaInput'),
+    type:val('typeSelect')||'1',
+    aud:val('audSel'),
+    contentType:val('contentTypeSel'),
+    tone:val('toneSel'),
+    lang:val('langSel'),
+    keyPoints:val('keyPoints'),
+    mainMessage:val('mainMessage'),
+    length:val('lengthSel'),
+    additionalInstr:val('additionalInstr'),
+    byok:val('byokInput'),
+    videoContent:val('videoContentText'),
+    videoType:val('videoTypeSelect')||'1',
+    videoTypeSel:val('videoTypeSel'),
+    videoDuration:val('videoDuration'),
+    videoAspect:val('videoAspect'),
+    videoVisualStyle:val('videoVisualStyle'),
+    videoCameraStyle:val('videoCameraStyle'),
+    videoLanguage:val('videoLanguage'),
+    videoSceneSettings:val('videoSceneSettings'),
+    videoVisualSettings:val('videoVisualSettings'),
+    videoReference:val('videoReference'),
+    videoAdditionalInstructions:val('videoAdditionalInstructions'),
+    videoByok:val('videoByokInput'),
+    ttsText:val('ttsText'),
+    maleVoice:val('maleVoiceSelect'),
+    femaleVoice:val('femaleVoiceSelect'),
+    effectiveVoice:effectiveVoiceName,
+    audioVoiceStyle:val('audioVoiceStyleSel'),
+    audioLang:val('audioLangSel'),
+    audioSpeed:val('audioSpeed'),
+    audioPitch:val('audioPitch'),
+    audioDirection:val('audioDirection'),
+    audioEmotion:val('audioEmotion'),
+    audioPronunciation:val('audioPronunciation'),
+    srt:val('resultSrt'),
+    srtTranslated:val('resultSrtTranslated'),
     direction:currentDirection,
     lastResult:lastResult,
     videoPlan:videoPlan,
@@ -1194,24 +1546,53 @@ window.studioCollectDraft=studioCollectDraft;
 
 function studioRestoreDraft(d){
   if(!d)return;
-  if(d.idea)document.getElementById('ideaInput').value=d.idea;
-  if(d.type)document.getElementById('typeSelect').value=d.type;
-  var audEl=document.getElementById('audSel');if(audEl&&d.aud)audEl.value=d.aud;if(audEl)window.aichAud=audEl.value;
-  if(d.byok&&document.getElementById('byokInput'))document.getElementById('byokInput').value=d.byok;
-  if(d.videoContent)document.getElementById('videoContentText').value=d.videoContent;
-  if(d.videoType)document.getElementById('videoTypeSelect').value=d.videoType;
-  if(d.videoByok&&document.getElementById('videoByokInput'))document.getElementById('videoByokInput').value=d.videoByok;
-  if(d.ttsText)document.getElementById('ttsText').value=d.ttsText;
-  if(d.voiceName)document.getElementById('voiceNameSelect').value=d.voiceName;
-  if(d.srt)document.getElementById('resultSrt').value=d.srt;
-  if(d.srtTranslated)document.getElementById('resultSrtTranslated').value=d.srtTranslated;
+  function setVal(id,v){if(v!==undefined&&v!==null&&document.getElementById(id))document.getElementById(id).value=v;}
+  setVal('ideaInput',d.idea);
+  setVal('typeSelect',d.type||'1');
+  setVal('audSel',d.aud);
+  var audEl=document.getElementById('audSel');if(audEl)window.aichAud=audEl.value;
+  setVal('contentTypeSel',d.contentType);
+  setVal('toneSel',d.tone);
+  setVal('langSel',d.lang);
+  setVal('keyPoints',d.keyPoints);
+  setVal('mainMessage',d.mainMessage);
+  setVal('lengthSel',d.length);
+  setVal('additionalInstr',d.additionalInstr);
+  setVal('byokInput',d.byok);
+  setVal('videoContentText',d.videoContent);
+  setVal('videoTypeSelect',d.videoType||'1');
+  setVal('videoTypeSel',d.videoTypeSel);
+  setVal('videoDuration',d.videoDuration);
+  setVal('videoAspect',d.videoAspect);
+  setVal('videoVisualStyle',d.videoVisualStyle);
+  setVal('videoCameraStyle',d.videoCameraStyle);
+  setVal('videoLanguage',d.videoLanguage);
+  setVal('videoSceneSettings',d.videoSceneSettings);
+  setVal('videoVisualSettings',d.videoVisualSettings);
+  setVal('videoReference',d.videoReference);
+  setVal('videoAdditionalInstructions',d.videoAdditionalInstructions);
+  setVal('videoByokInput',d.videoByok);
+  setVal('ttsText',d.ttsText);
+  setVal('maleVoiceSelect',d.maleVoice);
+  setVal('femaleVoiceSelect',d.femaleVoice);
+  if(d.effectiveVoice)effectiveVoiceName=d.effectiveVoice;
+  setVal('audioVoiceStyleSel',d.audioVoiceStyle);
+  setVal('audioLangSel',d.audioLang);
+  setVal('audioSpeed',d.audioSpeed);
+  setVal('audioPitch',d.audioPitch);
+  setVal('audioDirection',d.audioDirection);
+  setVal('audioEmotion',d.audioEmotion);
+  setVal('audioPronunciation',d.audioPronunciation);
+  var ev=document.getElementById('effectiveVoiceLabel');if(ev)ev.textContent=effectiveVoiceName;
+  setVal('resultSrt',d.srt);
+  setVal('resultSrtTranslated',d.srtTranslated);
   if(d.direction)currentDirection=d.direction;
   lastResult=d.lastResult||null;
   videoPlan=d.videoPlan||null;
   currentAudioBase64=d.audio||null;
   contentState.result=lastResult;
   if(lastResult){
-    renderContentResult();
+    renderContentResult(true);
     csMarkDone(1);
     csMarkDone(2);
   }
@@ -1221,7 +1602,7 @@ function studioRestoreDraft(d){
     csMarkDone(12);
     csMarkDone(14);
     var vp=document.getElementById('videoContentPreview');
-    if(vp)vp.textContent=videoState.content||(lastResult?lastResult.content:'')||'';
+    if(vp&&videoState.content)vp.textContent=videoState.content;
   }
   if(currentAudioBase64){
     var audioUrl='data:audio/wav;base64,'+currentAudioBase64;
@@ -1229,7 +1610,7 @@ function studioRestoreDraft(d){
     csMarkDone(22);
     csMarkDone(24);
     var ap=document.getElementById('audioContentPreview');
-    if(ap)ap.textContent=audioState.content||(lastResult?lastResult.content:'')||'';
+    if(ap&&audioState.content)ap.textContent=audioState.content;
   }
   if(d.mode&&CS_STEPS[d.mode]){
     CS_MODE=d.mode;
@@ -1248,7 +1629,7 @@ function studioRestoreDraft(d){
 }
 window.studioRestoreDraft=studioRestoreDraft;
 
-// ===== Boot (Shell ပြီးမှ Stepper ကို ကိုယ်ပိုင် Branch Stepper ဖြင့် ပြန်ဆောက်သည်) =====
+// ===== Boot (Shell ပြီးမှ Main + Branch Stepper ကို ကိုယ်ပိုင်ဖြင့် ပြန်ဆောက်သည်) =====
 function csBoot(){
   csRenderStepper();
   csShow(csCur);
