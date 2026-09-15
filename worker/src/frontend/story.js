@@ -145,10 +145,6 @@ const STEP4_HTML = `
 <label class="aics-check-row" for="vidConsistency"><input type="checkbox" id="vidConsistency" checked> ဇာတ်ကောင်အသွင်အပြင်ကို Scene တိုင်း တစ်သမတ်တည်း ဖော်ပြပါ</label>
 </div>
 <div class="form-group">
-<label for="vidEnvSel">ပတ်ဝန်းကျင်စတိုင် (Environment Style)</label>
-<select id="vidEnvSel"></select>
-</div>
-<div class="form-group">
 <label for="vidCharDir">&#127917; ဇာတ်ကောင် ဦးတည်ချက် (Character Direction)</label>
 <input type="text" id="vidCharDir" placeholder="ဥပမာ — ရိုးရာ ဗုဒ္ဓဝတ်စုံ၊ လေးစားတဲ့ အမူအရာ...">
 </div>
@@ -171,12 +167,6 @@ const STEP4_HTML = `
 <div class="form-group">
 <label for="vidTransition">&#127916; ကူးပြောင်း / အရှိန် (Transition / Pacing)</label>
 <input type="text" id="vidTransition" placeholder="ဥပမာ — soft cross-fade, slow pacing...">
-</div>
-<div class="form-group adv-full">
-<label for="vidRefImgInput">ရည်ညွှန်းရုပ်ပုံ (Reference Image)</label>
-<input type="file" id="vidRefImgInput" accept="image/*" onchange="onRefImageSelect(this)">
-<div class="ref-img-preview" id="vidRefImgPreview"></div>
-<p class="form-help">Character / Style အတွက် ရည်ညွှန်းရုပ်ပုံ ထည့်နိုင်သည် (PNG / JPG, max 4MB)</p>
 </div>
 <div class="form-group adv-full">
 <label for="vidAudio">&#128266; အသံ / အသံလမ်းညွှန် (Audio / Sound Direction)</label>
@@ -434,7 +424,6 @@ var videoStarted=false;
 var storyBusy=false;
 var planBusy=false;
 var typewriterTimer=null;
-var currentRefImage='';
 
 var STORY_TYPES=[
   {v:'1',label:'ဇာတ်လမ်း',pro:false},
@@ -471,7 +460,6 @@ var RATIOS=['16:9','9:16','1:1','4:3','21:9'];
 var VISUAL_STYLES=['Cinematic Realism','Anime','3D Animation','2D Illustration','Stop Motion','Documentary','Film Noir','Fantasy'];
 var CAMERA_STYLES=['Feature Film','Documentary','Drone Shot','Handheld','Static Shot','Slow Motion','Tracking Shot','Aerial'];
 var LANGUAGES=['မြန်မာ','English','မြန်မာ + English'];
-var ENV_STYLES=['Realistic','Stylized','Minimalist','Fantasy','Sci-Fi','Historical','Urban','Nature'];
 
 (function init(){
   if(!token){document.getElementById('loginView').style.display='flex';document.getElementById('aicsApp').style.display='none';return;}
@@ -486,11 +474,9 @@ var ENV_STYLES=['Realistic','Stylized','Minimalist','Fantasy','Sci-Fi','Historic
   fillSelect('vidStyleSel',VISUAL_STYLES,'Cinematic Realism');
   fillSelect('vidCamSel',CAMERA_STYLES,'Feature Film');
   fillSelect('vidLangSel',LANGUAGES,'မြန်မာ');
-  fillSelect('vidEnvSel',ENV_STYLES,'Realistic');
   var _ta=document.getElementById('field_0');
   if(_ta){_ta.addEventListener('input',function(){this.style.height='auto';this.style.height=(this.scrollHeight)+'px';});}
   updateGenBtn();
-  renderRefPreview();
   var sr=document.getElementById('storyResult');
   if(sr){
     sr.addEventListener('keydown',function(){stopTypewriter();});
@@ -776,30 +762,6 @@ function fillVideoStoryField(){
   autoExpand(ta);
 }
 
-// ===================== Reference Image (Video Advanced) =====================
-function onRefImageSelect(input){
-  var f=input.files&&input.files[0];
-  if(!f)return;
-  if(!/^image\\//.test(f.type)){showToastMsg('ပုံဖိုင် (Image) သာ ထည့်နိုင်ပါသည်');input.value='';return;}
-  if(f.size>4*1024*1024){showToastMsg('ပုံဖိုင် အရွယ်အစား 4MB ထက် မကြီးရပါ');input.value='';return;}
-  var r=new FileReader();
-  r.onload=function(){currentRefImage=String(r.result);renderRefPreview();autoSave();};
-  r.readAsDataURL(f);
-}
-function renderRefPreview(){
-  var p=document.getElementById('vidRefImgPreview');
-  if(!p)return;
-  if(currentRefImage){
-    p.innerHTML='<img src="'+currentRefImage+'" alt="ရည်ညွှန်းရုပ်ပုံ (Reference Image)"><button type="button" class="btn-ghost" onclick="clearRefImage()">&#10005; ဖျက်ရန်</button>';
-  }else{p.innerHTML='';}
-}
-function clearRefImage(){
-  currentRefImage='';
-  var i=document.getElementById('vidRefImgInput');if(i)i.value='';
-  renderRefPreview();
-  autoSave();
-}
-
 // ===================== Step 03 → 04 (Video Plan — Unified Result Loading) =====================
 function generateVideoPlan(){
   if(planBusy)return;
@@ -826,10 +788,8 @@ function generateVideoPlan(){
     visualStyle:sel('vidStyleSel'),
     cameraStyle:sel('vidCamSel'),
     language:sel('vidLangSel'),
-    environmentStyle:sel('vidEnvSel'),
     characterContinuity:(continuity&&continuity.checked)?'true':'false',
     characterConsistency:(consistency&&consistency.checked)?'true':'false',
-    referenceImage:currentRefImage||'',
     characterDirection:document.getElementById('vidCharDir')?document.getElementById('vidCharDir').value.trim():'',
     cameraDirection:document.getElementById('vidCamDir')?document.getElementById('vidCamDir').value.trim():'',
     lighting:document.getElementById('vidLighting')?document.getElementById('vidLighting').value.trim():'',
@@ -1100,10 +1060,8 @@ function studioCollectDraft(){
       visualStyle:sel('vidStyleSel'),
       cameraStyle:sel('vidCamSel'),
       language:sel('vidLangSel'),
-      environmentStyle:sel('vidEnvSel'),
       characterContinuity:document.getElementById('vidContinuity')?document.getElementById('vidContinuity').checked:true,
       characterConsistency:document.getElementById('vidConsistency')?document.getElementById('vidConsistency').checked:true,
-      referenceImage:currentRefImage||'',
       characterDirection:document.getElementById('vidCharDir')?document.getElementById('vidCharDir').value:'',
       cameraDirection:document.getElementById('vidCamDir')?document.getElementById('vidCamDir').value:'',
       lighting:document.getElementById('vidLighting')?document.getElementById('vidLighting').value:'',
@@ -1140,11 +1098,8 @@ function studioRestoreDraft(d){
     var setf=function(id,v){var e=document.getElementById(id);if(e&&v)e.value=v;};
     setf('vidDurationSel',vf.duration);setf('vidSceneSel',vf.sceneDuration);setf('vidRatioSel',vf.aspectRatio);
     setf('vidStyleSel',vf.visualStyle);setf('vidCamSel',vf.cameraStyle);setf('vidLangSel',vf.language);
-    setf('vidEnvSel',vf.environmentStyle);
     var cc=document.getElementById('vidContinuity');if(cc)cc.checked=vf.characterContinuity!==false;
     var cs=document.getElementById('vidConsistency');if(cs)cs.checked=vf.characterConsistency!==false;
-    currentRefImage=vf.referenceImage||'';
-    renderRefPreview();
     var ve=document.getElementById('vidExtra');if(ve)ve.value=vf.additionalInstructions||'';
     setf('vidCharDir',vf.characterDirection);setf('vidCamDir',vf.cameraDirection);setf('vidLighting',vf.lighting);
     setf('vidEnvDetails',vf.environmentDetails);setf('vidColorMood',vf.colorMood);setf('vidTransition',vf.transitionPacing);
