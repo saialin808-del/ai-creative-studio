@@ -20,22 +20,22 @@ const STEP1_HTML = `
 <div class="card">
 <div class="card-title">&#128221;&#65039; Short အချက်အလက် ဖြည့်ရန်</div>
 <p style="color:var(--text2);font-size:13px;margin-bottom:14px;">Short Video / Short Content ရေးသားရန် လိုအပ်သော အချက်အလက်များကို အောက်တွင် ဖြည့်ပါ — Generate နှိပ်လိုက်ရင် AI က Short Script ရေးပေးပါမယ်။</p>
-<div class="form-row">
-<div class="form-group" style="flex:1;min-width:170px;margin-bottom:0;">
+<div class="studio-form-grid">
+<div class="form-group" style="margin-bottom:0;">
 <label>Short Type</label>
 <select id="shortTypeSel"></select>
 </div>
-<div class="form-group" style="flex:1;min-width:170px;margin-bottom:0;">
+<div class="form-group" style="margin-bottom:0;">
 <label>Duration</label>
 <select id="durSel"></select>
 </div>
 </div>
-<div class="form-row">
-<div class="form-group" style="flex:1;min-width:170px;margin-bottom:0;">
+<div class="studio-form-grid">
+<div class="form-group" style="margin-bottom:0;">
 <label>Tone</label>
 <select id="toneSel"></select>
 </div>
-<div class="form-group" style="flex:1;min-width:170px;margin-bottom:0;">
+<div class="form-group" style="margin-bottom:0;">
 <label>Language</label>
 <select id="langSel"></select>
 </div>
@@ -56,8 +56,8 @@ const STEP1_HTML = `
 <label>Additional Instructions</label>
 <textarea id="extraInstr" placeholder="ဥပမာ — စိတ်ခံစားချက်ကို ပိုဖော်ပြပါ / အဆုံးမှာ Follow လုပ်ဖို့ တိုက်တွန်းပါ" style="min-height:70px;"></textarea>
 </div>
-<button type="button" id="advToggle" onclick="toggleAdvFields()" style="width:100%;padding:11px;border-radius:14px;background:rgba(0,229,255,.08);border:1px solid rgba(0,229,255,.25);color:#00e5ff;font-size:13px;font-weight:600;cursor:pointer;margin-bottom:12px;"><span>အပိုဆောင်းသတ်မှတ်ချက် (Advanced Options) ▼</span></button>
-<div id="advFields" class="adv-grid" style="display:none;">
+<button type="button" class="aics-advanced-toggle" id="advToggle" onclick="studioToggleAdvanced('advToggle','advFields')" aria-expanded="false"><span>အပိုဆောင်းသတ်မှတ်ချက် (Advanced Options)</span><span class="aics-adv-arrow">▼</span></button>
+<div id="advFields" class="adv-grid aics-adv-panel">
 <div class="form-group"><label>Hook</label><textarea id="advHook" placeholder="ဥပမာ — "ဒီနေ့ မင်းတို့ကို မြန်မာတစ်ပြည်လုံး ချစ်တဲ့ လက်ဖက်ရည်ဆိုင် ပြပေးမယ်"" style="min-height:60px;"></textarea></div>
 <div class="form-group"><label>Call To Action</label><textarea id="advCta" placeholder="ဥပမာ — Follow + Like နှိပ်ဖို့ မမေ့နဲ့နော်" style="min-height:60px;"></textarea></div>
 <div class="form-group"><label>Character Information</label><textarea id="advCharInfo" placeholder="ဥပမာ — အသက် ၄၅ နှစ် ဆိုင်ရှင် ဦးဘ" style="min-height:60px;"></textarea></div>
@@ -1073,19 +1073,6 @@ function stNav(n){
 function stGoForce(n){stCur=n;stShow(n);}
 function stMarkDone(n){stDone[n]=true;stUpdateStepper();}
 function stUnmarkDone(n){stDone[n]=false;stUpdateStepper();}
-function updateBranchContext(){
-  var work=document.getElementById('aicsWork');
-  if(!work)return;
-  var old=document.getElementById('aicsBranchContext');
-  if(old)old.remove();
-  if(ST_MODE!=='video')return;
-  var step=stCur>=4?2:1;
-  var el=document.createElement('div');
-  el.id='aicsBranchContext';
-  el.className='aics-branch-context';
-  el.innerHTML='<div><div class=\"aics-branch-context-title\">🎬 Video Branch · '+('Video Branch')+'</div><div class=\"aics-branch-context-sub\">Main result ကိုအခြေခံပြီး Video workflow ဆက်လုပ်နေပါသည်</div></div><button type=\"button\" class=\"aics-act ghost\" style=\"min-height:36px;padding:7px 12px;font-size:11.5px;\" onclick=\"stGoForce(2)\">← Main Result</button>';
-  work.insertBefore(el,work.firstChild);
-}
 function stShow(n){
   var steps=document.querySelectorAll('.aics-step');
   for(var i=0;i<steps.length;i++){
@@ -1094,7 +1081,6 @@ function stShow(n){
   }
   var w=document.getElementById('aicsWork');if(w)w.scrollTop=0;
   stUpdateStepper();
-  updateBranchContext();
   if(window.studioOnStep){try{window.studioOnStep(n);}catch(e){}}
 }
 function stUpdateStepper(){

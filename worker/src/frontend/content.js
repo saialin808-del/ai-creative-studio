@@ -703,7 +703,8 @@ function generateContent(){
   var byok=(document.getElementById('byokInput')||{value:''}).value.trim();
   var audEl=document.getElementById('audSel');
   if(!idea){showError('genError','အကြောင်းအရာ (User Idea) ထည့်ပါ။');return;}
-  if(audEl&&audEl.value)idea+='\n\nဘယ်သူအတွက်: '+audEl.value;
+  if(type!=='1'&&(window.userPlan||localStorage.getItem('aics_plan')||'FREE')!=='PRO'){showError('genError','ဒီ Type ကို Pro User သာ အသုံးပြုနိုင်ပါသည်။ — Settings → Plan မှာ Upgrade လုပ်ပါ။');return;}
+  if(audEl&&audEl.value)idea+='\\n\\nဘယ်သူအတွက်: '+audEl.value;
   window.aichAud=audEl?audEl.value:'လူတိုင်း';
   hideError('genError'); hideError('genError2');
   document.getElementById('genRetryRow').style.display='none';

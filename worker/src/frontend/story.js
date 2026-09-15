@@ -19,8 +19,8 @@ const STEP1_HTML = `
 <div class="card">
 <div class="card-title">&#128221; ဇာတ်လမ်းရေးရန်</div>
 <p style="color:var(--text2);font-size:13px;margin-bottom:14px;">Type ရွေးပြီး အောက်ကနေရာလေးများကို ဖြည့်ရေးပါ — Generate နှိပ်လိုက်ရင် AI က ဇာတ်လမ်းရေးပေးပါမယ်။</p>
-<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;">
-<div class="form-group" style="flex:1;min-width:170px;margin-bottom:0;">
+<div class="studio-form-grid">
+<div class="form-group" style="margin-bottom:0;">
 <label>ဇာတ်လမ်းအမျိုးအစား</label>
 <select id="storyTypeSel" onchange="selectedStoryType=this.value;">
 <option value="1" selected>ဇာတ်လမ်း (Free)</option>
@@ -30,17 +30,17 @@ const STEP1_HTML = `
 <option value="5">ဟာသဇာတ်လမ်း (Pro)</option>
 </select>
 </div>
-<div class="form-group" style="flex:1;min-width:170px;margin-bottom:0;">
+<div class="form-group" style="margin-bottom:0;">
 <label>ဘယ်သူအတွက်</label>
 <select id="audSel" onchange="window.aichAud=this.value;"><option>လူတိုင်း</option><option>လူငယ်</option><option>လူကြီး</option><option>ကလေး</option></select>
 </div>
 </div>
-<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;">
-<div class="form-group" style="flex:1;min-width:170px;margin-bottom:0;">
+<div class="studio-form-grid">
+<div class="form-group" style="margin-bottom:0;">
 <label>Tone</label>
 <select id="toneSel"><option>Emotional</option><option>Dark</option><option>Light</option><option>Funny</option><option>Epic</option><option>Mysterious</option></select>
 </div>
-<div class="form-group" style="flex:1;min-width:170px;margin-bottom:0;">
+<div class="form-group" style="margin-bottom:0;">
 <label>Language</label>
 <select id="langSel"><option>မြန်မာ (ဘာသာ)</option><option>English</option><option>မြန်မာ + English</option></select>
 </div>
@@ -49,8 +49,8 @@ const STEP1_HTML = `
 <label>ဇာတ်လမ်းအကြောင်း *</label>
 <textarea id="field_0" placeholder="ဥပမာ — ရန်ကုန်မှာ အောင်မြင်မှုရဖို့ ကြိုးစားနေတဲ့ လူငယ်တစ်ယောက်ရဲ့ ခရီး..." style="min-height:110px;resize:vertical;"></textarea>
 </div>
-<button type="button" id="advToggle" onclick="document.getElementById('ideaFields').style.display=(document.getElementById('ideaFields').style.display==='none'?'grid':'none');this.querySelector('span').textContent=document.getElementById('ideaFields').style.display==='none'?'အပိုဆောင်းသတ်မှတ်ချက် ▼':'ချုံ့ရန် ▲'" style="width:100%;padding:11px;border-radius:14px;background:rgba(0,229,255,.08);border:1px solid rgba(0,229,255,.25);color:#00e5ff;font-size:13px;font-weight:600;cursor:pointer;margin-bottom:12px;"><span>အပိုဆောင်းသတ်မှတ်ချက် ▼</span></button>
-<div id="ideaFields" class="adv-grid" style="margin-top:4px;display:none;"></div>
+<button type="button" class="aics-advanced-toggle" id="advToggle" onclick="studioToggleAdvanced('advToggle','ideaFields')" aria-expanded="false"><span>အပိုဆောင်းသတ်မှတ်ချက်</span><span class="aics-adv-arrow">▼</span></button>
+<div id="ideaFields" class="adv-grid aics-adv-panel" style="margin-top:4px;"></div>
 <div class="error-box" id="genError"></div>
 </div>
 </div>`;
@@ -1017,19 +1017,6 @@ function stNav(n){
 function stGoForce(n){stCur=n;stShow(n);}
 function stMarkDone(n){stDone[n]=true;stUpdateStepper();}
 function stUnmarkDone(n){stDone[n]=false;stUpdateStepper();}
-function updateBranchContext(){
-  var work=document.getElementById('aicsWork');
-  if(!work)return;
-  var old=document.getElementById('aicsBranchContext');
-  if(old)old.remove();
-  if(ST_MODE!=='video')return;
-  var step=stCur>=4?2:1;
-  var el=document.createElement('div');
-  el.id='aicsBranchContext';
-  el.className='aics-branch-context';
-  el.innerHTML='<div><div class=\"aics-branch-context-title\">🎬 Video Branch · '+('Video Branch')+'</div><div class=\"aics-branch-context-sub\">Main result ကိုအခြေခံပြီး Video workflow ဆက်လုပ်နေပါသည်</div></div><button type=\"button\" class=\"aics-act ghost\" style=\"min-height:36px;padding:7px 12px;font-size:11.5px;\" onclick=\"stGoForce(2)\">← Main Result</button>';
-  work.insertBefore(el,work.firstChild);
-}
 function stShow(n){
   var steps=document.querySelectorAll('.aics-step');
   for(var i=0;i<steps.length;i++){
@@ -1038,7 +1025,6 @@ function stShow(n){
   }
   var w=document.getElementById('aicsWork');if(w)w.scrollTop=0;
   stUpdateStepper();
-  updateBranchContext();
   if(window.studioOnStep){try{window.studioOnStep(n);}catch(e){}}
 }
 function stUpdateStepper(){

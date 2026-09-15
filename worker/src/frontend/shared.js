@@ -393,6 +393,16 @@ export function sidebarScript() {
     '})();\n' +
     '// ===== Unified Result Loading UI — shared page-script helper (all Studios) =====\n' +
     '// Loading state ကို Result section အတွင်းတွင်သာ ပြချေဖျက်ရန် တစ်နေရာတည်းမှ ထိန်းချုပ်သည်\n' +
+    'window.studioToggleAdvanced = function (btnId, panelId) {\n' +
+    '  var btn = document.getElementById(btnId);\n' +
+    '  var p = document.getElementById(panelId);\n' +
+    '  if (!btn || !p) return;\n' +
+    '  var open = p.classList.toggle(\'open\');\n' +
+    '  btn.classList.toggle(\'open\', open);\n' +
+    '  btn.setAttribute(\'aria-expanded\', open ? \'true\' : \'false\');\n' +
+    '  var arrow = btn.querySelector(\'.aics-adv-arrow\');\n' +
+    '  if (arrow) arrow.textContent = open ? \'▲\' : \'▼\';\n' +
+    '};\n' +
     'window.aicsResultLoading = {\n' +
     '  show: function (id, msg, hint) {\n' +
     '    var box = document.getElementById(id); if (!box) return;\n' +
@@ -497,33 +507,8 @@ function aicsShellCss() {
     '.aics-result-loading-spinner{width:30px;height:30px;flex:0 0 30px;border:3px solid rgba(0,229,255,.2);border-top-color:#00e5ff;border-radius:50%;animation:spin .8s linear infinite;}\n' +
     '.aics-result-loading-msg{color:#e8ecf4;font-size:14.5px;font-weight:600;line-height:1.5;}\n' +
     '.aics-result-loading-hint{color:#7fd8ff;font-size:13px;font-style:italic;opacity:.88;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}\n' +
-    '.aics-grid{display:grid;grid-template-columns:minmax(0,3fr) minmax(300px,2fr);gap:18px;align-items:start;}\n' +
+    '.aics-grid{display:block;}\n' +
     '.aics-work{min-width:0;}\n' +
-    '.aics-preview{position:sticky;top:82px;min-width:0;max-height:calc(100vh - 105px);overflow:auto;background:#0d1424;border:1px solid rgba(0,229,255,.14);border-radius:14px;padding:14px;box-sizing:border-box;}\n' +
-    '.aics-preview-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid rgba(0,229,255,.10);}\n' +
-    '.aics-preview-title{font-size:12px;font-weight:800;color:#e8ecf4;letter-spacing:.5px;text-transform:uppercase;}\n' +
-    '.aics-preview-empty{padding:28px 14px;text-align:center;color:#69758a;font-size:12.5px;line-height:1.6;border:1px dashed rgba(148,163,184,.18);border-radius:10px;}\n' +
-    '.aics-preview-body{min-width:0;}\n' +
-    '.aics-form-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;align-items:start;}\n' +
-    '.aics-form-row > .form-group{min-width:0;}\n' +
-    '.aics-branch-context{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:0 0 14px;padding:10px 12px;border:1px solid rgba(123,92,255,.28);border-radius:12px;background:linear-gradient(90deg,rgba(123,92,255,.12),rgba(0,229,255,.05));}\n' +
-    '.aics-branch-context-title{font-size:12.5px;font-weight:800;color:#fff;display:flex;align-items:center;gap:7px;}\n' +
-    '.aics-branch-context-sub{font-size:11.5px;color:#94a3b8;}\n' +
-    '.aics-form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;align-items:start;}\n' +
-    '    .aics-form-grid .form-group{min-width:0;}\n' +
-    '.aics-form-grid > .aics-field-full{grid-column:1 / -1;}\n' +
-    '.aics-step details{border:1px solid rgba(0,229,255,.12);border-radius:12px;background:#0d1424;margin:10px 0;overflow:hidden;}\n' +
-    '.aics-step details > summary{list-style:none;cursor:pointer;padding:12px 14px;color:#e8ecf4;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:space-between;gap:10px;}\n' +
-    '.aics-step details > summary::-webkit-details-marker{display:none;}\n' +
-    '.aics-step details > summary::after{content:"+";color:#00e5ff;font-size:16px;}\n' +
-    '.aics-step details[open] > summary::after{content:"-";}\n' +
-    '.aics-step details > *:not(summary){margin-left:14px;margin-right:14px;}\n' +
-    '.aics-accordion{border:1px solid rgba(0,229,255,.12);border-radius:12px;background:#0d1424;margin:10px 0;overflow:hidden;}\n' +
-    '.aics-accordion > summary{list-style:none;cursor:pointer;padding:12px 14px;color:#e8ecf4;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:space-between;gap:10px;}\n' +
-    '.aics-accordion > summary::-webkit-details-marker{display:none;}\n' +
-    '.aics-accordion > summary::after{content:"+";color:#00e5ff;font-size:16px;}\n' +
-    '.aics-accordion[open] > summary::after{content:"-";}\n' +
-    '.aics-accordion-body{padding:0 14px 14px;}\n' +
     '.aics-step{display:none;}\n' +
     '.aics-step.active{display:block;}\n' +
     '.aics-pv-label{font-size:11px;color:#8b95a8;font-weight:700;letter-spacing:.5px;margin-bottom:8px;text-transform:uppercase;}\n' +
@@ -550,14 +535,8 @@ function aicsShellCss() {
     '.aics-act.secondary:hover{background:rgba(0,229,255,.16);}\n' +
     '.aics-act.ghost{background:rgba(255,255,255,.04);color:#94a3b8;border:1px solid rgba(148,163,184,.25);}\n' +
     '.aics-act.ghost:hover{color:#00e5ff;border-color:rgba(0,229,255,.4);background:rgba(0,229,255,.06);}\n' +
-    '@media (min-width:768px) and (max-width:1199px){.aics-desc{max-width:200px;}.aics-grid{grid-template-columns:minmax(0,1.35fr) minmax(280px,.95fr);gap:14px;}.aics-preview{top:78px;}}\n' +
+    '@media (min-width:768px) and (max-width:1199px){.aics-desc{max-width:200px;}}\n' +
     '@media (max-width:767px){\n' +
-    '  .aics-grid{grid-template-columns:1fr;gap:14px;}\n' +
-    '  .aics-preview{position:relative;top:auto;max-height:none;order:2;}\n' +
-    '  .aics-form-grid{grid-template-columns:1fr;}\n' +
-    '  .aics-form-row{grid-template-columns:1fr;}\n' +
-    '  .aics-branch-context{align-items:flex-start;}\n' +
-    '  .aics-form-grid > .aics-field-full{grid-column:auto;}\n' +
     '  .aics-title{font-size:15px;}\n' +
     '  .aics-brand-icon{font-size:17px;}\n' +
     '  .aics-pro{padding:5px 12px;font-size:11px;}\n' +
@@ -578,6 +557,31 @@ function aicsShellCss() {
     '  .aics-result-loading{padding:24px 12px;}\n' +
     '  .aics-result-loading-msg{font-size:13.5px;}\n' +
     '  .aics-result-loading-spinner{width:26px;height:26px;flex-basis:26px;}\n' +
+    '}\n' +
+    '/* ===== AI Creative Studio — Shared Form / Input / Accordion Standards ===== */\n' +
+    '/* 1) Two-column form grid (Desktop/iPad) → 1-column on mobile */\n' +
+    '.studio-form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-bottom:16px;}\n' +
+    '.studio-form-grid .form-group{margin-bottom:0;}\n' +
+    '@media (max-width:767px){.studio-form-grid{grid-template-columns:1fr;gap:12px;}}\n' +
+    '/* 2) Consistent Accordion (Advanced / Optional settings) */\n' +
+    '.aics-advanced-toggle{width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 16px;border-radius:12px;background:rgba(0,229,255,.07);border:1px solid rgba(0,229,255,.25);color:#00e5ff;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;min-height:44px;margin-bottom:12px;text-align:left;transition:background .2s,border-color .2s;box-sizing:border-box;}\n' +
+    '.aics-advanced-toggle:hover{background:rgba(0,229,255,.13);border-color:rgba(0,229,255,.45);}\n' +
+    '.aics-advanced-toggle:focus{outline:none;border-color:#00e5ff;box-shadow:0 0 0 2px rgba(0,229,255,.18);}\n' +
+    '.aics-advanced-toggle .aics-adv-arrow{display:inline-block;font-size:11px;flex-shrink:0;transition:transform .2s;}\n' +
+    '.aics-advanced-toggle.open .aics-adv-arrow{transform:rotate(180deg);}\n' +
+    '.aics-adv-panel{display:none;}\n' +
+    '.aics-adv-panel.open{display:grid;}\n' +
+    '/* 3) Standard input states — focus / disabled / error / helper */\n' +
+    '.aics-work input:disabled,.aics-work textarea:disabled,.aics-work select:disabled,.aics-work button:disabled{opacity:.5;cursor:not-allowed;}\n' +
+    '.aics-work .form-help{font-size:11.5px;color:#5a6478;margin-top:5px;line-height:1.55;}\n' +
+    '.aics-work .form-group.has-error input,.aics-work .form-group.has-error textarea,.aics-work .form-group.has-error select{border-color:rgba(255,82,82,.65);box-shadow:0 0 0 2px rgba(255,82,82,.12);}\n' +
+    '.aics-work .form-error{display:none;color:#ff8a8a;font-size:12px;margin-top:5px;line-height:1.5;}\n' +
+    '.aics-work .form-group.has-error .form-error{display:block;}\n' +
+    '/* 4) Mobile touch targets ≥44px for in-card small buttons */\n' +
+    '@media (max-width:767px){\n' +
+    '  .aics-work .btn-ghost,.aics-work .btn-sm,.aics-work .btn-row .btn{min-height:44px;padding-top:10px;padding-bottom:10px;}\n' +
+    '  .aics-advanced-toggle{min-height:48px;}\n' +
+    '  .aics-work .ref-upload-area input[type=file]{min-height:48px;}\n' +
     '}\n' +
     '</style>'
   );
@@ -623,7 +627,7 @@ export function renderStudioShell(opts) {
     aicsShellCss() +
     '<div class="aics-app" id="aicsApp">\n' +
     '<header class="header aics-header">\n' +
-    '<button class="aics-menu-btn" onclick="toggleSidebar()">&#9776;</button>\n' +
+    '<button class="aics-menu-btn" aria-label="Menu ဖွင့်ရန် / ပိတ်ရန်" title="Menu" onclick="toggleSidebar()">&#9776;</button>\n' +
     '<div class="aics-brand"><span class="aics-brand-icon">' + icon + '</span><span class="aics-title">' + nameMy + '</span></div>\n' +
     '<div class="aics-pro" id="sidePlan">FREE</div>\n' +
     '</header>\n' +
@@ -632,13 +636,9 @@ export function renderStudioShell(opts) {
     '<main class="main aics-main">\n' +
     '<div class="aics-stepper" id="aicsStepper"></div>\n' +
     '<div class="aics-grid">\n' +
-    '<section class="aics-work" id="aicsWork">\n' +
+    '<section class="aics-work" id="aicsWork" style="max-width:820px;margin:0 auto;width:100%;">\n' +
     content +
     '</section>\n' +
-    '<aside class="aics-preview" id="aicsPreview" aria-label="Studio Preview">\n' +
-    '<div class="aics-preview-head"><span class="aics-preview-title">Preview</span><button type="button" class="aics-act ghost" style="min-height:32px;padding:6px 10px;font-size:11px;" onclick="studioPreviewClear()">Clear</button></div>\n' +
-    '<div class="aics-preview-body" id="aicsPreviewBody"><div class="aics-preview-empty">Studio output preview ကို ဒီနေရာမှာ ပြပါမယ်။</div></div>\n' +
-    '</aside>\n' +
     '</div>\n' +
     '<div class="aics-actions">\n' +
     '<div class="aics-actions-inner" id="aicsActionsInner"><div class="aics-actions-model"><span class="aics-actions-model-label">&#129302; AI မော်ဒယ်</span><select id="aiModelSel" data-category="' + modelCat + '"></select></div></div>\n' +
@@ -806,8 +806,7 @@ export function renderStudioShell(opts) {
     '    if (typeof a.fn === "function") { try { a.fn(); } catch (e) { toast("Action error: " + (e && e.message || ""), true); } }\n' +
     '    else if (a.fn && window[a.fn]) { try { window[a.fn](); } catch (e) { toast("Action error: " + (e && e.message || ""), true); } }\n' +
     '  };\n' +
-    '  window.studioPreview = function (html) { var b = document.getElementById("aicsPreviewBody"); if (!b) return; b.innerHTML = html || "<div class=\"aics-preview-empty\">Preview မရှိသေးပါ။</div>"; };\n' +
-    '  window.studioPreviewClear = function () { var b = document.getElementById("aicsPreviewBody"); if (b) b.innerHTML = "<div class=\"aics-preview-empty\">Studio output preview ကို ဒီနေရာမှာ ပြပါမယ်။</div>"; };\n' +
+    '  window.studioPreview = function (html) { /* preview panel removed */ };\n' +
     '  window.studioSaveDraft = function () {\n' +
     '    var data = null;\n' +
     '    if (window.studioCollectDraft) { try { data = window.studioCollectDraft(); } catch (e) { data = null; } }\n' +
@@ -821,31 +820,8 @@ export function renderStudioShell(opts) {
     '    try { localStorage.removeItem(draftKey); } catch (e) {}\n' +
     '    location.reload();\n' +
     '  };\n' +
-    '  function normalizeStudioForms() {\n' +
-    '    var cards = document.querySelectorAll(".aics-step .card");\n' +
-    '    for (var i = 0; i < cards.length; i++) {\n' +
-    '      var groups = cards[i].querySelectorAll(":scope > .form-group");\n' +
-    '      if (groups.length >= 2 && !cards[i].querySelector(":scope > .aics-form-grid")) {\n' +
-    '        var grid = document.createElement("div"); grid.className = "aics-form-grid";\n' +
-    '        for (var j = 0; j < groups.length; j++) { var g = groups[j]; if (g.parentNode === cards[i]) grid.appendChild(g); }\n' +
-    '        var before = cards[i].querySelector(":scope > .error-box") || cards[i].querySelector(":scope > .btn-row");\n' +
-    '        if (before) cards[i].insertBefore(grid, before); else cards[i].appendChild(grid);\n' +
-    '      }\n' +
-    '      var details = cards[i].querySelectorAll(":scope > details, :scope > .aics-accordion");\n' +
-    '      for (var d = 0; d < details.length; d++) {\n' +
-    '        var body = details[d];\n' +
-    '        if (body.querySelector(":scope > .aics-form-grid")) continue;\n' +
-    '        var inner = body.querySelectorAll(":scope > .form-group");\n' +
-    '        if (inner.length < 2) continue;\n' +
-    '        var ig = document.createElement("div"); ig.className = "aics-form-grid";\n' +
-    '        for (var k = 0; k < inner.length; k++) ig.appendChild(inner[k]);\n' +
-    '        body.appendChild(ig);\n' +
-    '      }\n' +
-    '    }\n' +
-    '  }\n' +
     '  function init() {\n' +
     '    renderStepper();\n' +
-    '    normalizeStudioForms();\n' +
     '    var raw = null;\n' +
     '    try { raw = localStorage.getItem(draftKey); } catch (e) {}\n' +
     '    if (raw) {\n' +

@@ -19,8 +19,8 @@ const STEP1_HTML = `
 <div class="card">
 <div class="card-title">&#127912; Image ဖန်တီးရန် အချက်အလက်</div>
 <p style="color:var(--text2);font-size:13px;margin-bottom:14px;">Type ရွေးပြီး ပုံအကြောင်း အပြည့်အစုံ ဖော်ပြပါ — AI က သင့်အတွက် Image Prompt ပြင်ဆင်ပေးပါမယ်။</p>
-<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;">
-<div class="form-group" style="flex:1;min-width:170px;margin-bottom:0;">
+<div class="studio-form-grid">
+<div class="form-group" style="margin-bottom:0;">
 <label>ဓာတ်ပုံ အမျိုးအစား</label>
 <select id="imgTypeSel" onchange="selectedImageType=this.value;">
 <option value="1" selected>💡 Idea To Image (Free)</option>
@@ -30,7 +30,7 @@ const STEP1_HTML = `
 <option value="5">👤🛒 Character Product Ad (Pro)</option>
 </select>
 </div>
-<div class="form-group" style="flex:1;min-width:170px;margin-bottom:0;">
+<div class="form-group" style="margin-bottom:0;">
 <label>ဘယ်သူအတွက်</label>
 <select id="audSel" onchange="window.aichAud=this.value;"><option>လူတိုင်း</option><option>လူငယ်</option><option>လူကြီး</option><option>ကလေး</option></select>
 </div>
@@ -300,7 +300,7 @@ function preparePrompt(){
   hideStepError('prepareErr2','prepareRetry');
   var aud=document.getElementById('audSel');
   originalIdea=idea;
-  if(aud&&aud.value)idea+='\n\nAudience: '+aud.value;
+  if(aud&&aud.value)idea+='\\n\\nAudience: '+aud.value;
   prepareBusy=true;
   stopTypewriter();
   studioMarkDone(1);

@@ -24,8 +24,8 @@ const STEP1_HTML = `
 <div class="card">
 <div class="card-title">&#128230; အကြောင်းအရာ — ကုန်ပစ္စည်း အချက်အလက်</div>
 <p class="hint">Type ရွေးပြီး အောက်ကနေရာလေးများကို ဖြည့်ရေးပါ — AI Marketing Content ဖန်တီးပေးပါမယ်။</p>
-<div class="aics-form-row" style="margin-bottom:16px;">
-<div class="form-group" style="flex:1;min-width:170px;margin-bottom:0;">
+<div class="studio-form-grid">
+<div class="form-group" style="margin-bottom:0;">
 <label>ဈေးကွန်တင့် အမျိုးအစား</label>
 <select id="contentTypeSel" onchange="contentType=this.value;">
 <option value="1" selected>📦 Product Description (Free)</option>
@@ -35,7 +35,7 @@ const STEP1_HTML = `
 <option value="5">📄 Content Type 5 (Pro)</option>
 </select>
 </div>
-<div class="form-group" style="flex:1;min-width:170px;margin-bottom:0;">
+<div class="form-group" style="margin-bottom:0;">
 <label>ဘယ်သူအတွက်</label>
 <select id="audSel" onchange="window.aichAud=this.value;"><option>လူတိုင်း</option><option>လူငယ်</option><option>လူကြီး</option><option>ကလေး</option></select>
 </div>
@@ -99,7 +99,6 @@ ${aicsResultLoadingHtml('contentLoading','AI က သင့်အတွက် Sho
 
 <!-- ===== VIEW: VIDEO BRANCH ===== -->
 <div id="viewVideo" style="display:none;">
-<div class="aics-branch-context"><div><div class="aics-branch-context-title">🎬 Video Branch</div><div class="aics-branch-context-sub">Shop Content ကို အခြေခံပြီး Product Video workflow</div></div><button type="button" class="btn btn-secondary btn-sm" onclick="goContentResult()">← Content Result</button></div>
 <div class="shop-branch-stepper" id="videoBranchStepper"></div>
 
 <div class="card" id="videoSetupCard">
@@ -142,7 +141,6 @@ ${aicsResultLoadingHtml('videoLoading','AI က သင့်အတွက် Video
 
 <!-- ===== VIEW: AUDIO BRANCH ===== -->
 <div id="viewAudio" style="display:none;">
-<div class="aics-branch-context"><div><div class="aics-branch-context-title">🔊 Audio Branch</div><div class="aics-branch-context-sub">Voice → SRT → Translation workflow</div></div><button type="button" class="btn btn-secondary btn-sm" onclick="goContentResult()">← Content Result</button></div>
 <div class="shop-branch-stepper" id="audioBranchStepper"></div>
 
 <div class="card" id="audioSetupCard">
@@ -332,7 +330,8 @@ select option{background:var(--bg-card);color:var(--text)}
 /* ===== Branch Stepper (Video / Audio) ===== */
 /* Main + Branch = Stepper တစ်ခုတည်း — အောက်က branch stepper container များကို ဖျောက်ပြီး
    #aicsStepper တစ်ခုတည်းတွင် Main + Branch ကို ဆက်ပေါင်းပြသည် */
-.aics-work .shop-branch-stepper{margin:8px 0 16px;background:#0f1830;border:1px solid rgba(123,92,255,.3);border-radius:10px;padding:6px 8px;overflow-x:auto}
+.aics-work .shop-branch-stepper{display:none!important}
+.aics-work .shop-branch-stepper{margin:8px 0 12px;background:#0f1830;border:1px solid rgba(123,92,255,.3);border-radius:10px;padding:6px 8px;overflow-x:auto}
 .aics-work .shop-branch-inner{display:flex;align-items:center;gap:3px;min-width:max-content}
 .aics-work .shop-bstep{display:flex;align-items:center;gap:5px;padding:6px 9px;border-radius:8px;border:1px solid transparent;color:#5a6478;font-size:12px;white-space:nowrap}
 .aics-work .shop-bstep .shop-bstep-marker{width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;background:#1a2138;color:#5a6478;flex-shrink:0}
@@ -405,9 +404,6 @@ select option{background:var(--bg-card);color:var(--text)}
 .aics-work .dir-radio{display:inline-flex;align-items:center;gap:6px;background:var(--bg-input);border:1px solid var(--border);border-radius:20px;padding:8px 14px;font-size:12.5px;color:var(--text2);cursor:pointer;user-select:none}
 .aics-work .dir-radio input{width:auto;margin:0;accent-color:var(--cyan);min-height:0;padding:0}
 .aics-work .dir-radio.selected{border-color:var(--cyan);background:rgba(0,229,255,.1);color:var(--text)}
-/* ===== Accessibility / Motion ===== */
-.aics-work button:focus-visible,.aics-work input:focus-visible,.aics-work textarea:focus-visible,.aics-work select:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
-@media(prefers-reduced-motion:reduce){.aics-work *{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
 /* ===== Responsive ===== */
 @media(max-width:767px){
 .aics-work .branch-action-grid{grid-template-columns:1fr}
@@ -736,14 +732,14 @@ function generateContent(){
     if(window.aicsResultLoading)window.aicsResultLoading.hide('contentLoading');
     if(d.error){
       console.error('Shop Content Generate Error:', d.error);
-      showStepError('step2Err','step2Retry','❌ Content ဖန်တီးရာတွင် အခက်အခဲရှိနေပါသည်။\n'+friendlyApiError(d));
+      showStepError('step2Err','step2Retry','❌ Content ဖန်တီးရာတွင် အခက်အခဲရှိနေပါသည်။\\n'+friendlyApiError(d));
       // Error → Result section အတွင်းတွင် error + retry ပြသည် (existing error UI ကို ထိန်းထားသည်)
       showToast('⚠️ Content ဖန်တီး၍ မရပါ — ခဏစောင့်ပြီး ပြန်ကြိုးစားပါ','error');
       return;
     }
     var text=d.content||'';
-    if(d.speakingStyle)text+='\n\n[SPEAKING STYLE]\n'+d.speakingStyle;
-    if(d.voiceStyle)text+='\n\n[VOICE STYLE]\n'+d.voiceStyle;
+    if(d.speakingStyle)text+='\\n\\n[SPEAKING STYLE]\\n'+d.speakingStyle;
+    if(d.voiceStyle)text+='\\n\\n[VOICE STYLE]\\n'+d.voiceStyle;
     shopState.content.result=text;
     studioMarkDone(1);
     studioMarkDone(2);
@@ -759,7 +755,7 @@ function generateContent(){
     console.error('Shop Content Generate Error:', err);
     shopBusy=false;
     if(window.aicsResultLoading)window.aicsResultLoading.hide('contentLoading');
-    showStepError('step2Err','step2Retry','❌ Content ဖန်တီးရာတွင် အခက်အခဲရှိနေပါသည်။\nNetwork error — ခဏစောင့်ပြီး ပြန်ကြိုးစားပါ။');
+    showStepError('step2Err','step2Retry','❌ Content ဖန်တီးရာတွင် အခက်အခဲရှိနေပါသည်။\\nNetwork error — ခဏစောင့်ပြီး ပြန်ကြိုးစားပါ။');
     // Error → Result section အတွင်းတွင် error + retry ပြသည် (existing error UI ကို ထိန်းထားသည်)
     showToast('⚠️ Content ဖန်တီး၍ မရပါ — ခဏစောင့်ပြီး ပြန်ကြိုးစားပါ','error');
   });
@@ -986,7 +982,7 @@ function generateVideo(){
     if(window.aicsResultLoading)window.aicsResultLoading.hide('videoLoading');
     if(d.error){
       console.error('Shop Video Generate Error:', d.error);
-      showStepError('videoLoadingErr','videoLoadingRetry','❌ Video ဖန်တီးရာတွင် အခက်အခဲရှိနေပါသည်။\n'+friendlyApiError(d));
+      showStepError('videoLoadingErr','videoLoadingRetry','❌ Video ဖန်တီးရာတွင် အခက်အခဲရှိနေပါသည်။\\n'+friendlyApiError(d));
       // Error → Result section အတွင်းတွင် error + retry ပြသည် (existing error UI ကို ထိန်းထားသည်)
       shopState.video.step=2;showVideoPhase();setActionsForCurrent();
       showToast('⚠️ Video ဖန်တီး၍ မရပါ — ခဏစောင့်ပြီး ပြန်ကြိုးစားပါ','error');
@@ -1003,7 +999,7 @@ function generateVideo(){
     console.error('Shop Video Generate Error:', err);
     shopBusy=false;
     if(window.aicsResultLoading)window.aicsResultLoading.hide('videoLoading');
-    showStepError('videoLoadingErr','videoLoadingRetry','❌ Video ဖန်တီးရာတွင် အခက်အခဲရှိနေပါသည်။\nNetwork error — ခဏစောင့်ပြီး ပြန်ကြိုးစားပါ။');
+    showStepError('videoLoadingErr','videoLoadingRetry','❌ Video ဖန်တီးရာတွင် အခက်အခဲရှိနေပါသည်။\\nNetwork error — ခဏစောင့်ပြီး ပြန်ကြိုးစားပါ။');
     // Error → Result section အတွင်းတွင် error + retry ပြသည် (existing error UI ကို ထိန်းထားသည်)
     shopState.video.step=2;showVideoPhase();setActionsForCurrent();
     showToast('⚠️ Video ဖန်တီး၍ မရပါ — ခဏစောင့်ပြီး ပြန်ကြိုးစားပါ','error');
@@ -1229,7 +1225,7 @@ function generateAudio(){
     if(window.aicsResultLoading)window.aicsResultLoading.hide('audioLoading');
     if(d.error){
       console.error('Shop Audio Generate Error:', d.error);
-      showStepError('audioLoadingErr','audioLoadingRetry','❌ အသံဖန်တီးရာတွင် အခက်အခဲရှိနေပါသည်။\n'+friendlyApiError(d));
+      showStepError('audioLoadingErr','audioLoadingRetry','❌ အသံဖန်တီးရာတွင် အခက်အခဲရှိနေပါသည်။\\n'+friendlyApiError(d));
       // Error → Result section အတွင်းတွင် error + retry ပြသည် (existing error UI ကို ထိန်းထားသည်)
       shopState.audio.step=2;showAudioPhase();setActionsForCurrent();
       showToast('⚠️ အသံဖန်တီး၍ မရပါ — ခဏစောင့်ပြီး ပြန်ကြိုးစားပါ','error');
@@ -1254,7 +1250,7 @@ function generateAudio(){
     console.error('Shop Audio Generate Error:', err);
     shopBusy=false;
     if(window.aicsResultLoading)window.aicsResultLoading.hide('audioLoading');
-    showStepError('audioLoadingErr','audioLoadingRetry','❌ အသံဖန်တီးရာတွင် အခက်အခဲရှိနေပါသည်။\nNetwork error — ခဏစောင့်ပြီး ပြန်ကြိုးစားပါ။');
+    showStepError('audioLoadingErr','audioLoadingRetry','❌ အသံဖန်တီးရာတွင် အခက်အခဲရှိနေပါသည်။\\nNetwork error — ခဏစောင့်ပြီး ပြန်ကြိုးစားပါ။');
     // Error → Result section အတွင်းတွင် error + retry ပြသည် (existing error UI ကို ထိန်းထားသည်)
     shopState.audio.step=2;showAudioPhase();setActionsForCurrent();
     showToast('⚠️ အသံဖန်တီး၍ မရပါ — ခဏစောင့်ပြီး ပြန်ကြိုးစားပါ','error');
@@ -1315,7 +1311,7 @@ function generateSrt(){
     if(window.aicsResultLoading)window.aicsResultLoading.hide('srtLoading');
     if(d.error){
       console.error('Shop SRT Generate Error:', d.error);
-      showStepError('srtLoadingErr','srtLoadingRetry','❌ စာတန်းထိုးဖန်တီးရာတွင် အခက်အခဲရှိနေပါသည်။\n'+friendlyApiError(d));
+      showStepError('srtLoadingErr','srtLoadingRetry','❌ စာတန်းထိုးဖန်တီးရာတွင် အခက်အခဲရှိနေပါသည်။\\n'+friendlyApiError(d));
       // Error → Result section အတွင်းတွင် error + retry ပြသည် (existing error UI ကို ထိန်းထားသည်)
       shopState.audio.step=3;showAudioPhase();setActionsForCurrent();
       showToast('⚠️ SRT ဖန်တီး၍ မရပါ — ခဏစောင့်ပြီး ပြန်ကြိုးစားပါ','error');
@@ -1334,7 +1330,7 @@ function generateSrt(){
     console.error('Shop SRT Generate Error:', err);
     shopBusy=false;
     if(window.aicsResultLoading)window.aicsResultLoading.hide('srtLoading');
-    showStepError('srtLoadingErr','srtLoadingRetry','❌ စာတန်းထိုးဖန်တီးရာတွင် အခက်အခဲရှိနေပါသည်။\nNetwork error — ခဏစောင့်ပြီး ပြန်ကြိုးစားပါ။');
+    showStepError('srtLoadingErr','srtLoadingRetry','❌ စာတန်းထိုးဖန်တီးရာတွင် အခက်အခဲရှိနေပါသည်။\\nNetwork error — ခဏစောင့်ပြီး ပြန်ကြိုးစားပါ။');
     // Error → Result section အတွင်းတွင် error + retry ပြသည် (existing error UI ကို ထိန်းထားသည်)
     shopState.audio.step=3;showAudioPhase();setActionsForCurrent();
     showToast('⚠️ SRT ဖန်တီး၍ မရပါ — ခဏစောင့်ပြီး ပြန်ကြိုးစားပါ','error');
@@ -1425,7 +1421,7 @@ function translateSrt(){
     if(window.aicsResultLoading)window.aicsResultLoading.hide('transLoading');
     if(d.error){
       console.error('Shop Translate Error:', d.error);
-      showStepError('transLoadingErr','transLoadingRetry','❌ ဘာသာပြန်ဖန်တီးရာတွင် အခက်အခဲရှိနေပါသည်။\n'+friendlyApiError(d));
+      showStepError('transLoadingErr','transLoadingRetry','❌ ဘာသာပြန်ဖန်တီးရာတွင် အခက်အခဲရှိနေပါသည်။\\n'+friendlyApiError(d));
       // Error → Result section အတွင်းတွင် error + retry ပြသည် (existing error UI ကို ထိန်းထားသည်)
       shopState.audio.step=4;showAudioPhase();setActionsForCurrent();
       showToast('⚠️ ဘာသာပြန်၍ မရပါ — ခဏစောင့်ပြီး ပြန်ကြိုးစားပါ','error');
@@ -1444,7 +1440,7 @@ function translateSrt(){
     console.error('Shop Translate Error:', err);
     shopBusy=false;
     if(window.aicsResultLoading)window.aicsResultLoading.hide('transLoading');
-    showStepError('transLoadingErr','transLoadingRetry','❌ ဘာသာပြန်ဖန်တီးရာတွင် အခက်အခဲရှိနေပါသည်။\nNetwork error — ခဏစောင့်ပြီး ပြန်ကြိုးစားပါ။');
+    showStepError('transLoadingErr','transLoadingRetry','❌ ဘာသာပြန်ဖန်တီးရာတွင် အခက်အခဲရှိနေပါသည်။\\nNetwork error — ခဏစောင့်ပြီး ပြန်ကြိုးစားပါ။');
     // Error → Result section အတွင်းတွင် error + retry ပြသည် (existing error UI ကို ထိန်းထားသည်)
     shopState.audio.step=4;showAudioPhase();setActionsForCurrent();
     showToast('⚠️ ဘာသာပြန်၍ မရပါ — ခဏစောင့်ပြီး ပြန်ကြိုးစားပါ','error');
